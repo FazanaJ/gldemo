@@ -6,6 +6,9 @@
 #include <math.h>
 
 #include "camera.h"
+#include "entity.h"
+#include "time_management.h"
+#include "auxiliary_math.h"
 #include "dummy_low.h"
 #include "plane.h"
 
@@ -13,17 +16,23 @@
 // The demo will only run for a single frame and stop.
 #define DEBUG_RDP 0
 
-static uint32_t animation = 3283;
 static uint32_t texture_index = 0;
-static camera_t camera;
 static surface_t zbuffer;
 
 static GLuint textures[5];
+static sprite_t *sprites[5];
+static const char *texture_path[5] = {
+    "rom:/circle0.sprite",
+    "rom:/diamond0.sprite",
+    "rom:/pentagon0.sprite",
+    "rom:/skin0.sprite",
+    "rom:/triangle0.sprite",
+};
 
 static GLenum shade_model = GL_SMOOTH;
 static bool fog_enabled = false;
 
-static const GLfloat environment_color[] = { 0.1f, 0.03f, 0.2f, 1.f };
+static const GLfloat environment_color[] = { 0.6f, 0.6f, 0.6f, 0.6f };
 
 static const GLfloat light_pos[8][4] = {
     { 1, 0, 0, 0 },
@@ -47,30 +56,26 @@ static const GLfloat light_diffuse[8][4] = {
     { 1.0f, 1.0f, 1.0f, 1.0f },
 };
 
-static const char *texture_path[5] = {
-    "rom:/circle0.sprite",
-    "rom:/diamond0.sprite",
-    "rom:/pentagon0.sprite",
-    "rom:/skin0.sprite",
-    "rom:/triangle0.sprite",
+
+
+TimeData time_data;
+
+Camera cam = {
+    distance_from_entity: 1200,
+    pitch: 30,
+    angle_around_entity: 0,
 };
 
-static sprite_t *sprites[5];
+Entity = {
 
-
-
-
+    pos: {0, 0, 0},
+    mesh = dummy;
+}
 
 
 void setup()
 {
-    camera.distance = -50.0f;
-    camera.rotation = 0.0f;
-
     zbuffer = surface_alloc(FMT_RGBA16, display_get_width(), display_get_height());
-
-
-
 
 
     for (uint32_t i = 0; i < 5; i++)
@@ -78,14 +83,11 @@ void setup()
         sprites[i] = sprite_load(texture_path[i]);
     }
 
-    setup_cube();
+
+    setup_entity();
 
     setup_plane();
     make_plane_mesh();
-
-
-
-
 
 
     float aspect_ratio = (float)display_get_width() / (float)display_get_height();
@@ -98,12 +100,6 @@ void setup()
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-
-
-
-
-
-
 
 
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, environment_color);
@@ -123,18 +119,9 @@ void setup()
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, mat_diffuse);
 
 
-
-
-
-
     glFogf(GL_FOG_START, 5);
     glFogf(GL_FOG_END, 20);
     glFogfv(GL_FOG_COLOR, environment_color);
-
-
-
-
-
 
 
     glGenTextures(5, textures);
@@ -158,12 +145,6 @@ void setup()
 }
 
 
-
-
-
-
-
-
 void set_light_positions(float rotation)
 {
     glPushMatrix();
@@ -175,11 +156,6 @@ void set_light_positions(float rotation)
     }
     glPopMatrix();
 }
-
-
-
-
-
 
 
 void render()
@@ -208,7 +184,7 @@ void render()
 
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, textures[3]);
-    render_cube(); 
+    render_entity(); 
 
     glBindTexture(GL_TEXTURE_2D, textures[(texture_index + 1)%4]);
     render_plane();
@@ -220,16 +196,6 @@ void render()
 
     rdpq_detach_show();
 }
-
-
-
-
-
-
-
-
-
-
 
 
 int main()
@@ -295,15 +261,24 @@ int main()
             texture_index = (texture_index + 1) % 4;
         }
 
-        float y = pressed.c[0].y/20;
-        float x = pressed.c[0].x/20;
-        float mag = x*x + y*y;
 
-        if (fabsf(mag) > 0.01f) {
-            camera.distance += y * 0.2f;
-            camera.rotation = camera.rotation - x * 1.2f;
+        float y = pressed.c[0].y;
+        float x = pressed.c[0].x;
+        
+        if (x < 7) {cont->stick_x = 0;}
+        if (y < 7) {cont->stick_y = 0;}
+
+
+        if (x != 0 || y != 0) {
+            entity->yaw = deg(atan2(x, -y) - rad(camera.angle_around_entity));
+            entity->horizontal_speed = fabs(7.0f / qi_sqrt(x * x + y * y));
         }
 
+        if ( x == 0 && y == 0) {
+            entity->horizontal_speed = 0;
+        }
+
+        
         render();
         if (DEBUG_RDP)
             rspq_wait();

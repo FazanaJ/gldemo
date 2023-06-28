@@ -10,4 +10,10 @@ typedef struct {
     uint32_t color;
 } vertex_t;
 
+typedef struct {
+    const vertex_t vertices[];
+    const uint16_t indices[];
+} mesh_t;
+
+
 #endif
