@@ -4,10 +4,6 @@
 #include <malloc.h>
 #include <math.h>
 
-#include "camera.h"
-#include "entity.h"
-#include "time_management.h"
-
 
 /*==============================
     rad
@@ -57,7 +53,7 @@ float qi_sqrt(float number){
     auxiliary function for 8 directional movement
 ==============================*/
 
-int lim(u32 input){
+int lim(int input){
     if (input == 0) {return 0;}
     else {return 1;}
 }

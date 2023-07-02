@@ -17,7 +17,7 @@
 typedef struct {
 	
 	float scale[3];
-	float pos[3];
+	float position[3];
 	float dir[3];
 
 	float pitch;
@@ -40,22 +40,22 @@ void get_entity_position(Entity *entity, TimeData time_data){
 
     float horizontal_distance = time_data.frame_duration * entity->horizontal_speed;
 
-    entity->pos[0] += horizontal_distance * sin(rad(entity->yaw));
-    entity->pos[1] -= horizontal_distance * cos(rad(entity->yaw));
+    entity->position[0] += horizontal_distance * sin(rad(entity->yaw));
+    entity->position[1] -= horizontal_distance * cos(rad(entity->yaw));
 
     float vertical_distance = time_data.frame_duration * entity->vertical_speed;
 
-    entity->pos[2] += vertical_distance;
+    entity->position[2] += vertical_distance;
 
-    if (entity->pos[2] > 0 || entity->vertical_speed > 0 || entity->vertical_speed < 0 ) {
+    if (entity->position[2] > 0 || entity->vertical_speed > 0 || entity->vertical_speed < 0 ) {
 
         entity->vertical_speed -= 10 * time_data.frame_duration;
     }
 
-    if (entity->pos[2] <= 0) {
+    if (entity->position[2] <= 0) {
 
         entity->vertical_speed = 0;
-        entity->pos[2] = 0;
+        entity->position[2] = 0;
     }
 }
 

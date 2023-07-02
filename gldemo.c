@@ -60,17 +60,17 @@ static const GLfloat light_diffuse[8][4] = {
 
 TimeData time_data;
 
-Camera cam = {
+Camera camera = {
     distance_from_entity: 1200,
     pitch: 30,
     angle_around_entity: 0,
 };
 
-Entity = {
+Entity dummy = {
 
     pos: {0, 0, 0},
-    mesh = dummy;
-}
+    mesh: dummy_mesh,
+};
 
 
 void setup()
@@ -145,10 +145,10 @@ void setup()
 }
 
 
-void set_light_positions(float rotation)
+void set_light_positions()
 {
     glPushMatrix();
-    glRotatef(rotation*5.43f, 0, 1, 0);
+    glRotatef(0, 0, 1, 0);
 
     for (uint32_t i = 0; i < 8; i++)
     {
@@ -170,11 +170,10 @@ void render()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glMatrixMode(GL_MODELVIEW);
-    camera_transform(&camera);
 
-    float rotation = animation * 0.5f;
+    set_cam(&camera, dummy);
 
-    set_light_positions(rotation);
+    set_light_positions();
 
     // Set some global render modes that we want to apply to all models
     glEnable(GL_LIGHTING);
@@ -182,12 +181,23 @@ void render()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
+
+
+
+
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, textures[3]);
-    render_entity(); 
+    render_entity(dummy); 
+
+
+
 
     glBindTexture(GL_TEXTURE_2D, textures[(texture_index + 1)%4]);
     render_plane();
+
+
+
+
 
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_LIGHTING);
@@ -226,15 +236,12 @@ int main()
         struct controller_data down = get_keys_down();
 
         if (pressed.c[0].A) {
-            animation++;
         }
 
         if (pressed.c[0].B) {
-            animation--;
         }
 
         if (down.c[0].start) {
-            debugf("%ld\n", animation);
         }
 
         if (down.c[0].R) {
@@ -265,17 +272,17 @@ int main()
         float y = pressed.c[0].y;
         float x = pressed.c[0].x;
         
-        if (x < 7) {cont->stick_x = 0;}
-        if (y < 7) {cont->stick_y = 0;}
+        if (x < 7) {x = 0;}
+        if (y < 7) {y = 0;}
 
 
         if (x != 0 || y != 0) {
-            entity->yaw = deg(atan2(x, -y) - rad(camera.angle_around_entity));
-            entity->horizontal_speed = fabs(7.0f / qi_sqrt(x * x + y * y));
+            dummy.yaw = deg(atan2(x, -y) - rad(camera.angle_around_entity));
+            dummy.horizontal_speed = fabs(7.0f / qi_sqrt(x * x + y * y));
         }
 
         if ( x == 0 && y == 0) {
-            entity->horizontal_speed = 0;
+            dummy.horizontal_speed = 0;
         }
 
         

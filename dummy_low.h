@@ -1,13 +1,12 @@
 #ifndef DUMMY_H
 #define DUMMY_H
 
-#include <libdragon.h>
-#include <GL/gl.h>
+
 #include "vertex.h"
 
-mesh_t dummy = {
+mesh_t dummy_mesh = {
     
-    vertices = { 
+    vertices: { 
         {.position = { 0.5, 0.5, 2},    .texcoord = { 1.024f, 0.992f},    .normal = { 0.f,  0.f,  1.f}, .color = 0xFF0000FF }, /* 0 */
         {.position = { -0.5, 0.5, 2},    .texcoord = { 0.f, 0.992f},    .normal = { 0.f,  0.f,  1.f}, .color = 0xFF0000FF }, /* 1 */
         {.position = { -0.5, -0.5, 2},    .texcoord = { 0.f, 0.512f},    .normal = { 0.f,  0.f,  1.f}, .color = 0xFF0000FF }, /* 2 */
@@ -37,16 +36,16 @@ mesh_t dummy = {
         {.position = { -0.5, 0.5, 2},    .texcoord = { 1.024f, 0.928f},    .normal = { 0.f,  0.f, -1.f}, .color = 0xFFFF00FF }, /* 21 */
         {.position = { 0.5, 0.5, 2},    .texcoord = { 0.f, 0.928f},    .normal = { 0.f,  0.f, -1.f}, .color = 0xFFFF00FF }, /* 22 */
         {.position = { 0.5, 0.5, 0},    .texcoord = { 0.f, 0.648f},    .normal = { 0.f,  0.f, -1.f}, .color = 0xFFFF00FF }, /* 23 */
-    };
+    },
 
-   indices = {
+   indices: {
         0,  1,  2,  0,  2,  3,
         4,  5,  6,  4,  6,  7,
         8,  9, 10,  8, 10, 11,
         12, 13, 14, 12, 14, 15,
         16, 17, 18, 16, 18, 19,
         20, 21, 22, 20, 22, 23,
-    };
+    },
 
 };
 

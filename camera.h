@@ -3,8 +3,9 @@
 
 #include <malloc.h>
 #include <math.h>
-#include "auxiliary_math.h"
 
+#include "auxiliary_math.h"
+#include "entity.h"
 
 typedef struct {
 
@@ -13,7 +14,7 @@ typedef struct {
 	float vertical_distance_from_entity;
     float angle_around_entity;
 
-	float pos[3];
+	float position[3];
 
 	float pitch;
 	float yaw;
@@ -31,9 +32,9 @@ void set_cam(Camera *camera, Entity entity){
 
     glLoadIdentity();
     gluLookAt(
-        camera->pos[0], camera->pos[1], camera->pos[2],
-        entity.pos[0], entity.pos[1], (entity.pos[2] / 3) + 150,
-        0, 0, 1)
+        camera->position[0], camera->position[1], camera->position[2],
+        entity.position[0], entity.position[1], (entity.position[2] / 3) + 150,
+        0, 0, 1);
 }
 
 
@@ -46,11 +47,11 @@ void get_camera_position(Camera *camera, Entity entity){
     camera->horizontal_distance_from_entity = camera->distance_from_entity * cos(rad(camera->pitch));
 	camera->vertical_distance_from_entity = camera->distance_from_entity * sin(rad(camera->pitch));
 
-    camera->pos[0] = entity.pos[0] - camera->horizontal_distance_from_entity * sin(rad(camera->angle_around_entity));
-    camera->pos[1] = entity.pos[1] - camera->horizontal_distance_from_entity * cos(rad(camera->angle_around_entity));
-    camera->pos[2] = camera->vertical_distance_from_entity + entity.pos[2];
+    camera->position[0] = entity.position[0] - camera->horizontal_distance_from_entity * sin(rad(camera->angle_around_entity));
+    camera->position[1] = entity.position[1] - camera->horizontal_distance_from_entity * cos(rad(camera->angle_around_entity));
+    camera->position[2] = camera->vertical_distance_from_entity + entity.position[2];
 
-    if ((camera->vertical_distance_from_entity + entity.pos[2]) < 5){cam.pos[2] = 5;}
+    if ((camera->vertical_distance_from_entity + entity.position[2]) < 5){cam.position[2] = 5;}
 }
 ==============================*/
 
