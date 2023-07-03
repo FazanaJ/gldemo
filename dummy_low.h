@@ -4,7 +4,7 @@
 
 #include "vertex.h"
 
-mesh_t dummy_mesh = {
+const mesh_t dummy_mesh = {
     
     vertices: { 
         {.position = { 0.5, 0.5, 2},    .texcoord = { 1.024f, 0.992f},    .normal = { 0.f,  0.f,  1.f}, .color = 0xFF0000FF }, /* 0 */

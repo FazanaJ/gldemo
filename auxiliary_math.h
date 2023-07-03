@@ -29,7 +29,6 @@ float deg(float rad){
 /*==============================
     qi_sqrt
     quick inverse square root
-==============================*/
 
 float qi_sqrt(float number){
 
@@ -47,16 +46,17 @@ float qi_sqrt(float number){
 
 	return y;
 }
+==============================*/
 
 /*==============================
     lim
     auxiliary function for 8 directional movement
-==============================*/
 
 int lim(int input){
     if (input == 0) {return 0;}
     else {return 1;}
 }
+==============================*/
 
 
 

@@ -68,7 +68,7 @@ Camera camera = {
 
 Entity dummy = {
 
-    pos: {0, 0, 0},
+    position: {0, 0, 0},
     mesh: dummy_mesh,
 };
 
@@ -278,7 +278,7 @@ int main()
 
         if (x != 0 || y != 0) {
             dummy.yaw = deg(atan2(x, -y) - rad(camera.angle_around_entity));
-            dummy.horizontal_speed = fabs(7.0f / qi_sqrt(x * x + y * y));
+            dummy.horizontal_speed = fabs(7.0f / sqrt(x * x + y * y));
         }
 
         if ( x == 0 && y == 0) {
