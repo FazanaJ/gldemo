@@ -5,28 +5,28 @@
 #include <malloc.h>
 #include <math.h>
 
-#include "camera.h"
-#include "dummy_low.h"
-#include "plane.h"
+#include "time.h"
 #include "lights.h"
-#include "player_controls.h"
+#include "sphere.h"
+#include "plane.h"
+#include "dummy_low.h"
+#include "controls.h"
 #include "entity.h"
+#include "camera.h"
 
 // Set this to 1 to enable rdpq debug output.
 // The demo will only run for a single frame and stop.
 #define DEBUG_RDP 0
 
-static uint32_t texture_index = 0;
-static camera_t camera;
-static surface_t zbuffer;
+// global variables??
 
-static GLuint textures[5];
+static surface_t zbuffer;
 
 static GLenum shade_model = GL_SMOOTH;
 static bool fog_enabled = false;
 
-struct Entity player;
-
+static GLuint textures[5];
+static sprite_t *sprites[5];
 static const char *texture_path[5] = {
     "rom:/circle0.sprite",
     "rom:/diamond0.sprite",
@@ -35,23 +35,23 @@ static const char *texture_path[5] = {
     "rom:/triangle0.sprite",
 };
 
-static sprite_t *sprites[5];
+
+static time_data_t time_data;
+
+static camera_t camera= {
+    distance_from_entity: 6,
+    pitch: 30,
+};
+
+struct entity_t player = {
+    position: {0, 0, 0,},
+};
 
 
+void setup(){
 
-
-
-
-void setup()
-{
-    camera.distance = -10.0f;
-    camera.rotation = 0.0f;
 
     zbuffer = surface_alloc(FMT_RGBA16, display_get_width(), display_get_height());
-
-
-
-
 
     for (uint32_t i = 0; i < 5; i++)
     {
@@ -60,17 +60,16 @@ void setup()
 
     setup_cube();
 
+    setup_sphere();
+    make_sphere_mesh();
+
     setup_plane();
     make_plane_mesh();
 
 
-
-
-
-
     float aspect_ratio = (float)display_get_width() / (float)display_get_height();
     float near_plane = 1.0f;
-    float far_plane = 5000.0f;
+    float far_plane = 6000.0f;
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -102,8 +101,7 @@ void setup()
 }
 
 
-void render()
-{
+void render(){
 
     if (fog_enabled) {
         glEnable(GL_FOG);
@@ -122,7 +120,8 @@ void render()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glMatrixMode(GL_MODELVIEW);
-    camera_transform(&camera);
+    
+    set_camera(camera, player);
 
     set_light_positions(1.0f);
 
@@ -136,15 +135,17 @@ void render()
     glBindTexture(GL_TEXTURE_2D, textures[3]);
 
     glPushMatrix();
-	glScalef(3.f, 3.f, 3.f);
-	glTranslatef(player.pos[0], player.pos[1], 0.f);
-
+	glTranslatef(player.position[0], player.position[1], player.position[2]);
+    glRotatef(player.yaw, 0, 0, 1);
+	glScalef(1.f, 1.f, 1.f);
     render_cube(); 
-
     glPopMatrix();
 
-    glBindTexture(GL_TEXTURE_2D, textures[(texture_index + 1)%4]);
+    glBindTexture(GL_TEXTURE_2D, textures[0%4]);
     render_plane();
+
+    glBindTexture(GL_TEXTURE_2D, textures[1%4]);
+    render_sphere(0);
 
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_LIGHTING);
@@ -155,20 +156,16 @@ void render()
 }
 
 
+int main(){
 
-
-
-
-
-
-
-
-
-
-int main()
-{
 	debug_init_isviewer();
 	debug_init_usblog();
+
+    console_init();
+    console_set_render_mode(RENDER_MANUAL);
+
+    timer_init();
+    print_time(time_data);
     
     dfs_init(DFS_DEFAULT_LOCATION);
 
@@ -186,18 +183,25 @@ int main()
 
     controller_init();
 
-    while (1)
-    {
+    while (1){
+
+        time_management(&time_data);
 
         controller_scan();
-        struct controller_data pressed = get_keys_pressed();
-        struct controller_data down = get_keys_down();
+        struct controller_data hold = get_keys_pressed();
+        struct controller_data press = get_keys_down();
     
-        handle_controller_input_player(pressed, down, &player);
+        move_entity_analog(hold, press, &player, camera);
+        get_entity_position(&player, time_data);
+
+        move_camera_analog(hold, press, &camera);
+        set_camera_zoom(hold, press, &camera);
+        get_camera_position(&camera, player);
+
 
         render();
-        if (DEBUG_RDP)
-            rspq_wait();
+
+        if (DEBUG_RDP) rspq_wait();
     }
 
 }

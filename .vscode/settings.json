@@ -2,6 +2,11 @@
     "C_Cpp.errorSquiggles": "disabled",
     "files.associations": {
         "camera.h": "c",
-        "compare": "cpp"
+        "compare": "cpp",
+        "lights.h": "c",
+        "math.h": "c",
+        "plane.h": "c",
+        "libdragon.h": "c",
+        "controls.h": "c"
     }
 }
