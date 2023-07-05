@@ -7,6 +7,8 @@
         "math.h": "c",
         "plane.h": "c",
         "libdragon.h": "c",
-        "controls.h": "c"
+        "controls.h": "c",
+        "glu.h": "c",
+        "malloc.h": "c"
     }
 }

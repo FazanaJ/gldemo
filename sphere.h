@@ -6,6 +6,7 @@
 #include <math.h>
 
 #include "vertex.h"
+#include "entity.h"
 
 #define SPHERE_RADIUS       1000.0f
 #define SPHERE_MIN_RINGS    4
@@ -166,14 +167,17 @@ void draw_sphere()
     glCallList(sphere_list);
 }
 
-void render_sphere(float rotation)
+void render_sphere(struct entity_t player)
 {
     rdpq_debug_log_msg("Sphere");
     glPushMatrix();
 
-    glRotatef(rotation*0.23f, 1, 0, 0);
-    glRotatef(rotation*0.98f, 0, 0, 1);
-    glRotatef(rotation*1.71f, 0, 1, 0);
+
+	glTranslatef(player.position[0], player.position[1], player.position[2]);
+
+    glRotatef(0, 1, 0, 0);
+    glRotatef(0, 0, 0, 1);
+    glRotatef(0, 0, 1, 0);
 
     // We want to see back faces instead of front faces, because the camera will be inside the sphere
     glCullFace(GL_FRONT);

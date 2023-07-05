@@ -29,8 +29,8 @@ void move_entity_analog(struct controller_data hold, struct controller_data pres
 
 void move_camera_analog(struct controller_data hold, struct controller_data press, camera_t *camera){
 
-    if (fabs(hold.c[0].y) < 7){hold.c[0].y = 0;}
-	if (fabs(hold.c[0].x) < 7){hold.c[0].x = 0;}
+    if (fabs(hold.c[1].y) < 7){hold.c[0].y = 0;}
+	if (fabs(hold.c[1].x) < 7){hold.c[0].x = 0;}
 
     float ry = hold.c[1].y ;
 	float rx = hold.c[1].x ;

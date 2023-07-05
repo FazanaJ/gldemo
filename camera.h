@@ -27,7 +27,7 @@ void set_camera (camera_t camera, struct entity_t entity){
     glLoadIdentity();
     gluLookAt(
         camera.position[0], camera.position[1], camera.position[2],
-        entity.position[0], entity.position[1], (entity.position[2] + 2),
+        entity.position[0], entity.position[1], entity.position[2],
         0, 0, 1);
 
 }
