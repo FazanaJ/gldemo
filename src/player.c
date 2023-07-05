@@ -1,0 +1,71 @@
+#include <libdragon.h>
+#include <malloc.h>
+
+#include "player.h"
+#include "../include/global.h"
+
+#include "math_util.h"
+#include "object.h"
+#include "camera.h"
+#include "main.h"
+#include "input.h"
+#include "audio.h"
+
+Object *gPlayer;
+
+void player_init(Object *obj) {
+    PlayerData *data = (PlayerData *) obj->data;
+
+    data->healthBase = 12;
+    data->healthMax = data->healthBase;
+    data->health = data->healthMax;
+}
+
+void player_loop(Object *obj, int updateRate, float updateRateF) {
+    Camera *c = gCamera;
+	float stickX = get_stick_x();
+    float intendedMag = get_stick_mag();
+    int moveTicks = timer_int(60);
+
+    if (gCurrentController == -1) {
+        return;
+    }
+
+    if (get_input_pressed(INPUT_A, 3)) {
+        rumble_set(10);
+    }
+
+    if (get_input_pressed(INPUT_B, 0)) {
+        play_sound_global(SOUND_LASER);
+    }
+
+    if (intendedMag > 0.01f && get_input_held(INPUT_L) == false) {
+        short intendedYaw = get_stick_angle();
+        float moveLerp;
+        INCREASE_VAR(c->moveTimer, updateRate, moveTicks);
+        moveLerp = 1.0f - (((float) (moveTicks - c->moveTimer)) / (float) moveTicks);
+        obj->moveAngle[2] = lerp_short(obj->moveAngle[2], intendedYaw + c->yawTarget, 0.25f * updateRateF);
+        if (gZTargetTimer == 0) {
+            c->yawTarget -= (float) (stickX * ((2.0f * updateRateF) * moveLerp));
+            obj->faceAngle[2] = lerp_short(obj->faceAngle[2], obj->moveAngle[2], 0.1f * updateRateF);
+        }
+    } else {
+        DECREASE_VAR(c->moveTimer, updateRate * 2, 0);
+        intendedMag = 0.0f;
+    }
+
+    if (obj->forwardVel < 10.0f * intendedMag) {
+        obj->forwardVel += (updateRateF * 3.0f) * intendedMag;
+    }
+    if (obj->forwardVel > 10.0f * intendedMag) {
+        DECREASE_VAR(obj->forwardVel, updateRate * 0.5f, 0);
+    }
+
+    if (obj->forwardVel > 0.0f) {
+        DECREASE_VAR(obj->forwardVel, updateRate * 0.75f, 0);
+    }
+
+    obj->pos[0] += (obj->forwardVel * sins(obj->moveAngle[2])) / 100.0f;
+    obj->pos[1] -= (obj->forwardVel * coss(obj->moveAngle[2])) / 100.0f;
+
+}

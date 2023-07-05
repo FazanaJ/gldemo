@@ -4,7 +4,8 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/opt/libdragon/**"
+                "/opt/libdragon/**",
+                "C:/sm64-decomp/libdragon/include/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

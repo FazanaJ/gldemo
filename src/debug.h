@@ -1,0 +1,70 @@
+#pragma once
+
+#include <libdragon.h>
+#include "../include/global.h"
+
+#define TIME_ITERATIONS 30
+#define TIME_AGGREGATE TIME_ITERATIONS
+#define TIME_TOTAL TIME_ITERATIONS + 1
+
+
+enum ProfileTimers {
+    PP_PLAYER,
+    PP_OBJECTS,
+    PP_RENDER,
+    PP_INPUT,
+    PP_DMA,
+    PP_AUDIO,
+    PP_HUD,
+
+    PP_TOTAL
+};
+
+typedef struct DebugData {
+    unsigned int timer[PP_TOTAL][TIME_TOTAL + 1];
+    unsigned int cpuTime[TIME_TOTAL + 1];
+    unsigned int rspTime[TIME_TOTAL + 1];
+    unsigned int rdpTime[TIME_TOTAL + 1];
+    unsigned char iteration;
+    char enabled : 1;
+} DebugData;
+
+extern DebugData *gDebugData;
+
+#ifdef PUPPYPRINT_DEBUG
+void reset_profiler_times(void);
+void get_time_snapshot(int index, int diff);
+void get_cpu_time(int diff);
+void get_rsp_time(int diff);
+void get_rdp_time(int diff);
+void init_debug(void);
+void render_profiler(void);
+void process_profiler(void);
+#define DEBUG_SNAPSHOT_1() unsigned int first1 = timer_ticks()
+#define DEBUG_SNAPSHOT_2() unsigned int first2 = timer_ticks()
+#define DEBUG_SNAPSHOT_3() unsigned int first3 = timer_ticks()
+#define DEBUG_SNAPSHOT_1_RESET() first1 = timer_ticks()
+#define DEBUG_SNAPSHOT_2_RESET() first2 = timer_ticks()
+#define DEBUG_SNAPSHOT_3_RESET() first3 = timer_ticks()
+#define DEBUG_SNAPSHOT_1_END timer_ticks() - first1
+#define DEBUG_SNAPSHOT_2_END timer_ticks() - first2
+#define DEBUG_SNAPSHOT_3_END timer_ticks() - first3
+#else
+#define reset_profiler_times()
+#define get_time_snapshot(index, diff)
+#define get_cpu_time(diff)
+#define get_rsp_time(diff)
+#define get_rdp_time(diff)
+#define init_debug()
+#define render_profiler()
+#define process_profiler()
+#define DEBUG_SNAPSHOT_1()
+#define DEBUG_SNAPSHOT_2()
+#define DEBUG_SNAPSHOT_3()
+#define DEBUG_SNAPSHOT_1_RESET()
+#define DEBUG_SNAPSHOT_2_RESET()
+#define DEBUG_SNAPSHOT_3_RESET()
+#define DEBUG_SNAPSHOT_1_END
+#define DEBUG_SNAPSHOT_2_END
+#define DEBUG_SNAPSHOT_3_END
+#endif

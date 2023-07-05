@@ -9,6 +9,15 @@
         "libdragon.h": "c",
         "controls.h": "c",
         "glu.h": "c",
-        "malloc.h": "c"
+        "malloc.h": "c",
+        "gl_integration.h": "c",
+        "input.h": "c",
+        "gl.h": "c",
+        "render.h": "c",
+        "environment.h": "c",
+        "object.h": "c",
+        "textures.h": "c",
+        "main.h": "c",
+        "global.h": "c"
     }
 }
