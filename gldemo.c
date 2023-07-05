@@ -167,13 +167,13 @@ int main(){
 
         controller_scan();
         struct controller_data hold = get_keys_pressed();
-        struct controller_data press = get_keys_down();
+        //struct controller_data press = get_keys_down();
     
-        move_entity_analog(hold, press, &player, camera);
+        move_entity_analog(hold, &player, camera);
         get_entity_position(&player, time_data);
 
-        move_camera_analog(hold, press, &camera);
-        set_camera_zoom(hold, press, &camera);
+        move_camera_c_buttons(hold, &camera);
+        set_camera_zoom(hold, &camera);
         get_camera_position(&camera, player);
 
 
