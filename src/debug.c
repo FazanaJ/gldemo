@@ -154,7 +154,7 @@ void render_profiler(void) {
     if (gDebugData->timer[PP_OBJECTS][TIME_TOTAL] > 10) {
         boxHeight += 10;
         rdpq_font_position(8, 26 + boxHeight);
-        rdpq_font_printf(gCurrentFont, "OBJ: %dus (%d%%)", gDebugData->timer[PP_OBJECTS][TIME_TOTAL], gDebugData->timer[PP_OBJECTS][TIME_TOTAL] / divisor);
+        rdpq_font_printf(gCurrentFont, "OBJ: %dus (%d%%): %d", gDebugData->timer[PP_OBJECTS][TIME_TOTAL], gDebugData->timer[PP_OBJECTS][TIME_TOTAL] / divisor, gNumObjects);
     }
     if (gDebugData->timer[PP_RENDER][TIME_TOTAL] > 10) {
         boxHeight += 10;

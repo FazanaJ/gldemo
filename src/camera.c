@@ -25,6 +25,13 @@ void camera_init(void) {
     gCamera->zoom = 4.0f;
     gCamera->zoomAdd = 0.0f;
     gCamera->moveTimer = 0;
+    gCamera->pos[0] = 0;
+    gCamera->pos[1] = 0;
+    gCamera->pos[2] = 0;
+    gCamera->focus[0] = 0;
+    gCamera->focus[1] = 0;
+    gCamera->focus[2] = 0;
+    gCamera->pan = 0.0f;
     if (gPlayer) {
         gCamera->parent = gPlayer;
     }

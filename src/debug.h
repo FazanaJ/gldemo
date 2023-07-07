@@ -16,6 +16,7 @@ enum ProfileTimers {
     PP_DMA,
     PP_AUDIO,
     PP_HUD,
+    PP_CLUTTER,
 
     PP_TOTAL
 };

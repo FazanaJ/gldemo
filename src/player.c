@@ -31,12 +31,12 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
         return;
     }
 
-    if (get_input_pressed(INPUT_A, 3)) {
-        rumble_set(10);
-    }
-
-    if (get_input_pressed(INPUT_B, 0)) {
+    if (get_input_pressed(INPUT_B, 0) && gGameTimer > 120) {
         play_sound_global(SOUND_LASER);
+        Object *bullet = spawn_object_pos(OBJ_PROJECTILE, obj->pos[0], obj->pos[1], obj->pos[2]);
+        bullet->forwardVel = 20.0f;
+        bullet->moveAngle[2] = obj->faceAngle[2];
+        rumble_set(3);
     }
 
     if (intendedMag > 0.01f && get_input_held(INPUT_L) == false) {

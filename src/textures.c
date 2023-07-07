@@ -18,13 +18,20 @@ void setup_textures(GLuint textures[], sprite_t *sprites[], const char *texture_
     GLenum min_filter = GL_LINEAR;
 
     for (uint32_t i = 0; i < texture_number; i++){
+        int repeat;
+
+        if (i == 2 || i == 3) {
+            repeat = false;
+        } else {
+            repeat = REPEAT_INFINITE;
+        }
 
         glBindTexture(GL_TEXTURE_2D, textures[i]);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter);
 
-        glSpriteTextureN64(GL_TEXTURE_2D, sprites[i], &(rdpq_texparms_t){.s.repeats = REPEAT_INFINITE, .t.repeats = REPEAT_INFINITE});
+        glSpriteTextureN64(GL_TEXTURE_2D, sprites[i], &(rdpq_texparms_t){.s.repeats = repeat, .t.repeats = repeat});
     }
 
 }

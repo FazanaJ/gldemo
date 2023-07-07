@@ -20,8 +20,8 @@
 surface_t gZBuffer;
 surface_t *gFrameBuffers;
 rdpq_font_t *gCurrentFont;
-unsigned int gGlobalTimer = 0;
-unsigned int gGameTimer = 0;
+unsigned int gGlobalTimer;
+unsigned int gGameTimer;
 float gAspectRatio = 1.0f;
 char gZTargetTimer = 0;
 
@@ -29,10 +29,10 @@ GLenum shade_model = GL_SMOOTH;
 
 
 const char *texture_path[] = {
-    "rom:/grass0.ci8.sprite",
+    "rom:/grass0.ci4.sprite",
     "rom:/skin0.ci8.sprite",
     "rom:/health.i8.sprite",
-    "rom:/plant1.sprite",
+    "rom:/plant1.ia8.sprite",
 };
 
 const char *gFontAssetTable[] = {
@@ -70,15 +70,15 @@ void setup(void) {
     setup_fog(light);
 
     gPlayer = spawn_object_pos(OBJ_PLAYER, 0.0f, 0.0f, 0.0f);
-    spawn_object_pos(OBJ_BUSH, 4, 8, 0);
-    spawn_object_pos(OBJ_BUSH, 2, 9, 0);
-    spawn_object_pos(OBJ_BUSH, 7, -20, 0);
-    spawn_object_pos(OBJ_BUSH, 15, -5, 0);
-    spawn_object_pos(OBJ_BUSH, 12, 8, 0);
-    spawn_object_pos(OBJ_BUSH, -5, 9, 0);
-    spawn_object_pos(OBJ_BUSH, -19, 8, 0);
-    spawn_object_pos(OBJ_BUSH, 9, 0, 0);
-    spawn_object_pos(OBJ_BUSH, 15, -15, 0);
+    spawn_clutter(CLUTTER_BUSH, 4, 8, 0, 0, 0, 0);
+    spawn_clutter(CLUTTER_BUSH, 2, 9, 0, 0, 0, 0);
+    spawn_clutter(CLUTTER_BUSH, 7, -20, 0, 0, 0, 0);
+    spawn_clutter(CLUTTER_BUSH, 15, -5, 0, 0, 0, 0);
+    spawn_clutter(CLUTTER_BUSH, 12, 8, 0, 0, 0, 0);
+    spawn_clutter(CLUTTER_BUSH, -5, 9, 0, 0, 0, 0);
+    spawn_clutter(CLUTTER_BUSH, -19, 8, 0, 0, 0, 0);
+    spawn_clutter(CLUTTER_BUSH, 9, 0, 0, 0, 0, 0);
+    spawn_clutter(CLUTTER_BUSH, 15, -15, 0, 0, 0, 0);
 
     camera_init();
     gAspectRatio = (float) display_get_width() / (float) display_get_height();
@@ -177,16 +177,19 @@ void render_game(void) {
     render_dummy(); 
     glPopMatrix();
 
-    ObjectList *list = gObjectListHead;
-    Object *obj;
+    ClutterList *list = gClutterListHead;
+    Clutter *obj;
+    
+    ObjectList *list2 = gObjectListHead;
+    Object *obj2;
 
     glAlphaFunc(GL_GREATER, 0.5);
     glEnable(GL_ALPHA_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBindTexture(GL_TEXTURE_2D, textures[3]);
     while (list) {
-        obj = list->obj;
-        if (obj->objectID == OBJ_BUSH) {
+        obj = list->clutter;
+        if (obj->objectID == CLUTTER_BUSH/* && !(obj->flags & OBJ_FLAG_INVISIBLE)*/) {
             glPushMatrix();
             glTranslatef(obj->pos[0], obj->pos[1], obj->pos[2]);
             glRotatef(SHORT_TO_DEGREES(gCamera->yaw), 0, 0, 1);
@@ -195,6 +198,18 @@ void render_game(void) {
             glPopMatrix();
         }
         list = list->next;
+    }
+    while (list2) {
+        obj2 = list2->obj;
+        if (obj2->objectID == OBJ_PROJECTILE) {
+            glPushMatrix();
+            glTranslatef(obj2->pos[0], obj2->pos[1], obj2->pos[2]);
+            glRotatef(SHORT_TO_DEGREES(gCamera->yaw), 0, 0, 1);
+            glScalef(obj2->scale[0], obj2->scale[1], obj2->scale[2]);
+            render_bush(); 
+            glPopMatrix();
+        }
+        list2 = list2->next;
     }
     glDisable(GL_ALPHA_TEST);
 
@@ -237,7 +252,7 @@ void init_memory(void) {
 }
 
 void init_save(void) {
-    gConfig.antiAliasing = AA_FAST;
+    gConfig.antiAliasing = AA_OFF;
     gConfig.dedither = false;
     gConfig.regionMode = get_tv_type();
     gConfig.screenMode = SCREEN_NORMAL;
@@ -250,27 +265,32 @@ void init_game(void) {
     init_audio();
     init_save();
     init_debug();
+    gGlobalTimer = 0;
+    gGameTimer = 0;
 }
 
-int update_game_time(void) {
+void update_game_time(int *updateRate, float *updateRateF) {
     static unsigned int prevTime = 0;
     static unsigned int deltaTime = 0;
     static unsigned int curTime;
-    int updateRate;
     
     curTime = timer_ticks();
+    // Convert it to float too, and make it 20% faster on PAL systems.
+    *updateRateF = 1.0f / ((float) (curTime - prevTime) / 1000000.0f);
+    if (gConfig.regionMode == TV_PAL) {
+        *updateRateF *= 1.2f;
+    }
     deltaTime += TIMER_MICROS(curTime - prevTime);
     prevTime = curTime;
     deltaTime -= 16666;
-    updateRate = LOGIC_60FPS;
+    *updateRate = LOGIC_60FPS;
     while (deltaTime > 16666) {
         deltaTime -= 16666;
         updateRate++;
-        if (updateRate == LOGIC_15FPS) {
+        if (*updateRate == LOGIC_15FPS) {
             deltaTime = 0;
         }
     }
-    return updateRate;
 }
 
 int main(void) {
@@ -286,15 +306,9 @@ int main(void) {
         reset_profiler_times();
         DEBUG_SNAPSHOT_1();
 
-        updateRate = update_game_time();
-        // Convert it to float too, and make it 20% faster on PAL systems.
-        updateRateF = (float) updateRate;
-        if (gConfig.regionMode == TV_PAL) {
-            updateRateF *= 1.2f;
-        }
-
+        update_game_time(&updateRate, &updateRateF);
         update_inputs(updateRate);
-        update_objects(updateRate, updateRateF);
+        update_game_entities(updateRate, updateRateF);
         camera_loop(updateRate, updateRateF);
         audio_loop(updateRate, updateRateF);
         
@@ -305,6 +319,7 @@ int main(void) {
         if (gDebugData && gDebugData->enabled) {
             render_profiler();
         }
+
         rdpq_detach_wait();
         display_show(gFrameBuffers);
         

@@ -25,7 +25,7 @@ filesystem/%.font64: assets/Fonts/%.ttf
 filesystem/%.sprite: assets/textures/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) -f RGBA16 --compress -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) --compress -o "$(dir $@)" "$<"
 
 filesystem/%.wav64: assets/Sounds/%.wav
 	@mkdir -p $(dir $@)

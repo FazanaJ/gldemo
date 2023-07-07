@@ -10,6 +10,9 @@ extern float gSineTable[];
 #define SHORT_TO_DEGREES(x) ((x / (float)0x10000) * 360.0f)
 #define INCREASE_VAR(x, amt, max) {x += amt; if (x > max) x = max;}
 #define DECREASE_VAR(x, amt, min) {x -= amt; if (x < min) x = min;}
+#define SQR(x) (x * x)
+#define DIST2(x, y) (SQR(x[0] - y[0]) + SQR(x[1] - y[1]))
+#define DIST3(x, y) (SQR(x[0] - y[0]) + SQR(x[1] - y[1]) + SQR(x[2] - y[2]))
 
 int atan2s(float y, float x);
 int timer_int(int timer);
