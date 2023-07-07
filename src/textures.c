@@ -9,8 +9,9 @@
 void setup_textures(GLuint textures[], sprite_t *sprites[], const char *texture_path[], int texture_number) {
 
     for (uint32_t i = 0; i < texture_number; i++){
-
-        sprites[i] = sprite_load(texture_path[i]);
+        if (sprites[i] == NULL) {
+            sprites[i] = sprite_load(texture_path[i]);
+        }
     }
 
     glGenTextures(texture_number, textures);

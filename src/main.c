@@ -45,9 +45,16 @@ const char *gFontAssetTable[] = {
 GLuint textures[TEXTURE_NUMBER];
 sprite_t *sprites[TEXTURE_NUMBER];
 
-const resolution_t RESOLUTION_304x224 = {304, 224, false};
-const resolution_t RESOLUTION_384x224 = {384, 224, false};
-const resolution_t RESOLUTION_408x224 = {408, 224, false};
+static const resolution_t RESOLUTION_304x224 = {320, 240, false};
+static const resolution_t RESOLUTION_384x224 = {384, 240, false};
+static const resolution_t RESOLUTION_408x224 = {424, 240, false};
+
+static const resolution_t sVideoModes[] = {
+    RESOLUTION_304x224,
+    RESOLUTION_384x224,
+    RESOLUTION_408x224
+};
+
 Config gConfig;
 
 light_t light = {
@@ -59,15 +66,18 @@ light_t light = {
     radius: 10.0f,
 };
 
+void init_renderer(void) {
+    setup_textures(textures, sprites, texture_path, TEXTURE_NUMBER);
+    setup_light(light);
+    setup_fog(light);
+}
+
 void setup(void) {
 
-    setup_textures(textures, sprites, texture_path, TEXTURE_NUMBER);
-
+    init_renderer();
     setup_plane();
     make_plane_mesh();
 
-    setup_light(light);
-    setup_fog(light);
 
     gPlayer = spawn_object_pos(OBJ_PLAYER, 0.0f, 0.0f, 0.0f);
     spawn_clutter(CLUTTER_BUSH, 4, 8, 0, 0, 0, 0);
@@ -238,11 +248,32 @@ void render_game(void) {
     get_time_snapshot(PP_HUD, DEBUG_SNAPSHOT_1_END);
 }
 
-void init_video(void) {
-    display_init(RESOLUTION_320x240, DEPTH_16_BPP, 3, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
+char sFirstBoot = 0;
+
+void reset_display(void) {
+    if (sFirstBoot) {
+        gl_close();
+        rdpq_close();
+    }
+    display_close();
+    display_init(sVideoModes[gConfig.screenMode], DEPTH_16_BPP, 3, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
     gZBuffer = surface_alloc(FMT_RGBA16, display_get_width(), display_get_height());
-    rdpq_init();
+    sFirstBoot = true;
     gl_init();
+    rdpq_init();
+    init_renderer();
+}
+
+void set_region_type(int region) {
+    if (region == PAL60) {
+        region = NTSC60;
+    }
+    *(uint32_t*) 0x80000300 = region; // Writes to osTvType
+    reset_display();
+}
+
+void init_video(void) {
+    set_region_type(get_tv_type());
 }
 
 void init_memory(void) {
@@ -255,7 +286,7 @@ void init_save(void) {
     gConfig.antiAliasing = AA_OFF;
     gConfig.dedither = false;
     gConfig.regionMode = get_tv_type();
-    gConfig.screenMode = SCREEN_NORMAL;
+    gConfig.screenMode = SCREEN_4_3;
 }
 
 void init_game(void) {
@@ -320,9 +351,10 @@ int main(void) {
             render_profiler();
         }
 
+
         rdpq_detach_wait();
         display_show(gFrameBuffers);
-        
+
         gGlobalTimer++;
         gGameTimer += updateRate;
     }

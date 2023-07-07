@@ -10,6 +10,7 @@
 #include "main.h"
 #include "input.h"
 #include "audio.h"
+#include "debug.h"
 
 Object *gPlayer;
 
@@ -22,12 +23,14 @@ void player_init(Object *obj) {
 }
 
 void player_loop(Object *obj, int updateRate, float updateRateF) {
+    DEBUG_SNAPSHOT_1();
     Camera *c = gCamera;
 	float stickX = get_stick_x();
     float intendedMag = get_stick_mag();
     int moveTicks = timer_int(60);
 
     if (gCurrentController == -1) {
+        get_time_snapshot(PP_PLAYER, DEBUG_SNAPSHOT_1_END);
         return;
     }
 
@@ -68,4 +71,5 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
     obj->pos[0] += (obj->forwardVel * sins(obj->moveAngle[2])) / 100.0f;
     obj->pos[1] -= (obj->forwardVel * coss(obj->moveAngle[2])) / 100.0f;
 
+    get_time_snapshot(PP_PLAYER, DEBUG_SNAPSHOT_1_END);
 }

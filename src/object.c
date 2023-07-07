@@ -313,6 +313,7 @@ static void update_objects(int updateRate, float updateRateF) {
     ObjectList *objList = gObjectListHead;
     Object *obj;
 
+    DEBUG_GET_TIME_1(PP_PLAYER);
     while (objList) {
         obj = objList->obj;
         obj->cameraDist = DIST3(obj->pos, gCamera->pos);
@@ -330,6 +331,7 @@ static void update_objects(int updateRate, float updateRateF) {
         }
     }
     get_time_snapshot(PP_OBJECTS, DEBUG_SNAPSHOT_1_END);
+    add_time_offset(PP_OBJECTS, DEBUG_GET_TIME_1_END(PP_PLAYER));
 }
 
 static void update_clutter(int updateRate, float updateRateF) {

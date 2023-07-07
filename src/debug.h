@@ -7,6 +7,16 @@
 #define TIME_AGGREGATE TIME_ITERATIONS
 #define TIME_TOTAL TIME_ITERATIONS + 1
 
+#define PROFILE_NAMES \
+    "Player", \
+    "Objects", \
+    "Render", \
+    "Input", \
+    "DMA", \
+    "Audio", \
+    "HUD", \
+    "Clutter"
+
 
 enum ProfileTimers {
     PP_PLAYER,
@@ -35,6 +45,8 @@ extern DebugData *gDebugData;
 #ifdef PUPPYPRINT_DEBUG
 void reset_profiler_times(void);
 void get_time_snapshot(int index, int diff);
+void add_time_offset(int index, int diff);
+int get_profiler_time(int index);
 void get_cpu_time(int diff);
 void get_rsp_time(int diff);
 void get_rdp_time(int diff);
@@ -50,9 +62,19 @@ void process_profiler(void);
 #define DEBUG_SNAPSHOT_1_END timer_ticks() - first1
 #define DEBUG_SNAPSHOT_2_END timer_ticks() - first2
 #define DEBUG_SNAPSHOT_3_END timer_ticks() - first3
+#define DEBUG_GET_TIME_1(index) unsigned int compare1 = get_profiler_time(index)
+#define DEBUG_GET_TIME_2(index) unsigned int compare2 = get_profiler_time(index)
+#define DEBUG_GET_TIME_3(index) unsigned int compare3 = get_profiler_time(index)
+#define DEBUG_GET_TIME_1_RESET(index) compare1 = get_profiler_time(index)
+#define DEBUG_GET_TIME_2_RESET(index) compare2 = get_profiler_time(index)
+#define DEBUG_GET_TIME_3_RESET(index) compare3 = get_profiler_time(index)
+#define DEBUG_GET_TIME_1_END(index) get_profiler_time(index) - compare1
+#define DEBUG_GET_TIME_2_END(index) get_profiler_time(index) - compare2
+#define DEBUG_GET_TIME_3_END(index) get_profiler_time(index) - compare3
 #else
 #define reset_profiler_times()
 #define get_time_snapshot(index, diff)
+#define add_time_offset(index, diff)
 #define get_cpu_time(diff)
 #define get_rsp_time(diff)
 #define get_rdp_time(diff)
@@ -68,4 +90,13 @@ void process_profiler(void);
 #define DEBUG_SNAPSHOT_1_END
 #define DEBUG_SNAPSHOT_2_END
 #define DEBUG_SNAPSHOT_3_END
+#define DEBUG_GET_TIME_1(index)
+#define DEBUG_GET_TIME_2(index)
+#define DEBUG_GET_TIME_3(index)
+#define DEBUG_GET_TIME_1_RESET(index)
+#define DEBUG_GET_TIME_2_RESET(index)
+#define DEBUG_GET_TIME_3_RESET(index)
+#define DEBUG_GET_TIME_1_END(index)
+#define DEBUG_GET_TIME_2_END(index)
+#define DEBUG_GET_TIME_3_END(index)
 #endif

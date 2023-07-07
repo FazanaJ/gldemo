@@ -21,7 +21,7 @@ enum RegionMode {
 };
 
 enum ScreenMode {
-    SCREEN_NORMAL,
+    SCREEN_4_3,
     SCREEN_16_10,
     SCREEN_16_9
 };

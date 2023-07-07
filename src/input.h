@@ -49,3 +49,4 @@ int get_stick_y(void);
 short get_stick_angle(void);
 float get_stick_mag(void);
 void rumble_set(int timer);
+void clear_input(int input);

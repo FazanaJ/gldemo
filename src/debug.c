@@ -12,6 +12,9 @@
 
 float gFPS = 0.0f;
 DebugData *gDebugData = NULL;
+char *sDebugText[] = {
+    PROFILE_NAMES
+};
 
 void init_debug(void) {
     debug_init_isviewer();
@@ -46,6 +49,15 @@ void get_time_snapshot(int index, int diff) {
     }
     gDebugData->timer[index][gDebugData->iteration] += time;
     gDebugData->timer[index][TIME_AGGREGATE] += time;
+}
+
+void add_time_offset(int index, int diff) {
+    gDebugData->timer[index][gDebugData->iteration] -= diff;
+    gDebugData->timer[index][TIME_AGGREGATE] -= diff;
+}
+
+int get_profiler_time(int index) {
+    return gDebugData->timer[index][gDebugData->iteration];
 }
 
 void get_cpu_time(int diff) {
@@ -124,16 +136,15 @@ void render_profiler(void) {
     if (gDebugData->rdpTime[TIME_TOTAL] > 10) {
         boxHeight += 10;
     }
-    if (gDebugData->timer[PP_INPUT][TIME_TOTAL] > 10) {
-        boxHeight -= 10;
-    }
+    rdpq_fill_rectangle(8, 6, 118, 28 + boxHeight);
+    rdpq_fill_rectangle(8, gFrameBuffers->height - 20, 132, gFrameBuffers->height - 6);
+    boxHeight = 12;
     for (int i = 0; i < PP_TOTAL; i++) {
         if (gDebugData->timer[i][TIME_TOTAL] > 10) {
             boxHeight += 10;
         }
     }
-    rdpq_fill_rectangle(8, 6, 118, 28 + boxHeight);
-    rdpq_fill_rectangle(8, gFrameBuffers->height - 20, 132, gFrameBuffers->height - 6);
+    rdpq_fill_rectangle(display_get_width() - 110, 0, display_get_width(), boxHeight);
     rdpq_mode_blender(0);
     rdpq_font_begin(RGBA32(255, 255, 255, 255));
     rdpq_font_position(8, 16);
@@ -151,25 +162,15 @@ void render_profiler(void) {
         rdpq_font_position(8, 26 + boxHeight);
         rdpq_font_printf(gCurrentFont, "RDP: %dus (%d%%)", gDebugData->rdpTime[TIME_TOTAL], gDebugData->rdpTime[TIME_TOTAL] / divisor);
     }
-    if (gDebugData->timer[PP_OBJECTS][TIME_TOTAL] > 10) {
-        boxHeight += 10;
-        rdpq_font_position(8, 26 + boxHeight);
-        rdpq_font_printf(gCurrentFont, "OBJ: %dus (%d%%): %d", gDebugData->timer[PP_OBJECTS][TIME_TOTAL], gDebugData->timer[PP_OBJECTS][TIME_TOTAL] / divisor, gNumObjects);
-    }
-    if (gDebugData->timer[PP_RENDER][TIME_TOTAL] > 10) {
-        boxHeight += 10;
-        rdpq_font_position(8, 26 + boxHeight);
-        rdpq_font_printf(gCurrentFont, "REN: %dus (%d%%)", gDebugData->timer[PP_RENDER][TIME_TOTAL], gDebugData->timer[PP_RENDER][TIME_TOTAL] / divisor);
-    }
-    if (gDebugData->timer[PP_AUDIO][TIME_TOTAL] > 10) {
-        boxHeight += 10;
-        rdpq_font_position(8, 26 + boxHeight);
-        rdpq_font_printf(gCurrentFont, "AUD: %dus (%d%%)", gDebugData->timer[PP_AUDIO][TIME_TOTAL], gDebugData->timer[PP_AUDIO][TIME_TOTAL] / divisor);
-    }
-    if (gDebugData->timer[PP_HUD][TIME_TOTAL] > 10) {
-        boxHeight += 10;
-        rdpq_font_position(8, 26 + boxHeight);
-        rdpq_font_printf(gCurrentFont, "HUD: %dus (%d%%)", gDebugData->timer[PP_HUD][TIME_TOTAL], gDebugData->timer[PP_HUD][TIME_TOTAL] / divisor);
+    boxHeight = 0;
+    for (int i = 0; i < PP_TOTAL; i++) {
+        if (gDebugData->timer[i][TIME_TOTAL] > 10) {
+            boxHeight += 10;
+            rdpq_font_position(display_get_width() - 106, 8 + boxHeight);
+            rdpq_font_printf(gCurrentFont, "%s:", sDebugText[i]);
+            rdpq_font_position(display_get_width() - 48, 8 + boxHeight);
+            rdpq_font_printf(gCurrentFont, "%dus", gDebugData->timer[i][TIME_TOTAL]);
+        }
     }
     rdpq_font_position(8, gFrameBuffers->height - 8);
     rdpq_font_printf(gCurrentFont, "RAM: %dKB/%dKB", (mem_info.uordblks / 1024), get_memory_size() / 1024);

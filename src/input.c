@@ -32,12 +32,21 @@ void init_controller(void) {
     sInputData.pak = 0;
 }
 
+void reset_controller_inputs(void) {
+    bzero(&sInputData, sizeof(Input));
+    for (int i = 0; i < INPUT_TOTAL; i++) {
+        sInputData.button[INPUT_PRESSED][i] = 250;
+        sInputData.button[INPUT_RELEASED][i] = 250;
+    }
+}
+
 void update_inputs(int updateRate) {
     DEBUG_SNAPSHOT_1();
     controller_scan();
     int p = gCurrentController;
     if (p == -1) {
         set_player_controller_id();
+        reset_controller_inputs();
         get_time_snapshot(PP_INPUT, DEBUG_SNAPSHOT_1_END);
         return;
     }
@@ -183,4 +192,12 @@ void rumble_set(int timer) {
 
     rumble_start(gCurrentController);
     sRumbleTimer = timer;
+}
+
+/**
+ * Sets the press timer to maximum, effectively making it so the button hasn't been touched.
+*/
+void clear_input(int input) {
+    sInputData.button[INPUT_PRESSED][input] = 250;
+    sInputData.button[INPUT_RELEASED][input] = 250;
 }
