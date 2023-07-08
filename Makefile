@@ -4,10 +4,10 @@ include $(N64_INST)/include/n64.mk
 src = $(wildcard src/*.c)
 src += $(wildcard assets/*.c)
 overlay += $(wildcard src/overlays/*.c)
-assets_ttf = $(wildcard assets/Fonts/*.ttf)
-assets_png = $(wildcard assets/Textures/*.png)
-assets_wav = $(wildcard assets/Sounds/*.wav)
-assets_gltf = $(wildcard assets/Models/*.glb)
+assets_ttf = $(wildcard assets/fonts/*.ttf)
+assets_png = $(wildcard assets/textures/*.png)
+assets_wav = $(wildcard assets/sounds/*.wav)
+assets_gltf = $(wildcard assets/models/*.glb)
 
 assets_conv = $(addprefix filesystem/,$(notdir $(assets_ttf:%.ttf=%.font64))) \
               $(addprefix filesystem/,$(notdir $(assets_png:%.png=%.sprite))) \
@@ -19,22 +19,22 @@ MKFONT_FLAGS ?=
 
 all: gldemo.z64
 
-filesystem/%.font64: assets/Fonts/%.ttf
+filesystem/%.font64: assets/fonts/%.ttf
 	@mkdir -p $(dir $@)
 	@echo "    [FONT] $@"
 	@$(N64_MKFONT) $(MKFONT_FLAGS) -o filesystem "$<"
 
-filesystem/%.sprite: assets/Textures/%.png
+filesystem/%.sprite: assets/textures/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
 	@$(N64_MKSPRITE) --compress -o "$(dir $@)" "$<"
 
-filesystem/%.wav64: assets/Sounds/%.wav
+filesystem/%.wav64: assets/sounds/%.wav
 	@mkdir -p $(dir $@)
 	@echo "    [AUDIO] $@"
 	@$(N64_AUDIOCONV) -o filesystem $<
 
-filesystem/%.model64: assets/Models/%.glb
+filesystem/%.model64: assets/models/%.glb
 	@mkdir -p $(dir $@)
 	@echo "    [MODEL] $@"
 	@$(N64_MKMODEL) -o filesystem $<
