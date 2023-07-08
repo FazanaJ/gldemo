@@ -46,3 +46,4 @@ extern short gNumTextureLoads;
 void setup_textures(GLuint textures[], sprite_t *sprites[], const char *texture_path[], int texture_number);
 void set_material(Material *material);
 void cycle_textures(int updateRate);
+void init_materials(void);

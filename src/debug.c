@@ -122,7 +122,7 @@ void process_profiler(void) {
         gDebugData->enabled ^= 1;
     }
 }
-
+extern RenderSettings sRenderSettings;;
 void render_profiler(void) {
     int boxHeight = 0;
     int divisor = (get_tv_type() == TV_PAL) ? 400 : 333;

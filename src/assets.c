@@ -18,7 +18,7 @@ const char *sTextureIDs[] = {
     "rom:/plant1.ia8.sprite",
 };
 
-static RenderSettings sRenderSettings;
+RenderSettings sRenderSettings;
 MaterialList *gMaterialListHead;
 MaterialList *gMaterialListTail;
 static Material *sCurrentMaterial;
@@ -156,66 +156,65 @@ void cycle_textures(int updateRate) {
         }
     }
     gNumTextureLoads = 0;
+    bzero(&sRenderSettings, sizeof(RenderSettings));
     get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
 }
 
 void set_render_settings(int flags) {
     if (flags & MATERIAL_CUTOUT) {
-        //if (!sRenderSettings.cutout) {
-            glAlphaFunc(GL_GREATER, 0.5f);
+        if (!sRenderSettings.cutout) {
             glEnable(GL_ALPHA_TEST);
             sRenderSettings.cutout = true;
-        //}
+        }
     } else {
-        //if (sRenderSettings.cutout) {
+        if (sRenderSettings.cutout) {
             glDisable(GL_ALPHA_TEST);
             sRenderSettings.cutout = false;
-        //}
+        }
     }
     if (flags & MATERIAL_XLU) {
-        //if (!sRenderSettings.xlu) {
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        if (!sRenderSettings.xlu) {
             glEnable(GL_BLEND);
             sRenderSettings.xlu = true;
-        //}
+        }
     } else {
-        //if (sRenderSettings.xlu) {
+        if (sRenderSettings.xlu) {
             glDisable(GL_BLEND);
             sRenderSettings.xlu = false;
-        //}
+        }
     }
     if (flags & MATERIAL_DEPTH_WRITE) {
-        //if (!sRenderSettings.depthWrite) {
+        if (!sRenderSettings.depthWrite) {
             glEnable(GL_DEPTH_TEST);
             sRenderSettings.depthWrite = true;
-        //}
+        }
     } else {
-        //if (sRenderSettings.depthWrite) {
+        if (sRenderSettings.depthWrite) {
             glDisable(GL_DEPTH_TEST);
             sRenderSettings.depthWrite = false;
-        //}
+        }
     }
     if (flags & MATERIAL_LIGHTING) {
-        //if (!sRenderSettings.lighting) {
+        if (!sRenderSettings.lighting) {
             glEnable(GL_LIGHTING);
             sRenderSettings.lighting = true;
-        //}
+        }
     } else {
-        //if (sRenderSettings.lighting) {
+        if (sRenderSettings.lighting) {
             glDisable(GL_LIGHTING);
             sRenderSettings.lighting = false;
-        //}
+        }
     }
     if (flags & MATERIAL_FOG && gEnvironment->flags & ENV_FOG) {
-        //if (!sRenderSettings.fog) {
+        if (!sRenderSettings.fog) {
             glEnable(GL_FOG);
             sRenderSettings.fog = true;
-        //}
+        }
     } else {
-        //if (sRenderSettings.fog) {
+        if (sRenderSettings.fog) {
             glDisable(GL_FOG);
             sRenderSettings.fog = false;
-        //}
+        }
     }    
 }
 
@@ -231,20 +230,19 @@ void set_material(Material *material) {
                 get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
                 return;
             }
-        //} else {
-            //if (!sRenderSettings.texture) {
-                glEnable(GL_TEXTURE_2D);
-                sRenderSettings.texture = true;
-            //}
-            
         //}
+        
+        if (!sRenderSettings.texture) {
+            glEnable(GL_TEXTURE_2D);
+            sRenderSettings.texture = true;
+        }
         material->index->loadTimer = 120;
         glBindTexture(GL_TEXTURE_2D, material->index->texture);
     } else {
-        //if (sRenderSettings.texture) {
+        if (sRenderSettings.texture) {
             glDisable(GL_TEXTURE_2D);
             sRenderSettings.texture = false;
-        //}
+        }
     }
 
     gNumTextureLoads++;

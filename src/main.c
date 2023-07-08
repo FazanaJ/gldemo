@@ -62,6 +62,7 @@ light_t light = {
 void init_renderer(void) {
     setup_light(light);
     setup_fog(light);
+    init_materials();
 }
 
 void setup(void) {
@@ -96,6 +97,8 @@ void apply_render_settings(void) {
         glEnable(GL_MULTISAMPLE_ARB);
         break;
     }
+    glAlphaFunc(GL_GREATER, 0.5f);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void render_game(void) {
