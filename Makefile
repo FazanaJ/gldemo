@@ -24,7 +24,7 @@ filesystem/%.font64: assets/Fonts/%.ttf
 	@echo "    [FONT] $@"
 	@$(N64_MKFONT) $(MKFONT_FLAGS) -o filesystem "$<"
 
-filesystem/%.sprite: assets/textures/%.png
+filesystem/%.sprite: assets/Textures/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
 	@$(N64_MKSPRITE) --compress -o "$(dir $@)" "$<"
