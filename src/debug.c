@@ -22,7 +22,7 @@ void init_debug(void) {
     debug_init_usblog();
     //console_init();
     //console_set_render_mode(RENDER_MANUAL);
-    rdpq_debug_start();
+    //rdpq_debug_start();
     //rdpq_debug_log(true);
     gDebugData = malloc(sizeof(DebugData));
     bzero(gDebugData, sizeof(DebugData));

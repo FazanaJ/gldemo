@@ -13,12 +13,12 @@
 
 const char *sTextureIDs[] = {
     "rom:/grass0.ci4.sprite",
-    "rom:/skin0.ci8.sprite",
     "rom:/health.i8.sprite",
     "rom:/plant1.ia8.sprite",
 };
 
 RenderSettings sRenderSettings;
+int sPrevRenderFlags;
 MaterialList *gMaterialListHead;
 MaterialList *gMaterialListTail;
 static Material *sCurrentMaterial;
@@ -56,6 +56,7 @@ void setup_textures(GLuint textures[], sprite_t *sprites[], const char *texture_
 
 void init_materials(void) {
     bzero(&sRenderSettings, sizeof(RenderSettings));
+    sPrevRenderFlags = 0;
     gMaterialListHead = NULL;
     gMaterialListTail = NULL;
     gNumTextures = 0;
@@ -156,6 +157,7 @@ void cycle_textures(int updateRate) {
         }
     }
     gNumTextureLoads = 0;
+    sPrevRenderFlags = 0;
     bzero(&sRenderSettings, sizeof(RenderSettings));
     get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
 }
@@ -215,7 +217,18 @@ void set_render_settings(int flags) {
             glDisable(GL_FOG);
             sRenderSettings.fog = false;
         }
-    }    
+    }
+    if (flags & MATERIAL_VTXCOL) {
+        if (!sRenderSettings.vertexColour) {
+            glEnable(GL_COLOR_MATERIAL);
+            sRenderSettings.vertexColour = true;
+        }
+    } else {
+        if (sRenderSettings.vertexColour) {
+            glDisable(GL_COLOR_MATERIAL);
+            sRenderSettings.vertexColour = false;
+        }
+    }
 }
 
 void set_material(Material *material) {
@@ -246,7 +259,11 @@ void set_material(Material *material) {
     }
 
     gNumTextureLoads++;
-    set_render_settings(material->flags);
+    if (sPrevRenderFlags != material->flags) {
+        set_render_settings(material->flags);
+    }
+
     sCurrentMaterial = material;
+    sPrevRenderFlags = material->flags;
     get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
 }

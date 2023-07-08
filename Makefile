@@ -7,10 +7,12 @@ overlay += $(wildcard src/overlays/*.c)
 assets_ttf = $(wildcard assets/Fonts/*.ttf)
 assets_png = $(wildcard assets/Textures/*.png)
 assets_wav = $(wildcard assets/Sounds/*.wav)
+assets_gltf = $(wildcard assets/Models/*.glb)
 
 assets_conv = $(addprefix filesystem/,$(notdir $(assets_ttf:%.ttf=%.font64))) \
               $(addprefix filesystem/,$(notdir $(assets_png:%.png=%.sprite))) \
-              $(addprefix filesystem/,$(notdir $(assets_wav:%.wav=%.wav64)))
+              $(addprefix filesystem/,$(notdir $(assets_wav:%.wav=%.wav64))) \
+              $(addprefix filesystem/,$(notdir $(assets_gltf:%.glb=%.model64)))
 
 MKSPRITE_FLAGS ?=
 MKFONT_FLAGS ?=
@@ -32,8 +34,10 @@ filesystem/%.wav64: assets/Sounds/%.wav
 	@echo "    [AUDIO] $@"
 	@$(N64_AUDIOCONV) -o filesystem $<
 
-	
-filesystem/health.i8.sprite: MKSPRITE_FLAGS=--format I8 --tiles 16,16
+filesystem/%.model64: assets/Models/%.glb
+	@mkdir -p $(dir $@)
+	@echo "    [MODEL] $@"
+	@$(N64_MKMODEL) -o filesystem $<
 
 $(BUILD_DIR)/gldemo.dfs: $(assets_conv)
 $(BUILD_DIR)/gldemo.elf: $(src:%.c=$(BUILD_DIR)/%.o)

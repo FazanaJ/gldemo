@@ -82,6 +82,7 @@ void render_sky(void) {
     Environment *e = gEnvironment;
     glDisable(GL_DEPTH_TEST);
     glMatrixMode(GL_PROJECTION);
+    glDisable(GL_MULTISAMPLE_ARB);
     glLoadIdentity();
     glOrtho(0.0f, display_get_width(), display_get_height(), 0.0f, -1.0f, 1.0f);
 

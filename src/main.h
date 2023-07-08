@@ -13,6 +13,11 @@ enum AntiAliasing {
     AA_FANCY
 };
 
+enum AntiAliasingNames {
+    AA_GEO,
+    AA_ACTOR
+};
+
 enum RegionMode {
     PAL50,
     NTSC60,

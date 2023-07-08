@@ -43,12 +43,15 @@ static const resolution_t sVideoModes[] = {
 
 Material gTempMaterials[] = {
     {NULL, 0, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_LIGHTING},
-    {NULL, 1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_LIGHTING},
-    {NULL, 2, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_XLU | MATERIAL_LIGHTING},
-    {NULL, 3, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_LIGHTING},
+    {NULL, -1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_LIGHTING | MATERIAL_VTXCOL},
+    {NULL, 1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_XLU | MATERIAL_LIGHTING},
+    {NULL, 2, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_LIGHTING | MATERIAL_VTXCOL},
 };
 
 Config gConfig;
+
+
+static model64_t *gPlayerModel;
 
 light_t light = {
     
@@ -63,6 +66,7 @@ void init_renderer(void) {
     setup_light(light);
     setup_fog(light);
     init_materials();
+    gPlayerModel = model64_load("rom:/humanoid.model64");
 }
 
 void setup(void) {
@@ -85,21 +89,38 @@ void setup(void) {
     camera_init();
 }
 
-void apply_render_settings(void) {
+void apply_anti_aliasing(int mode) {
     switch (gConfig.antiAliasing) {
     case AA_OFF:
         glDisable(GL_MULTISAMPLE_ARB);
+        rdpq_mode_antialias(AA_NONE);
         break;
     case AA_FAST:
+        if (mode == AA_ACTOR) {
+            goto mrFancyPants;
+        }
         glEnable(GL_MULTISAMPLE_ARB);
+        glHint(GL_MULTISAMPLE_HINT_N64, GL_FASTEST);
+        rdpq_mode_antialias(AA_REDUCED);
         break;
     case AA_FANCY:
+        mrFancyPants:
         glEnable(GL_MULTISAMPLE_ARB);
+        glHint(GL_MULTISAMPLE_HINT_N64, GL_NICEST);
+        rdpq_mode_antialias(AA_STANDARD);
         break;
     }
+}
+
+void apply_render_settings(void) {
     glAlphaFunc(GL_GREATER, 0.5f);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
+
+
+rspq_block_t *sPlayerBlock;
+rspq_block_t *sBushBlock;
+rspq_block_t *sPlaneBlock;
 
 void render_game(void) {
     DEBUG_SNAPSHOT_1();
@@ -110,6 +131,7 @@ void render_game(void) {
     glScissor(0, gZTargetOut, display_get_width(), display_get_height() - (gZTargetOut * 2));
     glClear(GL_DEPTH_BUFFER_BIT);
     render_sky();
+    apply_anti_aliasing(AA_ACTOR);
     project_camera();
     apply_render_settings();
     set_light(light);
@@ -123,17 +145,27 @@ void render_game(void) {
     glPushMatrix();
 	glTranslatef(gPlayer->pos[0], gPlayer->pos[1], gPlayer->pos[2]);
     glRotatef(SHORT_TO_DEGREES(gPlayer->faceAngle[2]), 0, 0, 1);
-	glScalef(1.f, 1.f, 1.f);
+	glScalef(0.18f, 0.25f, 0.25f);
     set_material(&gTempMaterials[1]);
-    render_dummy(); 
+    rdpq_set_mode_standard();
+    rdpq_mode_combiner(RDPQ_COMBINER1((0,0,0,SHADE),(0,0,0,1)));
+    rdpq_mode_blender(RDPQ_BLENDER2((FOG_RGB, SHADE_ALPHA, IN_RGB, INV_MUX_ALPHA), (CYCLE1_RGB, IN_ALPHA, MEMORY_RGB, MEMORY_CVG)));
+    if (sPlayerBlock == NULL) {
+        rspq_block_begin();
+        model64_draw(gPlayerModel);
+        sPlayerBlock = rspq_block_end();
+    }
+    rspq_block_run(sPlayerBlock);
     glPopMatrix();
+
 
     ClutterList *list = gClutterListHead;
     Clutter *obj;
     
     ObjectList *list2 = gObjectListHead;
     Object *obj2;
-
+    
+    apply_anti_aliasing(AA_GEO);
     while (list) {
         obj = list->clutter;
         if (obj->objectID == CLUTTER_BUSH/* && !(obj->flags & OBJ_FLAG_INVISIBLE)*/) {
@@ -143,14 +175,26 @@ void render_game(void) {
             glTranslatef(obj->pos[0], obj->pos[1], obj->pos[2]);
             glRotatef(SHORT_TO_DEGREES(gCamera->yaw), 0, 0, 1);
             //glScalef(obj->scale[0], obj->scale[1], obj->scale[2]);
-            render_bush(); 
+            
+            if (sBushBlock == NULL) {
+                rspq_block_begin();
+                render_bush(); 
+                sBushBlock = rspq_block_end();
+            }
+            rspq_block_run(sBushBlock);
             glPopMatrix();
         }
         list = list->next;
     }
 
+    apply_anti_aliasing(AA_ACTOR);
     set_material(&gTempMaterials[0]);
-    render_plane();
+    if (sPlaneBlock == NULL) {
+        rspq_block_begin();
+        render_plane();
+        sPlaneBlock = rspq_block_end();
+    }
+    rspq_block_run(sPlaneBlock);
     
     while (list2) {
         obj2 = list2->obj;
@@ -166,6 +210,7 @@ void render_game(void) {
         list2 = list2->next;
     }
 
+    apply_anti_aliasing(AA_GEO);
     get_time_snapshot(PP_RENDER, DEBUG_SNAPSHOT_1_END);
     DEBUG_SNAPSHOT_1_RESET();
     
@@ -199,7 +244,6 @@ void reset_display(void) {
     gZBuffer.buffer = (void *) ((0x80800000 - 0x10000) - ((display_get_width() * display_get_height()) * 2));
     sFirstBoot = true;
     gl_init();
-    rdpq_init();
     init_renderer();
 }
 
@@ -248,7 +292,7 @@ void update_game_time(int *updateRate, float *updateRateF) {
     
     curTime = timer_ticks();
     // Convert it to float too, and make it 20% faster on PAL systems.
-    *updateRateF = 1.0f / ((float) (curTime - prevTime) / 1000000.0f);
+    *updateRateF = ((float) (curTime - prevTime) / 1000000.0f);
     if (gConfig.regionMode == PAL50) {
         *updateRateF *= 1.2f;
     }
