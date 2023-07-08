@@ -8,8 +8,10 @@
 #include "../include/global.h"
 
 #include "main.h"
+#include "camera.h"
 
 Environment *gEnvironment;
+float gAspectRatio = 1.0f;
 
 void setup_light(light_t light) {
 
@@ -62,10 +64,63 @@ void setup_fog(light_t light) {
     glFogfv(GL_FOG_COLOR, light.color);
 }
 
+void project_camera(void) {
+    Camera *c = gCamera;
+    float nearClip = 1.0f;
+    float farClip = 100.0f;
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gAspectRatio = (float) display_get_width() / (float) (display_get_height());
+    glFrustum(-nearClip * gAspectRatio, nearClip * gAspectRatio, -nearClip, nearClip, nearClip, farClip);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    gluLookAt(c->pos[0], c->pos[1], c->pos[2], c->focus[0], c->focus[1], c->focus[2], 0.0f, 0.0f, 1.0f);
+}
+
+void render_sky(void) {
+    Environment *e = gEnvironment;
+    glDisable(GL_DEPTH_TEST);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0.0f, display_get_width(), display_get_height(), 0.0f, -1.0f, 1.0f);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glBegin(GL_QUADS);
+    glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
+    glVertex2i(0, 0);
+    glColor3f(e->skyColourBottom[0], e->skyColourBottom[1], e->skyColourBottom[2]);
+    glVertex2i(0, display_get_height());
+    glVertex2i(display_get_width(), display_get_height());
+    glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
+    glVertex2i(display_get_width(), 0);
+    glEnd();
+}
+
+void render_bush(void) {
+    Environment *e = gEnvironment;
+    glBegin(GL_QUADS);
+    glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
+    glTexCoord2f(0, 0);
+    glVertex3i(-1, 0, 2);
+    glColor3f(e->skyColourBottom[0], e->skyColourBottom[1], e->skyColourBottom[2]);
+    glTexCoord2f(0, 1.024f);
+    glVertex3i(-1, 0, 0);
+    glTexCoord2f(1.024f, 1.024f);
+    glVertex3i(1, 0, 0);
+    glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
+    glTexCoord2f(1.024f, 0);
+    glVertex3i(1, 0, 2);
+    glEnd();
+}
+
 void render_end(void) {
     glDisable(GL_MULTISAMPLE_ARB);
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_LIGHTING);
     glDisable(GL_FOG);
     glDisable(GL_DEPTH_TEST);
+    glDisable(GL_SCISSOR_TEST);
+    glScissor(0, 0, display_get_width(), display_get_height());
 }

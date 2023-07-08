@@ -16,7 +16,7 @@
         "render.h": "c",
         "environment.h": "c",
         "object.h": "c",
-        "textures.h": "c",
+        "assets.h": "c",
         "main.h": "c",
         "global.h": "c"
     }

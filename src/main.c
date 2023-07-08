@@ -6,7 +6,7 @@
 
 #include "camera.h"
 #include "render.h"
-#include "textures.h"
+#include "assets.h"
 #include "plane.h"
 #include "dummy_low.h"
 #include "input.h"
@@ -22,28 +22,14 @@ surface_t *gFrameBuffers;
 rdpq_font_t *gCurrentFont;
 unsigned int gGlobalTimer;
 unsigned int gGameTimer;
-float gAspectRatio = 1.0f;
 char gZTargetTimer = 0;
+char gZTargetOut = 0;
 
 GLenum shade_model = GL_SMOOTH;
-
-
-const char *texture_path[] = {
-    "rom:/grass0.ci4.sprite",
-    "rom:/skin0.ci8.sprite",
-    "rom:/health.i8.sprite",
-    "rom:/plant1.ia8.sprite",
-};
 
 const char *gFontAssetTable[] = {
     "rom:/arial.font64"
 };
-
-#define TEXTURE_NUMBER sizeof(texture_path) / sizeof(char*)
-#define FONT_NUMBER sizeof(gFontAssetTable) / sizeof(char*)
-
-GLuint textures[TEXTURE_NUMBER];
-sprite_t *sprites[TEXTURE_NUMBER];
 
 static const resolution_t RESOLUTION_304x224 = {320, 240, false};
 static const resolution_t RESOLUTION_384x224 = {384, 240, false};
@@ -53,6 +39,13 @@ static const resolution_t sVideoModes[] = {
     RESOLUTION_304x224,
     RESOLUTION_384x224,
     RESOLUTION_408x224
+};
+
+Material gTempMaterials[] = {
+    {NULL, 0, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_LIGHTING},
+    {NULL, 1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_LIGHTING},
+    {NULL, 2, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_XLU | MATERIAL_LIGHTING},
+    {NULL, 3, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_LIGHTING},
 };
 
 Config gConfig;
@@ -67,7 +60,6 @@ light_t light = {
 };
 
 void init_renderer(void) {
-    setup_textures(textures, sprites, texture_path, TEXTURE_NUMBER);
     setup_light(light);
     setup_fog(light);
 }
@@ -77,7 +69,6 @@ void setup(void) {
     init_renderer();
     setup_plane();
     make_plane_mesh();
-
 
     gPlayer = spawn_object_pos(OBJ_PLAYER, 0.0f, 0.0f, 0.0f);
     spawn_clutter(CLUTTER_BUSH, 4, 8, 0, 0, 0, 0);
@@ -91,7 +82,6 @@ void setup(void) {
     spawn_clutter(CLUTTER_BUSH, 15, -15, 0, 0, 0, 0);
 
     camera_init();
-    gAspectRatio = (float) display_get_width() / (float) display_get_height();
 }
 
 void apply_render_settings(void) {
@@ -106,64 +96,6 @@ void apply_render_settings(void) {
         glEnable(GL_MULTISAMPLE_ARB);
         break;
     }
-    glEnable(GL_LIGHTING);
-    glEnable(GL_NORMALIZE);
-    glEnable(GL_DEPTH_TEST);
-    if (gEnvironment->flags & ENV_FOG) {
-        glEnable(GL_FOG);
-    }
-}
-
-void render_sky(void) {
-    Environment *e = gEnvironment;
-    glDisable(GL_DEPTH_TEST);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0.0f, display_get_width(), display_get_height(), 0.0f, -1.0f, 1.0f);
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    glBegin(GL_QUADS);
-    glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
-    glVertex2i(0, 0);
-    glColor3f(e->skyColourBottom[0], e->skyColourBottom[1], e->skyColourBottom[2]);
-    glVertex2i(0, display_get_height());
-    glVertex2i(display_get_width(), display_get_height());
-    glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
-    glVertex2i(display_get_width(), 0);
-    glEnd();
-}
-
-void project_camera(void) {
-    Camera *c = gCamera;
-    float nearClip = 1.0f;
-    float farClip = 100.0f;
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glFrustum(-nearClip * gAspectRatio, nearClip * gAspectRatio, -nearClip, nearClip, nearClip, farClip);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    gluLookAt(c->pos[0], c->pos[1], c->pos[2], c->focus[0], c->focus[1], c->focus[2], 0.0f, 0.0f, 1.0f);
-}
-
-void render_bush(void) {
-    Environment *e = gEnvironment;
-    glPushMatrix();
-    glBegin(GL_QUADS);
-    glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
-    glTexCoord2f(0, 0);
-    glVertex3i(-1, 0, 2);
-    glColor3f(e->skyColourBottom[0], e->skyColourBottom[1], e->skyColourBottom[2]);
-    glTexCoord2f(0, 1.024f);
-    glVertex3i(-1, 0, 0);
-    glTexCoord2f(1.024f, 1.024f);
-    glVertex3i(1, 0, 0);
-    glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
-    glTexCoord2f(1.024f, 0);
-    glVertex3i(1, 0, 2);
-    glEnd();
-    glPopMatrix();
 }
 
 void render_game(void) {
@@ -171,19 +103,25 @@ void render_game(void) {
     rdpq_attach(gFrameBuffers, &gZBuffer);
     glShadeModel(shade_model);
     gl_context_begin();
-
+    glEnable(GL_SCISSOR_TEST);
+    glScissor(0, gZTargetOut, display_get_width(), display_get_height() - (gZTargetOut * 2));
     glClear(GL_DEPTH_BUFFER_BIT);
     render_sky();
     project_camera();
     apply_render_settings();
-    glEnable(GL_TEXTURE_2D);
     set_light(light);
+    
+    if (gConfig.regionMode == TV_PAL) {
+        gZTargetOut = gZTargetTimer * (1.5f * 1.2f);
+    } else {
+        gZTargetOut = gZTargetTimer * 1.5f;
+    }
 
     glPushMatrix();
 	glTranslatef(gPlayer->pos[0], gPlayer->pos[1], gPlayer->pos[2]);
     glRotatef(SHORT_TO_DEGREES(gPlayer->faceAngle[2]), 0, 0, 1);
 	glScalef(1.f, 1.f, 1.f);
-    glBindTexture(GL_TEXTURE_2D, textures[1]);
+    set_material(&gTempMaterials[1]);
     render_dummy(); 
     glPopMatrix();
 
@@ -193,55 +131,48 @@ void render_game(void) {
     ObjectList *list2 = gObjectListHead;
     Object *obj2;
 
-    glAlphaFunc(GL_GREATER, 0.5);
-    glEnable(GL_ALPHA_TEST);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glBindTexture(GL_TEXTURE_2D, textures[3]);
     while (list) {
         obj = list->clutter;
         if (obj->objectID == CLUTTER_BUSH/* && !(obj->flags & OBJ_FLAG_INVISIBLE)*/) {
             glPushMatrix();
+            
+            set_material(&gTempMaterials[3]);
             glTranslatef(obj->pos[0], obj->pos[1], obj->pos[2]);
             glRotatef(SHORT_TO_DEGREES(gCamera->yaw), 0, 0, 1);
-            glScalef(obj->scale[0], obj->scale[1], obj->scale[2]);
+            //glScalef(obj->scale[0], obj->scale[1], obj->scale[2]);
             render_bush(); 
             glPopMatrix();
         }
         list = list->next;
     }
+
+    set_material(&gTempMaterials[0]);
+    render_plane();
+    
     while (list2) {
         obj2 = list2->obj;
         if (obj2->objectID == OBJ_PROJECTILE) {
             glPushMatrix();
+            set_material(&gTempMaterials[2]);
             glTranslatef(obj2->pos[0], obj2->pos[1], obj2->pos[2]);
             glRotatef(SHORT_TO_DEGREES(gCamera->yaw), 0, 0, 1);
-            glScalef(obj2->scale[0], obj2->scale[1], obj2->scale[2]);
+            //glScalef(obj2->scale[0], obj2->scale[1], obj2->scale[2]);
             render_bush(); 
             glPopMatrix();
         }
         list2 = list2->next;
     }
-    glDisable(GL_ALPHA_TEST);
-
-    glBindTexture(GL_TEXTURE_2D, textures[0]);
-    render_plane();
 
     get_time_snapshot(PP_RENDER, DEBUG_SNAPSHOT_1_END);
     DEBUG_SNAPSHOT_1_RESET();
-    render_end();
     
+    render_end();
     gl_context_end();
     if (gZTargetTimer) {
-        int outWard;
-        if (gConfig.regionMode == TV_PAL) {
-            outWard = gZTargetTimer * (1.5f * 1.2f);
-        } else {
-            outWard = gZTargetTimer * 1.5f;
-        }
         rdpq_set_mode_fill(RGBA32(0, 0, 0, 255));
         rdpq_mode_blender(0);
-        rdpq_fill_rectangle(0, 0, display_get_width(), outWard);
-        rdpq_fill_rectangle(0, display_get_height() - outWard, display_get_width(), display_get_height());
+        rdpq_fill_rectangle(0, 0, display_get_width(), gZTargetOut);
+        rdpq_fill_rectangle(0, display_get_height() - gZTargetOut, display_get_width(), display_get_height());
         rdpq_set_mode_standard();
     }
     render_hud();
@@ -257,7 +188,12 @@ void reset_display(void) {
     }
     display_close();
     display_init(sVideoModes[gConfig.screenMode], DEPTH_16_BPP, 3, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
-    gZBuffer = surface_alloc(FMT_RGBA16, display_get_width(), display_get_height());
+    //gZBuffer = surface_alloc(FMT_RGBA16, display_get_width(), display_get_height());
+    gZBuffer.flags = FMT_RGBA16 | SURFACE_FLAGS_OWNEDBUFFER;
+    gZBuffer.width = display_get_width();
+    gZBuffer.height = display_get_height();
+    gZBuffer.stride = TEX_FORMAT_PIX2BYTES(FMT_RGBA16, display_get_width());
+    gZBuffer.buffer = (void *) ((0x80800000 - 0x10000) - ((display_get_width() * display_get_height()) * 2));
     sFirstBoot = true;
     gl_init();
     rdpq_init();
@@ -273,7 +209,7 @@ void set_region_type(int region) {
 }
 
 void init_video(void) {
-    set_region_type(get_tv_type());
+    set_region_type(gConfig.regionMode);
 }
 
 void init_memory(void) {
@@ -286,15 +222,17 @@ void init_save(void) {
     gConfig.antiAliasing = AA_OFF;
     gConfig.dedither = false;
     gConfig.regionMode = get_tv_type();
+    //gConfig.regionMode = PAL60;
     gConfig.screenMode = SCREEN_4_3;
+    gConfig.soundMode = SOUND_STEREO;
 }
 
 void init_game(void) {
     init_memory();
     init_controller();
+    init_save();
     init_video();
     init_audio();
-    init_save();
     init_debug();
     gGlobalTimer = 0;
     gGameTimer = 0;
@@ -308,8 +246,11 @@ void update_game_time(int *updateRate, float *updateRateF) {
     curTime = timer_ticks();
     // Convert it to float too, and make it 20% faster on PAL systems.
     *updateRateF = 1.0f / ((float) (curTime - prevTime) / 1000000.0f);
-    if (gConfig.regionMode == TV_PAL) {
+    if (gConfig.regionMode == PAL50) {
         *updateRateF *= 1.2f;
+    }
+    if (*updateRateF <= 0.0001f) {
+        *updateRateF = 0.0001f;
     }
     deltaTime += TIMER_MICROS(curTime - prevTime);
     prevTime = curTime;
@@ -351,7 +292,14 @@ int main(void) {
             render_profiler();
         }
 
+        if (get_input_pressed(INPUT_R, 0)) {
+            gConfig.antiAliasing++;
+            if (gConfig.antiAliasing == 2) {
+                gConfig.antiAliasing = -1;
+            }
+        }
 
+        cycle_textures(updateRate);
         rdpq_detach_wait();
         display_show(gFrameBuffers);
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <libdragon.h>
+#include <debug.h>
 #include "../include/global.h"
 
 #define TIME_ITERATIONS 30
@@ -15,7 +16,9 @@
     "DMA", \
     "Audio", \
     "HUD", \
-    "Clutter"
+    "Clutter", \
+    "Camera", \
+    "Materials"
 
 
 enum ProfileTimers {
@@ -27,6 +30,8 @@ enum ProfileTimers {
     PP_AUDIO,
     PP_HUD,
     PP_CLUTTER,
+    PP_CAMERA,
+    PP_MATERIALS,
 
     PP_TOTAL
 };

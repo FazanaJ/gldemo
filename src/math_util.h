@@ -7,7 +7,7 @@ extern float gSineTable[];
 #define gCosineTable (gSineTable + 0x400)
 #define sins(x) gSineTable[(unsigned short) (x) >> 4]
 #define coss(x) gCosineTable[(unsigned short) (x) >> 4]
-#define SHORT_TO_DEGREES(x) ((x / (float)0x10000) * 360.0f)
+#define SHORT_TO_DEGREES(x) (x / 182)
 #define INCREASE_VAR(x, amt, max) {x += amt; if (x > max) x = max;}
 #define DECREASE_VAR(x, amt, min) {x -= amt; if (x < min) x = min;}
 #define SQR(x) (x * x)

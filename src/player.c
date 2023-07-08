@@ -28,18 +28,21 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
 	float stickX = get_stick_x();
     float intendedMag = get_stick_mag();
     int moveTicks = timer_int(60);
-
     if (gCurrentController == -1) {
         get_time_snapshot(PP_PLAYER, DEBUG_SNAPSHOT_1_END);
         return;
     }
 
     if (get_input_pressed(INPUT_B, 0) && gGameTimer > 120) {
-        play_sound_global(SOUND_LASER);
+        play_sound_spatial(SOUND_LASER, obj->pos);
         Object *bullet = spawn_object_pos(OBJ_PROJECTILE, obj->pos[0], obj->pos[1], obj->pos[2]);
         bullet->forwardVel = 20.0f;
         bullet->moveAngle[2] = obj->faceAngle[2];
         rumble_set(3);
+    }
+
+    if (get_input_pressed(INPUT_A, 0) && gGameTimer > 120) {
+        play_sound_spatial(SOUND_CANNON, obj->pos);
     }
 
     if (intendedMag > 0.01f && get_input_held(INPUT_L) == false) {
@@ -68,8 +71,10 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
         DECREASE_VAR(obj->forwardVel, updateRate * 0.75f, 0);
     }
 
-    obj->pos[0] += (obj->forwardVel * sins(obj->moveAngle[2])) / 100.0f;
-    obj->pos[1] -= (obj->forwardVel * coss(obj->moveAngle[2])) / 100.0f;
+    if (obj->forwardVel != 0.0f) {
+        obj->pos[0] += (obj->forwardVel * sins(obj->moveAngle[2])) / 100.0f;
+        obj->pos[1] -= (obj->forwardVel * coss(obj->moveAngle[2])) / 100.0f;
+    }
 
     get_time_snapshot(PP_PLAYER, DEBUG_SNAPSHOT_1_END);
 }

@@ -7,6 +7,7 @@
 #include "main.h"
 #include "object.h"
 #include "input.h"
+#include "assets.h"
 
 #ifdef PUPPYPRINT_DEBUG
 
@@ -21,7 +22,7 @@ void init_debug(void) {
     debug_init_usblog();
     //console_init();
     //console_set_render_mode(RENDER_MANUAL);
-    //rdpq_debug_start();
+    rdpq_debug_start();
     //rdpq_debug_log(true);
     gDebugData = malloc(sizeof(DebugData));
     bzero(gDebugData, sizeof(DebugData));
@@ -137,10 +138,10 @@ void render_profiler(void) {
         boxHeight += 10;
     }
     rdpq_fill_rectangle(8, 6, 118, 28 + boxHeight);
-    rdpq_fill_rectangle(8, gFrameBuffers->height - 20, 132, gFrameBuffers->height - 6);
+    rdpq_fill_rectangle(8, gFrameBuffers->height - 40, 132, gFrameBuffers->height - 6);
     boxHeight = 12;
     for (int i = 0; i < PP_TOTAL; i++) {
-        if (gDebugData->timer[i][TIME_TOTAL] > 10) {
+        if (gDebugData->timer[i][TIME_TOTAL] > 1) {
             boxHeight += 10;
         }
     }
@@ -164,7 +165,7 @@ void render_profiler(void) {
     }
     boxHeight = 0;
     for (int i = 0; i < PP_TOTAL; i++) {
-        if (gDebugData->timer[i][TIME_TOTAL] > 10) {
+        if (gDebugData->timer[i][TIME_TOTAL] > 1) {
             boxHeight += 10;
             rdpq_font_position(display_get_width() - 106, 8 + boxHeight);
             rdpq_font_printf(gCurrentFont, "%s:", sDebugText[i]);
@@ -172,8 +173,13 @@ void render_profiler(void) {
             rdpq_font_printf(gCurrentFont, "%dus", gDebugData->timer[i][TIME_TOTAL]);
         }
     }
+    int ramUsed = mem_info.uordblks - (size_t) (((display_get_width() * display_get_height()) * 2) - ((unsigned int) HEAP_START_ADDR - 0x80000000) - 0x10000);
     rdpq_font_position(8, gFrameBuffers->height - 8);
-    rdpq_font_printf(gCurrentFont, "RAM: %dKB/%dKB", (mem_info.uordblks / 1024), get_memory_size() / 1024);
+    rdpq_font_printf(gCurrentFont, "RAM: %dKB/%dKB", (ramUsed / 1024), get_memory_size() / 1024);
+    rdpq_font_position(8, gFrameBuffers->height - 18);
+    rdpq_font_printf(gCurrentFont, "Tex: %d | Loads: %d", gNumTextures, gNumTextureLoads);
+    rdpq_font_position(8, gFrameBuffers->height - 28);
+    rdpq_font_printf(gCurrentFont, "Obj: %d | Clu: %d", gNumObjects, gNumClutter);
     rdpq_font_end();
 }
 

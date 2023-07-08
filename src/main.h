@@ -26,11 +26,18 @@ enum ScreenMode {
     SCREEN_16_9
 };
 
+enum SoundMode {
+    SOUND_MONO,
+    SOUND_STEREO,
+    SOUND_SURROUND
+};
+
 typedef struct Config {
     signed antiAliasing : 2;
     unsigned dedither : 1;
     unsigned regionMode : 2;
     unsigned screenMode : 2;
+    unsigned soundMode : 2;
 } Config;
 
 extern surface_t gZBuffer;

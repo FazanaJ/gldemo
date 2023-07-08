@@ -23,6 +23,7 @@ short gNumClutter = 0;
 */
 Object *allocate_object(void) {
     Object *newObj = malloc(sizeof(Object));
+    bzero(newObj, sizeof(Object));
     newObj->entry = malloc(sizeof(ObjectList));
 
     if (gObjectListHead == NULL) {
@@ -51,6 +52,7 @@ Object *allocate_object(void) {
 
 Clutter *allocate_clutter(void) {
     Clutter *newObj = malloc(sizeof(Clutter));
+    bzero(newObj, sizeof(Clutter));
     newObj->entry = malloc(sizeof(ClutterList));
 
     if (gClutterListHead == NULL) {

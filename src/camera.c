@@ -10,34 +10,23 @@
 #include "math_util.h"
 #include "input.h"
 #include "main.h"
+#include "debug.h"
 
 Camera *gCamera;
 
 void camera_init(void) {
     gCamera = malloc(sizeof(Camera));
+    bzero(gCamera, sizeof(Camera));
     
-    gCamera->yaw = 0;
-    gCamera->yawTarget = 0;
     gCamera->pitch = 0x3400;
-    gCamera->lookPitch = 0;
-    gCamera->flags = 0;
-    gCamera->mode = 0;
     gCamera->zoom = 4.0f;
-    gCamera->zoomAdd = 0.0f;
-    gCamera->moveTimer = 0;
-    gCamera->pos[0] = 0;
-    gCamera->pos[1] = 0;
-    gCamera->pos[2] = 0;
-    gCamera->focus[0] = 0;
-    gCamera->focus[1] = 0;
-    gCamera->focus[2] = 0;
-    gCamera->pan = 0.0f;
     if (gPlayer) {
         gCamera->parent = gPlayer;
     }
 }
 
 void camera_loop(int updateRate, float updateRateF) {
+    DEBUG_SNAPSHOT_1();
     Camera *c = gCamera;
     float zoom;
     float stickX = get_stick_x();
@@ -57,9 +46,13 @@ void camera_loop(int updateRate, float updateRateF) {
         c->zoomAdd = lerpf(c->zoomAdd, 0.0f, 0.05f * updateRateF);
         c->lookPitch = lerp(c->lookPitch, stickY * 100.0f, 0.1f * updateRateF);
     } else {
-        c->pan = lerpf(c->pan, (-stickX / 75.0f), 0.025f * updateRateF);
-        c->zoomAdd = lerpf(c->zoomAdd, (stickY / 75.0f), 0.05f * updateRateF);
-        c->lookPitch = lerp(c->lookPitch, 0, 0.1f * updateRateF);
+        if (stickX != 0.0f || fabs(c->pan) > 0.001f) {
+            c->pan = lerpf(c->pan, (-stickX / 75.0f), 0.025f * updateRateF);
+        }
+        if (stickY != 0.0f || fabs(c->zoomAdd) > 0.001f) {
+            c->zoomAdd = lerpf(c->zoomAdd, (stickY / 75.0f), 0.05f * updateRateF);
+        }
+        c->lookPitch = lerp(c->lookPitch, 0.0f, 0.1f * updateRateF);
     }
 
     c->yaw = lerp_short(c->yaw, c->yawTarget, 0.25f * updateRateF);
@@ -74,5 +67,5 @@ void camera_loop(int updateRate, float updateRateF) {
     c->pos[0] = c->focus[0] + ((zoom) * coss(c->yaw - 0x4000));
     c->pos[1] = c->focus[1] + ((zoom) * sins(c->yaw - 0x4000));
     c->pos[2] = c->focus[2] + (3.5f * sins(pitch + 0x4000));
-
+    get_time_snapshot(PP_CAMERA, DEBUG_SNAPSHOT_1_END);
 }
