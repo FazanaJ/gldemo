@@ -43,6 +43,8 @@ typedef struct Config {
     unsigned regionMode : 2;
     unsigned screenMode : 2;
     unsigned soundMode : 2;
+    signed screenPosX : 5;
+    signed screenPosY : 5;
 } Config;
 
 extern surface_t gZBuffer;

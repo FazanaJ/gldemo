@@ -9,6 +9,8 @@ typedef struct Camera {
 	float focus[3];
 	float pan;
 	float zoom;
+	float intendedZoom;
+	float targetZoom;
 	float zoomAdd;
 	short pitch;
 	short lookPitch;

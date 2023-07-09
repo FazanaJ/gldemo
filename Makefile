@@ -53,6 +53,6 @@ clean:
 clean_src:
 	rm -rf $(BUILD_DIR)/src gldemo.z64
 
--include $(wildcard $(BUILD_DIR)/*.d)
+-include $(src:%.c=$(BUILD_DIR)/%.d)
 
 .PHONY: all clean

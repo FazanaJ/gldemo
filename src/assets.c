@@ -11,10 +11,10 @@
 #include "render.h"
 #include "main.h"
 
-const char *sTextureIDs[] = {
-    "rom:/grass0.ci4.sprite",
-    "rom:/health.i8.sprite",
-    "rom:/plant1.ia8.sprite",
+const TextureInfo sTextureIDs[] = {
+    {"rom:/grass0.ci4.sprite", TEX_NULL, 0},
+    {"rom:/health.i8.sprite", TEX_CLAMP_H | TEX_CLAMP_V, 0},
+    {"rom:/plant1.ia8.sprite", TEX_CLAMP_H | TEX_CLAMP_V, 0},
 };
 
 RenderSettings sRenderSettings;
@@ -65,19 +65,39 @@ void init_materials(void) {
 }
 
 void bind_new_texture(MaterialList *material) {
-    int repeat;
+    int repeatH;
+    int repeatV;
+    int mirrorH;
+    int mirrorV;
+    int texID = material->textureID;
 
-        if (material->textureID == 2 || material->textureID == 3) {
-            repeat = false;
-        } else {
-            repeat = REPEAT_INFINITE;
-        }
+    if (sTextureIDs[texID].flags & TEX_CLAMP_H) {
+        repeatH = false;
+    } else {
+        repeatH = REPEAT_INFINITE;
+    }
+    if (sTextureIDs[texID].flags & TEX_CLAMP_V) {
+        repeatV = false;
+    } else {
+        repeatV = REPEAT_INFINITE;
+    }
+    if (sTextureIDs[texID].flags & TEX_MIRROR_H) {
+        mirrorH = MIRROR_REPEAT;
+    } else {
+        mirrorH = MIRROR_DISABLED;
+    }
+    if (sTextureIDs[texID].flags & TEX_MIRROR_V) {
+        mirrorV = MIRROR_REPEAT;
+    } else {
+        mirrorV = MIRROR_DISABLED;
+    }
     glBindTexture(GL_TEXTURE_2D, material->texture);
 
+        //repeatH = REPEAT_INFINITE;
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-    glSpriteTextureN64(GL_TEXTURE_2D, material->sprite, &(rdpq_texparms_t){.s.repeats = repeat, .t.repeats = repeat});
+    glSpriteTextureN64(GL_TEXTURE_2D, material->sprite, &(rdpq_texparms_t){.s.repeats = repeatH, .t.repeats = repeatV, .s.mirror = mirrorH, .t.mirror = mirrorV});
 }
 
 int load_texture(Material *material) {
@@ -105,7 +125,7 @@ int load_texture(Material *material) {
         gMaterialListTail = gMaterialListTail->next;
     }
     list->next = NULL;
-    list->sprite = sprite_load(sTextureIDs[material->textureID]);
+    list->sprite = sprite_load(sTextureIDs[material->textureID].file);
     glGenTextures(1, &list->texture);
     bind_new_texture(list);
     list->textureID = material->textureID;
@@ -177,11 +197,13 @@ void set_render_settings(int flags) {
     if (flags & MATERIAL_XLU) {
         if (!sRenderSettings.xlu) {
             glEnable(GL_BLEND);
+            glDepthMask(GL_FALSE);
             sRenderSettings.xlu = true;
         }
     } else {
         if (sRenderSettings.xlu) {
             glDisable(GL_BLEND);
+            glDepthMask(GL_TRUE);
             sRenderSettings.xlu = false;
         }
     }
@@ -229,11 +251,26 @@ void set_render_settings(int flags) {
             sRenderSettings.vertexColour = false;
         }
     }
+    if (flags & MATERIAL_DECAL) {
+        if (!sRenderSettings.decal) {
+            glDepthFunc(GL_EQUAL);
+            sRenderSettings.decal = true;
+        }
+    } else {
+        if (sRenderSettings.decal) {
+            glDepthFunc(GL_LESS);
+            sRenderSettings.decal = false;
+        }
+    }
 }
 
-void set_material(Material *material) {
+void set_material(Material *material, int flags) {
     DEBUG_SNAPSHOT_1();
+    flags |= material->flags;
     if (sCurrentMaterial == material) {
+        if (sPrevRenderFlags != flags) {
+            goto newFlags;
+        }
         get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
         return;
     }
@@ -259,11 +296,12 @@ void set_material(Material *material) {
     }
 
     gNumTextureLoads++;
-    if (sPrevRenderFlags != material->flags) {
-        set_render_settings(material->flags);
+    newFlags:
+    if (sPrevRenderFlags != flags) {
+        set_render_settings(flags);
     }
 
     sCurrentMaterial = material;
-    sPrevRenderFlags = material->flags;
+    sPrevRenderFlags = flags;
     get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
 }

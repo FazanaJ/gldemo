@@ -19,7 +19,8 @@ void camera_init(void) {
     bzero(gCamera, sizeof(Camera));
     
     gCamera->pitch = 0x3400;
-    gCamera->zoom = 4.0f;
+    gCamera->zoom = 8.0f;
+    gCamera->intendedZoom = 4.0f;
     if (gPlayer) {
         gCamera->parent = gPlayer;
     }
@@ -35,16 +36,29 @@ void camera_loop(int updateRate, float updateRateF) {
 
     if (get_input_held(INPUT_Z)) {
         c->yawTarget = c->parent->faceAngle[2] + 0x8000;
-        INCREASE_VAR(gZTargetTimer, updateRate * 4, timer_int(20))
+        INCREASE_VAR(gZTargetTimer, updateRate * 4, timer_int(20));
+        if (c->targetZoom < 0.99f) {
+            c->targetZoom = lerpf(c->targetZoom, 1.0f, 0.05f * updateRateF);
+        }
     } else {
-        DECREASE_VAR(gZTargetTimer, updateRate * 2, 0)
+        DECREASE_VAR(gZTargetTimer, updateRate * 2, 0);
+        if (c->targetZoom > 0.01f) {
+            c->targetZoom = lerpf(c->targetZoom, 0.0f, 0.05f * updateRateF);
+        }
     }
 
     if (get_input_held(INPUT_L)) {
+        float intendedPitch = stickY * 100.0f;
         c->yawTarget -= (float) (stickX * ((8.0f * updateRateF)));
-        c->pan = lerpf(c->pan, 0.0f, 0.025f * updateRateF);
-        c->zoomAdd = lerpf(c->zoomAdd, 0.0f, 0.05f * updateRateF);
-        c->lookPitch = lerp(c->lookPitch, stickY * 100.0f, 0.1f * updateRateF);
+        if (c->pan > 0.0f) {
+            c->pan = lerpf(c->pan, 0.0f, 0.025f * updateRateF);
+        }
+        if (c->zoomAdd > 0.0f) {
+            c->zoomAdd = lerpf(c->zoomAdd, 0.0f, 0.05f * updateRateF);
+        }
+        if (fabs(c->lookPitch - intendedPitch) > 0.01f) {
+            c->lookPitch = lerp(c->lookPitch, intendedPitch, 0.1f * updateRateF);
+        }
     } else {
         if (stickX != 0.0f || fabs(c->pan) > 0.001f) {
             c->pan = lerpf(c->pan, (-stickX / 75.0f), 0.025f * updateRateF);
@@ -52,13 +66,18 @@ void camera_loop(int updateRate, float updateRateF) {
         if (stickY != 0.0f || fabs(c->zoomAdd) > 0.001f) {
             c->zoomAdd = lerpf(c->zoomAdd, (stickY / 75.0f), 0.05f * updateRateF);
         }
-        c->lookPitch = lerp(c->lookPitch, 0.0f, 0.1f * updateRateF);
+        if (c->lookPitch > 0.0f) {
+            c->lookPitch = lerp(c->lookPitch, 0.0f, 0.1f * updateRateF);
+        }
     }
 
     c->yaw = lerp_short(c->yaw, c->yawTarget, 0.25f * updateRateF);
+    if (fabs(c->zoom - c->intendedZoom) > 0.01f) {
+        c->zoom = lerpf(c->zoom, c->intendedZoom, 0.05f * updateRateF);
+    }
 
     pitch = c->pitch + c->lookPitch;
-    zoom = c->zoomAdd + c->zoom;
+    zoom = c->zoomAdd + c->zoom + c->targetZoom;
     
     c->focus[0] = c->parent->pos[0] + (c->pan * sins(c->yaw - 0x4000));
     c->focus[1] = c->parent->pos[1] - (c->pan * coss(c->yaw - 0x4000));

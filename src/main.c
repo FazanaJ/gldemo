@@ -46,6 +46,7 @@ Material gTempMaterials[] = {
     {NULL, -1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_LIGHTING | MATERIAL_VTXCOL},
     {NULL, 1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_XLU | MATERIAL_LIGHTING},
     {NULL, 2, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_LIGHTING | MATERIAL_VTXCOL},
+    {NULL, 1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_LIGHTING | MATERIAL_VTXCOL},
 };
 
 Config gConfig;
@@ -62,8 +63,17 @@ light_t light = {
     radius: 10.0f,
 };
 
+light_t lightNeutral = {
+    
+    color: { 0.66f, 0.66f, 0.66f, 0.66f},
+    diffuse: {1.0f, 1.0f, 1.0f, 1.0f},
+    direction: {0.0f, -60.0f, 0.0f},
+    position: {1.0f, 0.0f, 0.0f, 0.0f},
+    radius: 10.0f,
+};
+
 void init_renderer(void) {
-    setup_light(light);
+    setup_light(lightNeutral);
     setup_fog(light);
     init_materials();
     gPlayerModel = model64_load("rom:/humanoid.model64");
@@ -115,6 +125,14 @@ void apply_anti_aliasing(int mode) {
 void apply_render_settings(void) {
     glAlphaFunc(GL_GREATER, 0.5f);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthFunc(GL_LESS);
+    glDisable(GL_ALPHA_TEST);
+    glDisable(GL_BLEND);
+    if (gConfig.dedither) {
+        *(volatile uint32_t*)0xA4400000 |= 0x10000;
+    } else {
+        *(volatile uint32_t*)0xA4400000 &= ~0x10000;
+    }
 }
 
 
@@ -134,7 +152,7 @@ void render_game(void) {
     apply_anti_aliasing(AA_ACTOR);
     project_camera();
     apply_render_settings();
-    set_light(light);
+    set_light(lightNeutral);
     
     if (gConfig.regionMode == TV_PAL) {
         gZTargetOut = gZTargetTimer * (1.5f * 1.2f);
@@ -146,7 +164,7 @@ void render_game(void) {
 	glTranslatef(gPlayer->pos[0], gPlayer->pos[1], gPlayer->pos[2]);
     glRotatef(SHORT_TO_DEGREES(gPlayer->faceAngle[2]), 0, 0, 1);
 	glScalef(0.18f, 0.25f, 0.25f);
-    set_material(&gTempMaterials[1]);
+    set_material(&gTempMaterials[1], MATERIAL_NULL);
     rdpq_set_mode_standard();
     rdpq_mode_combiner(RDPQ_COMBINER1((0,0,0,SHADE),(0,0,0,1)));
     rdpq_mode_blender(RDPQ_BLENDER2((FOG_RGB, SHADE_ALPHA, IN_RGB, INV_MUX_ALPHA), (CYCLE1_RGB, IN_ALPHA, MEMORY_RGB, MEMORY_CVG)));
@@ -171,7 +189,7 @@ void render_game(void) {
         if (obj->objectID == CLUTTER_BUSH/* && !(obj->flags & OBJ_FLAG_INVISIBLE)*/) {
             glPushMatrix();
             
-            set_material(&gTempMaterials[3]);
+            set_material(&gTempMaterials[3], MATERIAL_NULL);
             glTranslatef(obj->pos[0], obj->pos[1], obj->pos[2]);
             glRotatef(SHORT_TO_DEGREES(gCamera->yaw), 0, 0, 1);
             //glScalef(obj->scale[0], obj->scale[1], obj->scale[2]);
@@ -187,8 +205,7 @@ void render_game(void) {
         list = list->next;
     }
 
-    apply_anti_aliasing(AA_ACTOR);
-    set_material(&gTempMaterials[0]);
+    set_material(&gTempMaterials[0], MATERIAL_NULL);
     if (sPlaneBlock == NULL) {
         rspq_block_begin();
         render_plane();
@@ -196,11 +213,12 @@ void render_game(void) {
     }
     rspq_block_run(sPlaneBlock);
     
+    apply_anti_aliasing(AA_ACTOR);
     while (list2) {
         obj2 = list2->obj;
         if (obj2->objectID == OBJ_PROJECTILE) {
             glPushMatrix();
-            set_material(&gTempMaterials[2]);
+            set_material(&gTempMaterials[2], MATERIAL_NULL);
             glTranslatef(obj2->pos[0], obj2->pos[1], obj2->pos[2]);
             glRotatef(SHORT_TO_DEGREES(gCamera->yaw), 0, 0, 1);
             //glScalef(obj2->scale[0], obj2->scale[1], obj2->scale[2]);
@@ -210,7 +228,37 @@ void render_game(void) {
         list2 = list2->next;
     }
 
-    apply_anti_aliasing(AA_GEO);
+    
+    set_material(&gTempMaterials[2], MATERIAL_DECAL);
+    glPushMatrix();
+    glTranslatef(10, 10, 0);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0, 0);
+    glVertex3i(-1, 1, 0);
+    glTexCoord2f(0, 1.024f);
+    glVertex3i(-1, -1, 0);
+    glTexCoord2f(1.024f, 1.024f);
+    glVertex3i(1, -1, 0);
+    glTexCoord2f(1.024f, 0);
+    glVertex3i(1, 1, 0);
+    glEnd();
+    glPopMatrix();
+    set_material(&gTempMaterials[4], MATERIAL_DECAL);
+    glPushMatrix();
+    glTranslatef(10, 12, 0);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0, 0);
+    glVertex3i(-1, 1, 0);
+    glTexCoord2f(0, 1.024f);
+    glVertex3i(-1, -1, 0);
+    glTexCoord2f(1.024f, 1.024f);
+    glVertex3i(1, -1, 0);
+    glTexCoord2f(1.024f, 0);
+    glVertex3i(1, 1, 0);
+    glEnd();
+    glPopMatrix();
+    
+
     get_time_snapshot(PP_RENDER, DEBUG_SNAPSHOT_1_END);
     DEBUG_SNAPSHOT_1_RESET();
     
@@ -266,7 +314,7 @@ void init_memory(void) {
 }
 
 void init_save(void) {
-    gConfig.antiAliasing = AA_OFF;
+    gConfig.antiAliasing = AA_FAST;
     gConfig.dedither = false;
     gConfig.regionMode = get_tv_type();
     //gConfig.regionMode = PAL60;

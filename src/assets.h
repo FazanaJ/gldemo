@@ -14,6 +14,15 @@ enum MaterialFlags {
     MATERIAL_ENVMAP =       (1 << 4),
     MATERIAL_DEPTH_WRITE =  (1 << 5),
     MATERIAL_VTXCOL =       (1 << 6),
+    MATERIAL_DECAL =        (1 << 7),
+};
+
+enum TextureFlags {
+    TEX_NULL,
+    TEX_MIRROR_H =  (1 << 0),
+    TEX_MIRROR_V =  (1 << 1),
+    TEX_CLAMP_H =   (1 << 2),
+    TEX_CLAMP_V =   (1 << 3),
 };
 
 typedef struct RenderSettings {
@@ -25,6 +34,7 @@ typedef struct RenderSettings {
     unsigned depthWrite : 1;
     unsigned texture : 1;
     unsigned vertexColour : 1;
+    unsigned decal : 1;
 } RenderSettings;
 
 typedef struct MaterialList {
@@ -42,10 +52,16 @@ typedef struct Material {
     short flags;
 } Material;
 
+typedef struct TextureInfo {
+    char *file;
+    unsigned char flags;
+    char pallettes;
+} TextureInfo;
+
 extern short gNumTextures;
 extern short gNumTextureLoads;
 
 void setup_textures(GLuint textures[], sprite_t *sprites[], const char *texture_path[], int texture_number);
-void set_material(Material *material);
+void set_material(Material *material, int flags);
 void cycle_textures(int updateRate);
 void init_materials(void);

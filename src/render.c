@@ -12,9 +12,10 @@
 
 Environment *gEnvironment;
 float gAspectRatio = 1.0f;
+static rspq_block_t *sRenderEndBlock;
+static rspq_block_t *sRenderSkyBlock;
 
 void setup_light(light_t light) {
-
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, light.color);
     glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
 
@@ -24,6 +25,30 @@ void setup_light(light_t light) {
     glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 1.0f/(light.radius*light.radius));
 
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, light.diffuse);
+
+    rspq_block_begin();
+    glDisable(GL_MULTISAMPLE_ARB);
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_FOG);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_SCISSOR_TEST);
+    glDisable(GL_ALPHA_TEST);
+    glDisable(GL_BLEND);
+    glScissor(0, 0, display_get_width(), display_get_height());
+    sRenderEndBlock = rspq_block_end();
+}
+
+void set_light(light_t light) {
+    glPushMatrix();
+    glRotatef(light.direction[0], 1, 0, 0);
+    glRotatef(light.direction[1], 0, 1, 0);
+    glRotatef(light.direction[2], 0, 0, 1);
+    glLightfv(GL_LIGHT0, GL_POSITION, light.position);
+    glPopMatrix();
+}
+
+void setup_fog(light_t light) {
     gEnvironment = malloc(sizeof(Environment));
     gEnvironment->fogColour[0] = light.color[0];
     gEnvironment->fogColour[1] = light.color[1];
@@ -46,22 +71,9 @@ void setup_light(light_t light) {
     gEnvironment->flags = ENV_FOG;
     gEnvironment->fogNear = 2.0f;
     gEnvironment->fogFar = 50.0f;
-}
-
-void set_light(light_t light) {
-    glPushMatrix();
-    glRotatef(light.direction[0], 1, 0, 0);
-    glRotatef(light.direction[1], 0, 1, 0);
-    glRotatef(light.direction[2], 0, 0, 1);
-    glLightfv(GL_LIGHT0, GL_POSITION, light.position);
-    glPopMatrix();
-
-}
-
-void setup_fog(light_t light) {
     glFogf(GL_FOG_START, gEnvironment->fogNear);
     glFogf(GL_FOG_END, gEnvironment->fogFar);
-    glFogfv(GL_FOG_COLOR, light.color);
+    glFogfv(GL_FOG_COLOR, gEnvironment->fogColour);
 }
 
 void project_camera(void) {
@@ -80,23 +92,28 @@ void project_camera(void) {
 
 void render_sky(void) {
     Environment *e = gEnvironment;
-    glDisable(GL_DEPTH_TEST);
-    glMatrixMode(GL_PROJECTION);
-    glDisable(GL_MULTISAMPLE_ARB);
-    glLoadIdentity();
-    glOrtho(0.0f, display_get_width(), display_get_height(), 0.0f, -1.0f, 1.0f);
+    if (sRenderSkyBlock == NULL) {
+        rspq_block_begin();
+        glDisable(GL_DEPTH_TEST);
+        glMatrixMode(GL_PROJECTION);
+        glDisable(GL_MULTISAMPLE_ARB);
+        glLoadIdentity();
+        glOrtho(0.0f, display_get_width(), display_get_height(), 0.0f, -1.0f, 1.0f);
 
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    glBegin(GL_QUADS);
-    glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
-    glVertex2i(0, 0);
-    glColor3f(e->skyColourBottom[0], e->skyColourBottom[1], e->skyColourBottom[2]);
-    glVertex2i(0, display_get_height());
-    glVertex2i(display_get_width(), display_get_height());
-    glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
-    glVertex2i(display_get_width(), 0);
-    glEnd();
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+        glBegin(GL_QUADS);
+        glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
+        glVertex2i(0, 0);
+        glColor3f(e->skyColourBottom[0], e->skyColourBottom[1], e->skyColourBottom[2]);
+        glVertex2i(0, display_get_height());
+        glVertex2i(display_get_width(), display_get_height());
+        glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
+        glVertex2i(display_get_width(), 0);
+        glEnd();
+        sRenderSkyBlock = rspq_block_end();
+    }
+    rspq_block_run(sRenderSkyBlock);
 }
 
 void render_bush(void) {
@@ -117,11 +134,5 @@ void render_bush(void) {
 }
 
 void render_end(void) {
-    glDisable(GL_MULTISAMPLE_ARB);
-    glDisable(GL_TEXTURE_2D);
-    glDisable(GL_LIGHTING);
-    glDisable(GL_FOG);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_SCISSOR_TEST);
-    glScissor(0, 0, display_get_width(), display_get_height());
+    rspq_block_run(sRenderEndBlock);
 }
