@@ -7,6 +7,7 @@ typedef struct Camera {
 	Object *target;
 	float pos[3];
 	float focus[3];
+	float lookFocus[3];
 	float pan;
 	float zoom;
 	float intendedZoom;

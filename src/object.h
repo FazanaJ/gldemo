@@ -16,6 +16,7 @@ enum ObjectIDs {
 	OBJ_NULL,
 	OBJ_PLAYER,
 	OBJ_PROJECTILE,
+	OBJ_NPC,
 };
 
 enum ClutterIDs {
@@ -109,3 +110,4 @@ Clutter *spawn_clutter(int objectID, float x, float y, float z, short pitch, sho
 void delete_object(Object *obj);
 void delete_clutter(Clutter *clutter);
 void update_game_entities(int updateRate, float updateRateF);
+Object *find_nearest_object(Object *obj, int objectID, float baseDist);

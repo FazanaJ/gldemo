@@ -12,7 +12,7 @@ extern float gSineTable[];
 #define DECREASE_VAR(x, amt, min) {x -= amt; if (x < min) x = min;}
 #define SQR(x) (x * x)
 #define DIST2(x, y) (SQR(x[0] - y[0]) + SQR(x[1] - y[1]))
-#define DIST3(x, y) (SQR(x[0] - y[0]) + SQR(x[1] - y[1]) + SQR(x[2] - y[2]))
+#define DIST3(x, y) (SQR(fabs(x[0] - y[0])) + SQR(fabs(x[1] - y[1])) + SQR(fabs(x[2] - y[2])))
 
 int atan2s(float y, float x);
 int timer_int(int timer);

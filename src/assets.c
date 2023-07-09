@@ -66,13 +66,13 @@ void init_materials(void) {
 }
 
 void bind_new_texture(MaterialList *material) {
-    int repeatH;
+    /*int repeatH;
     int repeatV;
     int mirrorH;
     int mirrorV;
-    int texID = material->textureID;
+    int texID = material->textureID;*/
 
-    if (sTextureIDs[texID].flags & TEX_CLAMP_H) {
+    /*if (sTextureIDs[texID].flags & TEX_CLAMP_H) {
         repeatH = false;
     } else {
         repeatH = REPEAT_INFINITE;
@@ -91,14 +91,13 @@ void bind_new_texture(MaterialList *material) {
         mirrorV = MIRROR_REPEAT;
     } else {
         mirrorV = MIRROR_DISABLED;
-    }
+    }*/
     glBindTexture(GL_TEXTURE_2D, material->texture);
 
-        //repeatH = REPEAT_INFINITE;
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-    glSpriteTextureN64(GL_TEXTURE_2D, material->sprite, &(rdpq_texparms_t){.s.repeats = repeatH, .t.repeats = repeatV, .s.mirror = mirrorH, .t.mirror = mirrorV});
+    glSpriteTextureN64(GL_TEXTURE_2D, material->sprite, &(rdpq_texparms_t){.s.repeats = REPEAT_INFINITE, .t.repeats = REPEAT_INFINITE, .s.mirror = MIRROR_REPEAT, .t.mirror = MIRROR_REPEAT});
 }
 
 int load_texture(Material *material) {
@@ -301,7 +300,7 @@ void set_material(Material *material, int flags) {
     gNumTextureLoads++;
     newFlags:
     if (sPrevRenderFlags != flags) {
-        //set_render_settings(flags);
+        set_render_settings(flags);
     }
 
     sCurrentMaterial = material;

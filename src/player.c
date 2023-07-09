@@ -33,6 +33,13 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
         return;
     }
 
+    Object *targetObj = find_nearest_object(obj, OBJ_NPC, 3.0f);
+    if (targetObj) {
+        gCamera->target = targetObj;
+    } else {
+        gCamera->target = NULL;
+    }
+
     if (get_input_pressed(INPUT_B, 0) && gGameTimer > 120) {
         play_sound_spatial(SOUND_LASER, obj->pos);
         Object *bullet = spawn_object_pos(OBJ_PROJECTILE, obj->pos[0], obj->pos[1], obj->pos[2]);

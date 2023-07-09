@@ -8,7 +8,6 @@
 #include "render.h"
 #include "assets.h"
 #include "plane.h"
-#include "dummy_low.h"
 #include "input.h"
 #include "math_util.h"
 #include "debug.h"
@@ -47,7 +46,7 @@ Material gTempMaterials[] = {
     {NULL, 1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_XLU | MATERIAL_LIGHTING},
     {NULL, 2, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_LIGHTING | MATERIAL_VTXCOL},
     {NULL, 1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_LIGHTING | MATERIAL_VTXCOL},
-    {NULL, 3, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_XLU},
+    {NULL, 3, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_XLU | MATERIAL_VTXCOL},
 };
 
 Config gConfig;
@@ -96,6 +95,7 @@ void setup(void) {
     spawn_clutter(CLUTTER_BUSH, -19, 8, 0, 0, 0, 0);
     spawn_clutter(CLUTTER_BUSH, 9, 0, 0, 0, 0, 0);
     spawn_clutter(CLUTTER_BUSH, 15, -15, 0, 0, 0, 0);
+    spawn_object_pos(OBJ_NPC, 10.0f, 0.0f, 0.0f);
 
     camera_init();
 }
@@ -150,15 +150,17 @@ void render_shadow(float pos[3]) {
     glTranslatef(pos[0], pos[1], pos[2]);
     if (sShadowBlock == NULL) {
         rspq_block_begin();
+        glScalef(0.66f, 0.66f, 0.66f);
         glBegin(GL_QUADS);
+        glColor3f(0, 0, 0);
         glTexCoord2f(0, 0);
-        glVertex3i(-1, 1, 0);
-        glTexCoord2f(0, 1.024f);
-        glVertex3i(-1, -1, 0);
-        glTexCoord2f(1.024f, 1.024f);
-        glVertex3i(1, -1, 0);
-        glTexCoord2f(1.024f, 0);
-        glVertex3i(1, 1, 0);
+        glVertex3i(-1.0, 1.0f, 0);
+        glTexCoord2f(0, 2.048f);
+        glVertex3i(-1.0f, -1.0f, 0);
+        glTexCoord2f(2.048f, 2.048f);
+        glVertex3i(1.0f, -1.0f, 0);
+        glTexCoord2f(2.048f, 0);
+        glVertex3i(1.0f, 1.0f, 0);
         glEnd();
         sShadowBlock = rspq_block_end();
     }
@@ -166,10 +168,8 @@ void render_shadow(float pos[3]) {
     glPopMatrix();
 }
 
-extern const TextureInfo sTextureIDs[];
-
 void render_game(void) {
-    //DEBUG_SNAPSHOT_1();
+    DEBUG_SNAPSHOT_1();
     rdpq_attach(gFrameBuffers, &gZBuffer);
     glShadeModel(shade_model);
     gl_context_begin();
@@ -177,49 +177,24 @@ void render_game(void) {
     glScissor(0, gZTargetOut, display_get_width(), display_get_height() - (gZTargetOut * 2));
     glClear(GL_DEPTH_BUFFER_BIT);
     render_sky();
-    apply_anti_aliasing(AA_ACTOR);
+    apply_anti_aliasing(AA_GEO);
     project_camera();
     apply_render_settings();
     set_light(lightNeutral);
-    
-    if (gConfig.regionMode == TV_PAL) {
-        gZTargetOut = gZTargetTimer * (1.5f * 1.2f);
-    } else {
-        gZTargetOut = gZTargetTimer * 1.5f;
-    }
 
-    /*glPushMatrix();
-	glTranslatef(gPlayer->pos[0], gPlayer->pos[1], gPlayer->pos[2]);
-    glRotatef(SHORT_TO_DEGREES(gPlayer->faceAngle[2]), 0, 0, 1);
-	glScalef(0.18f, 0.25f, 0.25f);
-    set_material(&gTempMaterials[1], MATERIAL_NULL);
-    rdpq_set_mode_standard();
-    rdpq_mode_combiner(RDPQ_COMBINER1((0,0,0,SHADE),(0,0,0,1)));
-    rdpq_mode_blender(RDPQ_BLENDER2((FOG_RGB, SHADE_ALPHA, IN_RGB, INV_MUX_ALPHA), (CYCLE1_RGB, IN_ALPHA, MEMORY_RGB, MEMORY_CVG)));
-    if (sPlayerBlock == NULL) {
+    set_material(&gTempMaterials[0], MATERIAL_NULL);
+    if (sPlaneBlock == NULL) {
         rspq_block_begin();
-        model64_draw(gPlayerModel);
-        sPlayerBlock = rspq_block_end();
+        render_plane();
+        sPlaneBlock = rspq_block_end();
     }
-    rspq_block_run(sPlayerBlock);
-    glPopMatrix();
-    render_shadow(gPlayer->pos);*/
+    rspq_block_run(sPlaneBlock);
 
+    render_shadow(gPlayer->pos);
 
     ClutterList *list = gClutterListHead;
     Clutter *obj;
     
-    //ObjectList *list2 = gObjectListHead;
-    //Object *obj2;
-    
-    apply_anti_aliasing(AA_GEO);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_FOG);
-    glEnable(GL_TEXTURE_2D);
-    glAlphaFunc(GL_GREATER, 0.5f);
-    glEnable(GL_ALPHA_TEST);
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_LIGHTING);
     while (list) {
         obj = list->clutter;
         if (obj->objectID == CLUTTER_BUSH/* && !(obj->flags & OBJ_FLAG_INVISIBLE)*/) {
@@ -240,16 +215,26 @@ void render_game(void) {
         }
         list = list->next;
     }
-
-    /*set_material(&gTempMaterials[0], MATERIAL_NULL);
-    if (sPlaneBlock == NULL) {
-        rspq_block_begin();
-        render_plane();
-        sPlaneBlock = rspq_block_end();
-    }
-    rspq_block_run(sPlaneBlock);
     
     apply_anti_aliasing(AA_ACTOR);
+
+    glPushMatrix();
+	glTranslatef(gPlayer->pos[0], gPlayer->pos[1], gPlayer->pos[2]);
+    glRotatef(SHORT_TO_DEGREES(gPlayer->faceAngle[2]), 0, 0, 1);
+	glScalef(0.18f, 0.25f, 0.25f);
+    set_material(&gTempMaterials[1], MATERIAL_NULL);
+    rdpq_set_mode_standard();
+    if (sPlayerBlock == NULL) {
+        rspq_block_begin();
+        model64_draw(gPlayerModel);
+        sPlayerBlock = rspq_block_end();
+    }
+    rspq_block_run(sPlayerBlock);
+    glPopMatrix();
+    
+    ObjectList *list2 = gObjectListHead;
+    Object *obj2;
+    
     while (list2) {
         obj2 = list2->obj;
         if (obj2->objectID == OBJ_PROJECTILE) {
@@ -260,10 +245,17 @@ void render_game(void) {
             //glScalef(obj2->scale[0], obj2->scale[1], obj2->scale[2]);
             render_bush(); 
             glPopMatrix();
+        } else if (obj2->objectID == OBJ_NPC) {
+            glPushMatrix();
+            set_material(&gTempMaterials[1], MATERIAL_NULL);
+            glTranslatef(obj2->pos[0], obj2->pos[1], obj2->pos[2]);
+            glRotatef(SHORT_TO_DEGREES(obj2->faceAngle[2]), 0, 0, 1);
+	        glScalef(0.18f, 0.25f, 0.25f);
+            rspq_block_run(sPlayerBlock);
+            glPopMatrix();
         }
         list2 = list2->next;
     }
-
     
     set_material(&gTempMaterials[2], MATERIAL_DECAL);
     glPushMatrix();
@@ -293,6 +285,8 @@ void render_game(void) {
     glVertex3i(1, 1, 0);
     glEnd();
     glPopMatrix();
+
+    
     
 
     get_time_snapshot(PP_RENDER, DEBUG_SNAPSHOT_1_END);
@@ -300,6 +294,11 @@ void render_game(void) {
     
     render_end();
     gl_context_end();
+    if (gConfig.regionMode == TV_PAL) {
+        gZTargetOut = gZTargetTimer * (1.5f * 1.2f);
+    } else {
+        gZTargetOut = gZTargetTimer * 1.5f;
+    }
     if (gZTargetTimer) {
         rdpq_set_mode_fill(RGBA32(0, 0, 0, 255));
         rdpq_mode_blender(0);
@@ -308,8 +307,7 @@ void render_game(void) {
         rdpq_set_mode_standard();
     }
     render_hud();
-    get_time_snapshot(PP_HUD, DEBUG_SNAPSHOT_1_END);*/
-    render_end();
+    get_time_snapshot(PP_HUD, DEBUG_SNAPSHOT_1_END);
 }
 
 char sFirstBoot = 0;
@@ -434,6 +432,11 @@ int main(void) {
         cycle_textures(updateRate);
         rdpq_detach_wait();
         display_show(gFrameBuffers);
+
+        rdpq_font_begin(RGBA32(255, 0, 0, 255));
+        rdpq_font_position(16, 160);
+        rdpq_font_printf(gCurrentFont, "%X", gCamera->target);
+        rdpq_font_end();
 
         gGlobalTimer++;
         gGameTimer += updateRate;

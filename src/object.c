@@ -102,12 +102,14 @@ static void (*gObjectInits[])(Object *obj) = {
     NULL,
     player_init,
     projectile_init,
+    NULL,
 };
 
 static void (*gObjectLoops[])(Object *obj, int updateRate, float updateRateF) = {
     0,
     player_loop,
     projectile_loop,
+    NULL,
 };
 
 static const unsigned short gObjectData[] = {
@@ -301,6 +303,28 @@ void clear_objects(void) {
     while (gClutterListHead) {
         free_clutter(gClutterListHead->clutter);
     }
+}
+
+Object *find_nearest_object(Object *obj, int objectID, float baseDist) {
+    float bestDist = SQR(baseDist);
+    ObjectList *objList = gObjectListHead;
+    Object *listObj;
+    Object *bestObj = NULL;
+    float dist;
+
+    while (objList) {
+        listObj = objList->obj;
+        if (listObj->objectID == objectID) {
+            dist = DIST3(obj->pos, listObj->pos);
+            if (dist < bestDist) {
+                bestObj = listObj;
+                bestDist = dist;
+            }
+        }
+        objList = objList->next;
+    }
+
+    return bestObj;
 }
 
 /**

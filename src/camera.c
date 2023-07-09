@@ -78,13 +78,39 @@ void camera_loop(int updateRate, float updateRateF) {
 
     pitch = c->pitch + c->lookPitch;
     zoom = c->zoomAdd + c->zoom + c->targetZoom;
-    
-    c->focus[0] = c->parent->pos[0] + (c->pan * sins(c->yaw - 0x4000));
-    c->focus[1] = c->parent->pos[1] - (c->pan * coss(c->yaw - 0x4000));
-    c->focus[2] = c->parent->pos[2] + 2.0f;
+    float intendedFocus[3];
 
-    c->pos[0] = c->focus[0] + ((zoom) * coss(c->yaw - 0x4000));
-    c->pos[1] = c->focus[1] + ((zoom) * sins(c->yaw - 0x4000));
-    c->pos[2] = c->focus[2] + (3.5f * sins(pitch + 0x4000));
+    intendedFocus[0] = c->parent->pos[0] + (c->pan * sins(c->yaw - 0x4000));
+    intendedFocus[1] = c->parent->pos[1] - (c->pan * coss(c->yaw - 0x4000));
+    intendedFocus[2] = c->parent->pos[2];
+
+    if (c->target) {
+        float targetMag;
+        if (get_input_held(INPUT_Z)) {
+            targetMag = 1.0f;
+        } else {
+            targetMag = 1.0f - (DIST3(c->parent->pos, c->target->pos) / SQR(3.0f));
+            if (targetMag > 0.5f) {
+                targetMag = 0.5f;
+            }
+        }
+        c->lookFocus[0] = lerpf(c->lookFocus[0], (c->target->pos[0] - intendedFocus[0]) * targetMag, 0.035f * updateRateF);
+        c->lookFocus[1] = lerpf(c->lookFocus[1], (c->target->pos[1] - intendedFocus[1]) * targetMag, 0.035f * updateRateF);
+        c->lookFocus[2] = lerpf(c->lookFocus[2], (c->target->pos[2] - intendedFocus[2]) * targetMag, 0.035f * updateRateF);
+    } else {
+        c->lookFocus[0] = lerpf(c->lookFocus[0], 0.0f, 0.01f * updateRateF);
+        c->lookFocus[1] = lerpf(c->lookFocus[1], 0.0f, 0.01f * updateRateF);
+        c->lookFocus[2] = lerpf(c->lookFocus[2], 0.0f, 0.01f * updateRateF);
+    }
+
+    
+
+    c->focus[0] = intendedFocus[0] + c->lookFocus[0];
+    c->focus[1] = intendedFocus[1] + c->lookFocus[1];
+    c->focus[2] = intendedFocus[2] + c->lookFocus[2] + 2.0f;
+
+    c->pos[0] = intendedFocus[0] + ((zoom) * coss(c->yaw - 0x4000));
+    c->pos[1] = intendedFocus[1] + ((zoom) * sins(c->yaw - 0x4000));
+    c->pos[2] = intendedFocus[2] + 2.0f + (3.5f * sins(pitch + 0x4000));
     get_time_snapshot(PP_CAMERA, DEBUG_SNAPSHOT_1_END);
 }
