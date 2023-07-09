@@ -47,6 +47,7 @@ Material gTempMaterials[] = {
     {NULL, 1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_XLU | MATERIAL_LIGHTING},
     {NULL, 2, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_LIGHTING | MATERIAL_VTXCOL},
     {NULL, 1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_LIGHTING | MATERIAL_VTXCOL},
+    {NULL, 3, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_XLU},
 };
 
 Config gConfig;
@@ -136,12 +137,39 @@ void apply_render_settings(void) {
 }
 
 
+
 rspq_block_t *sPlayerBlock;
 rspq_block_t *sBushBlock;
 rspq_block_t *sPlaneBlock;
+rspq_block_t *sShadowBlock;
+
+
+void render_shadow(float pos[3]) {
+    set_material(&gTempMaterials[5], MATERIAL_DECAL);
+    glPushMatrix();
+    glTranslatef(pos[0], pos[1], pos[2]);
+    if (sShadowBlock == NULL) {
+        rspq_block_begin();
+        glBegin(GL_QUADS);
+        glTexCoord2f(0, 0);
+        glVertex3i(-1, 1, 0);
+        glTexCoord2f(0, 1.024f);
+        glVertex3i(-1, -1, 0);
+        glTexCoord2f(1.024f, 1.024f);
+        glVertex3i(1, -1, 0);
+        glTexCoord2f(1.024f, 0);
+        glVertex3i(1, 1, 0);
+        glEnd();
+        sShadowBlock = rspq_block_end();
+    }
+    rspq_block_run(sShadowBlock);
+    glPopMatrix();
+}
+
+extern const TextureInfo sTextureIDs[];
 
 void render_game(void) {
-    DEBUG_SNAPSHOT_1();
+    //DEBUG_SNAPSHOT_1();
     rdpq_attach(gFrameBuffers, &gZBuffer);
     glShadeModel(shade_model);
     gl_context_begin();
@@ -160,7 +188,7 @@ void render_game(void) {
         gZTargetOut = gZTargetTimer * 1.5f;
     }
 
-    glPushMatrix();
+    /*glPushMatrix();
 	glTranslatef(gPlayer->pos[0], gPlayer->pos[1], gPlayer->pos[2]);
     glRotatef(SHORT_TO_DEGREES(gPlayer->faceAngle[2]), 0, 0, 1);
 	glScalef(0.18f, 0.25f, 0.25f);
@@ -175,15 +203,23 @@ void render_game(void) {
     }
     rspq_block_run(sPlayerBlock);
     glPopMatrix();
+    render_shadow(gPlayer->pos);*/
 
 
     ClutterList *list = gClutterListHead;
     Clutter *obj;
     
-    ObjectList *list2 = gObjectListHead;
-    Object *obj2;
+    //ObjectList *list2 = gObjectListHead;
+    //Object *obj2;
     
     apply_anti_aliasing(AA_GEO);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_FOG);
+    glEnable(GL_TEXTURE_2D);
+    glAlphaFunc(GL_GREATER, 0.5f);
+    glEnable(GL_ALPHA_TEST);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_LIGHTING);
     while (list) {
         obj = list->clutter;
         if (obj->objectID == CLUTTER_BUSH/* && !(obj->flags & OBJ_FLAG_INVISIBLE)*/) {
@@ -205,7 +241,7 @@ void render_game(void) {
         list = list->next;
     }
 
-    set_material(&gTempMaterials[0], MATERIAL_NULL);
+    /*set_material(&gTempMaterials[0], MATERIAL_NULL);
     if (sPlaneBlock == NULL) {
         rspq_block_begin();
         render_plane();
@@ -272,7 +308,8 @@ void render_game(void) {
         rdpq_set_mode_standard();
     }
     render_hud();
-    get_time_snapshot(PP_HUD, DEBUG_SNAPSHOT_1_END);
+    get_time_snapshot(PP_HUD, DEBUG_SNAPSHOT_1_END);*/
+    render_end();
 }
 
 char sFirstBoot = 0;

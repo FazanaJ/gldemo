@@ -15,6 +15,7 @@ const TextureInfo sTextureIDs[] = {
     {"rom:/grass0.ci4.sprite", TEX_NULL, 0},
     {"rom:/health.i8.sprite", TEX_CLAMP_H | TEX_CLAMP_V, 0},
     {"rom:/plant1.ia8.sprite", TEX_CLAMP_H | TEX_CLAMP_V, 0},
+    {"rom:/shadow.i4.sprite", TEX_CLAMP_H | TEX_CLAMP_V | TEX_MIRROR_H | TEX_MIRROR_V, 0},
 };
 
 RenderSettings sRenderSettings;
@@ -178,6 +179,8 @@ void cycle_textures(int updateRate) {
     }
     gNumTextureLoads = 0;
     sPrevRenderFlags = 0;
+    sCurrentMaterial = 0;
+    sPrevRenderFlags = 0;
     bzero(&sRenderSettings, sizeof(RenderSettings));
     get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
 }
@@ -298,7 +301,7 @@ void set_material(Material *material, int flags) {
     gNumTextureLoads++;
     newFlags:
     if (sPrevRenderFlags != flags) {
-        set_render_settings(flags);
+        //set_render_settings(flags);
     }
 
     sCurrentMaterial = material;
