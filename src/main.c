@@ -87,16 +87,16 @@ void setup(void) {
     init_renderer();
 
     gPlayer = spawn_object_pos(OBJ_PLAYER, 0.0f, 0.0f, 0.0f);
-    spawn_clutter(CLUTTER_BUSH, 4, 8, 0, 0, 0, 0);
-    spawn_clutter(CLUTTER_BUSH, 2, 9, 0, 0, 0, 0);
-    spawn_clutter(CLUTTER_BUSH, 7, -20, 0, 0, 0, 0);
-    spawn_clutter(CLUTTER_BUSH, 15, -5, 0, 0, 0, 0);
-    spawn_clutter(CLUTTER_BUSH, 12, 8, 0, 0, 0, 0);
-    spawn_clutter(CLUTTER_BUSH, -5, 9, 0, 0, 0, 0);
-    spawn_clutter(CLUTTER_BUSH, -19, 8, 0, 0, 0, 0);
-    spawn_clutter(CLUTTER_BUSH, 9, 0, 0, 0, 0, 0);
-    spawn_clutter(CLUTTER_BUSH, 15, -15, 0, 0, 0, 0);
-    spawn_object_pos(OBJ_NPC, 10.0f, 0.0f, 0.0f);
+    spawn_clutter(CLUTTER_BUSH, 20, 40, 0, 0, 0, 0);
+    spawn_clutter(CLUTTER_BUSH, 10, 45, 0, 0, 0, 0);
+    spawn_clutter(CLUTTER_BUSH, 35, -100, 0, 0, 0, 0);
+    spawn_clutter(CLUTTER_BUSH, 75, -25, 0, 0, 0, 0);
+    spawn_clutter(CLUTTER_BUSH, 60, 40, 0, 0, 0, 0);
+    spawn_clutter(CLUTTER_BUSH, -25, 45, 0, 0, 0, 0);
+    spawn_clutter(CLUTTER_BUSH, -95, 40, 0, 0, 0, 0);
+    spawn_clutter(CLUTTER_BUSH, 45, 0, 0, 0, 0, 0);
+    spawn_clutter(CLUTTER_BUSH, 75, -75, 0, 0, 0, 0);
+    spawn_object_pos(OBJ_NPC, 50.0f, 0.0f, 0.0f);
 
     camera_init();
 }
@@ -157,13 +157,13 @@ void render_shadow(float pos[3]) {
         glBegin(GL_QUADS);
         glColor3f(0, 0, 0);
         glTexCoord2f(0, 0);
-        glVertex3i(-1.0, 1.0f, 0);
+        glVertex3i(-5.0f, 5.0f, 0);
         glTexCoord2f(0, 2.048f);
-        glVertex3i(-1.0f, -1.0f, 0);
+        glVertex3i(-5.0f, -5.0f, 0);
         glTexCoord2f(2.048f, 2.048f);
-        glVertex3i(1.0f, -1.0f, 0);
+        glVertex3i(5.0f, -5.0f, 0);
         glTexCoord2f(2.048f, 0);
-        glVertex3i(1.0f, 1.0f, 0);
+        glVertex3i(5.0f, 5.0f, 0);
         glEnd();
         sShadowBlock = rspq_block_end();
     }
@@ -186,20 +186,21 @@ void render_game(void) {
     set_light(lightNeutral);
 
     glPushMatrix();
-    mesh_t *worldFloor = model64_get_mesh(gWorldModel, 1);
-    mesh_t *worldWall = model64_get_mesh(gWorldModel, 0);
-    mesh_t *worldWater = model64_get_mesh(gWorldModel, 2);
+	glScalef(5.0f, 5.0f, 5.0f);
     if (sPlaneBlockFloor == NULL) {
+        mesh_t *worldFloor = model64_get_mesh(gWorldModel, 1);
         rspq_block_begin();
         model64_draw_mesh(worldFloor);
         sPlaneBlockFloor = rspq_block_end();
     }
     if (sPlaneBlockWall == NULL) {
+        mesh_t *worldWall = model64_get_mesh(gWorldModel, 0);
         rspq_block_begin();
         model64_draw_mesh(worldWall);
         sPlaneBlockWall = rspq_block_end();
     }
     if (sPlaneBlockWater == NULL) {
+        mesh_t *worldWater = model64_get_mesh(gWorldModel, 2);
         rspq_block_begin();
         model64_draw_mesh(worldWater);
         sPlaneBlockWater = rspq_block_end();
@@ -242,7 +243,7 @@ void render_game(void) {
     glPushMatrix();
 	glTranslatef(gPlayer->pos[0], gPlayer->pos[1], gPlayer->pos[2]);
     glRotatef(SHORT_TO_DEGREES(gPlayer->faceAngle[2]), 0, 0, 1);
-	glScalef(0.18f, 0.25f, 0.25f);
+	glScalef(0.9f, 1.25f, 1.25f);
     set_material(&gTempMaterials[1], MATERIAL_NULL);
     if (sPlayerBlock == NULL) {
         rspq_block_begin();
@@ -270,7 +271,7 @@ void render_game(void) {
             set_material(&gTempMaterials[1], MATERIAL_NULL);
             glTranslatef(obj2->pos[0], obj2->pos[1], obj2->pos[2]);
             glRotatef(SHORT_TO_DEGREES(obj2->faceAngle[2]), 0, 0, 1);
-	        glScalef(0.18f, 0.25f, 0.25f);
+	        glScalef(0.9f, 1.25f, 1.25f);
             rspq_block_run(sPlayerBlock);
             glPopMatrix();
         }
@@ -279,30 +280,30 @@ void render_game(void) {
     
     set_material(&gTempMaterials[2], MATERIAL_DECAL);
     glPushMatrix();
-    glTranslatef(10, 10, 0);
+    glTranslatef(25, 25, 0);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
-    glVertex3i(-1, 1, 0);
+    glVertex3i(-5, 5, 0);
     glTexCoord2f(0, 1.024f);
-    glVertex3i(-1, -1, 0);
+    glVertex3i(-5, -5, 0);
     glTexCoord2f(1.024f, 1.024f);
-    glVertex3i(1, -1, 0);
+    glVertex3i(5, -5, 0);
     glTexCoord2f(1.024f, 0);
-    glVertex3i(1, 1, 0);
+    glVertex3i(5, 5, 0);
     glEnd();
     glPopMatrix();
     set_material(&gTempMaterials[4], MATERIAL_DECAL);
     glPushMatrix();
-    glTranslatef(10, 12, 0);
+    glTranslatef(25, 35, 0);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
-    glVertex3i(-1, 1, 0);
+    glVertex3i(-5, 5, 0);
     glTexCoord2f(0, 1.024f);
-    glVertex3i(-1, -1, 0);
+    glVertex3i(-5, -5, 0);
     glTexCoord2f(1.024f, 1.024f);
-    glVertex3i(1, -1, 0);
+    glVertex3i(5, -5, 0);
     glTexCoord2f(1.024f, 0);
-    glVertex3i(1, 1, 0);
+    glVertex3i(5, 5, 0);
     glEnd();
     glPopMatrix();
 

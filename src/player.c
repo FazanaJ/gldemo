@@ -67,20 +67,20 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
         intendedMag = 0.0f;
     }
 
-    if (obj->forwardVel < 10.0f * intendedMag) {
-        obj->forwardVel += (updateRateF * 3.0f) * intendedMag;
+    if (obj->forwardVel < 8.0f * intendedMag) {
+        obj->forwardVel += (updateRateF * 1.0f) * intendedMag;
     }
-    if (obj->forwardVel > 10.0f * intendedMag) {
-        DECREASE_VAR(obj->forwardVel, updateRate * 0.5f, 0);
+    if (obj->forwardVel > 8.0f * intendedMag) {
+        DECREASE_VAR(obj->forwardVel, updateRateF * 0.5f, 0);
     }
 
     if (obj->forwardVel > 0.0f) {
-        DECREASE_VAR(obj->forwardVel, updateRate * 0.75f, 0);
+        DECREASE_VAR(obj->forwardVel, updateRateF * 0.25f, 0);
     }
 
     if (obj->forwardVel != 0.0f) {
-        obj->pos[0] += (obj->forwardVel * sins(obj->moveAngle[2])) / 100.0f;
-        obj->pos[1] -= (obj->forwardVel * coss(obj->moveAngle[2])) / 100.0f;
+        obj->pos[0] += ((obj->forwardVel * sins(obj->moveAngle[2])) / 20.0f) * updateRateF;
+        obj->pos[1] -= ((obj->forwardVel * coss(obj->moveAngle[2])) / 20.0f) * updateRateF;
     }
 
     get_time_snapshot(PP_PLAYER, DEBUG_SNAPSHOT_1_END);

@@ -90,8 +90,8 @@ void projectile_loop(Object *obj, int updateRate, float updateRateF) {
 
     data->life --;
 
-    obj->pos[0] += (obj->forwardVel * sins(obj->moveAngle[2])) / 100.0f;
-    obj->pos[1] -= (obj->forwardVel * coss(obj->moveAngle[2])) / 100.0f;
+    obj->pos[0] += (obj->forwardVel * sins(obj->moveAngle[2])) / 10.0f;
+    obj->pos[1] -= (obj->forwardVel * coss(obj->moveAngle[2])) / 10.0f;
 
     if (data->life == 0) {
         delete_object(obj);

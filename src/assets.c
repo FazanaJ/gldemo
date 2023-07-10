@@ -15,7 +15,7 @@ const TextureInfo sTextureIDs[] = {
     {"rom:/grass0.ci4.sprite", TEX_NULL, 0},
     {"rom:/health.i8.sprite", TEX_CLAMP_H | TEX_CLAMP_V, 0},
     {"rom:/plant1.ia8.sprite", TEX_CLAMP_H | TEX_CLAMP_V, 0},
-    {"rom:/shadow.i4.sprite", TEX_CLAMP_H | TEX_CLAMP_V | TEX_MIRROR_H | TEX_MIRROR_V, 0},
+    {"rom:/shadow.i4.sprite", TEX_MIRROR_H | TEX_MIRROR_V, 0},
     {"rom:/stone.ci4.sprite", TEX_NULL, 0},
     {"rom:/water.ci8.sprite", TEX_NULL, 0},
 };
@@ -68,13 +68,13 @@ void init_materials(void) {
 }
 
 void bind_new_texture(MaterialList *material) {
-    /*int repeatH;
+    int repeatH;
     int repeatV;
     int mirrorH;
     int mirrorV;
-    int texID = material->textureID;*/
+    int texID = material->textureID;
 
-    /*if (sTextureIDs[texID].flags & TEX_CLAMP_H) {
+    if (sTextureIDs[texID].flags & TEX_CLAMP_H) {
         repeatH = false;
     } else {
         repeatH = REPEAT_INFINITE;
@@ -93,13 +93,13 @@ void bind_new_texture(MaterialList *material) {
         mirrorV = MIRROR_REPEAT;
     } else {
         mirrorV = MIRROR_DISABLED;
-    }*/
+    }
     glBindTexture(GL_TEXTURE_2D, material->texture);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-    glSpriteTextureN64(GL_TEXTURE_2D, material->sprite, &(rdpq_texparms_t){.s.repeats = REPEAT_INFINITE, .t.repeats = REPEAT_INFINITE, .s.mirror = MIRROR_REPEAT, .t.mirror = MIRROR_REPEAT});
+    glSpriteTextureN64(GL_TEXTURE_2D, material->sprite, &(rdpq_texparms_t){.s.repeats = repeatH, .t.repeats = repeatV, .s.mirror = mirrorH, .t.mirror = mirrorV});
 }
 
 int load_texture(Material *material) {
@@ -128,9 +128,9 @@ int load_texture(Material *material) {
     }
     list->next = NULL;
     list->sprite = sprite_load(sTextureIDs[material->textureID].file);
+    list->textureID = material->textureID;
     glGenTextures(1, &list->texture);
     bind_new_texture(list);
-    list->textureID = material->textureID;
     list->loadTimer = 120;
     material->index = list;
     gNumTextures++;
@@ -235,7 +235,7 @@ void set_render_settings(int flags) {
     }
     if (flags & MATERIAL_FOG && gEnvironment->flags & ENV_FOG) {
         if (!sRenderSettings.fog) {
-            glEnable(GL_FOG);
+            //glEnable(GL_FOG);
             sRenderSettings.fog = true;
         }
     } else {
