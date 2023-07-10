@@ -130,6 +130,8 @@ void apply_render_settings(void) {
     glDepthFunc(GL_LESS);
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
     if (gConfig.dedither) {
         *(volatile uint32_t*)0xA4400000 |= 0x10000;
     } else {
@@ -171,7 +173,7 @@ void render_shadow(float pos[3]) {
     glPopMatrix();
 }
 
-void render_game(void) {
+void render_game(int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
     rdpq_attach(gFrameBuffers, &gZBuffer);
     glShadeModel(shade_model);
@@ -282,6 +284,7 @@ void render_game(void) {
     glPushMatrix();
     glTranslatef(25, 25, 0);
     glBegin(GL_QUADS);
+    glColor3f(1.0f, 0, 1.0f);
     glTexCoord2f(0, 0);
     glVertex3i(-5, 5, 0);
     glTexCoord2f(0, 1.024f);
@@ -296,6 +299,7 @@ void render_game(void) {
     glPushMatrix();
     glTranslatef(25, 35, 0);
     glBegin(GL_QUADS);
+    glColor3f(1.0f, 0, 1.0f);
     glTexCoord2f(0, 0);
     glVertex3i(-5, 5, 0);
     glTexCoord2f(0, 1.024f);
@@ -327,7 +331,7 @@ void render_game(void) {
         rdpq_fill_rectangle(0, display_get_height() - gZTargetOut, display_get_width(), display_get_height());
         rdpq_set_mode_standard();
     }
-    render_hud();
+    render_hud(updateRate, updateRateF);
     get_time_snapshot(PP_HUD, DEBUG_SNAPSHOT_1_END);
 }
 
@@ -435,7 +439,7 @@ int main(void) {
         camera_loop(updateRate, updateRateF);
         audio_loop(updateRate, updateRateF);
         
-        render_game();
+        render_game(updateRate, updateRateF);
         get_cpu_time(DEBUG_SNAPSHOT_1_END);
         
         process_profiler();
@@ -445,8 +449,19 @@ int main(void) {
 
         if (get_input_pressed(INPUT_R, 0)) {
             gConfig.antiAliasing++;
-            if (gConfig.antiAliasing == 2) {
+            if (gConfig.antiAliasing == -2) {
                 gConfig.antiAliasing = -1;
+            }
+            switch (gConfig.antiAliasing) {
+            case -1:
+                add_subtitle("AA off.", 120, 0xFF0000FF);
+                break;
+            case 0:
+                add_subtitle("AA fast.", 120, 0xFF0000FF);
+                break;
+            case 1:
+                add_subtitle("AA fancy.", 120, 0xFF0000FF);
+                break;
             }
         }
 

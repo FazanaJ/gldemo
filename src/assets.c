@@ -255,6 +255,17 @@ void set_render_settings(int flags) {
             sRenderSettings.vertexColour = false;
         }
     }
+    if (flags & MATERIAL_BACKFACE) {
+        if (!sRenderSettings.backface) {
+            glDisable(GL_CULL_FACE);
+            sRenderSettings.backface = true;
+        }
+    } else {
+        if (sRenderSettings.backface) {
+            glEnable(GL_CULL_FACE);
+            sRenderSettings.backface = false;
+        }
+    }
     if (flags & MATERIAL_DECAL) {
         if (!sRenderSettings.decal) {
             glDepthFunc(GL_EQUAL);

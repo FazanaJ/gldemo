@@ -14,10 +14,11 @@ enum MaterialFlags {
     MATERIAL_VTXCOL =       (1 << 6), // Enables vertex colours
     MATERIAL_DECAL =        (1 << 7), // Enables surface decal projection.
     MATERIAL_INTER =        (1 << 8), // Enables interpenetrating surfaces.
-    MATERIAL_INVISIBLE =    (1 << 9), // Don't render.
-    MATERIAL_INTANGIBLE =   (1 << 10), // Don't collide with anything.
-    MATERIAL_CAM_ONLY =     (1 << 11), // Only collide with the camera.
-    MATERIAL_NO_CAM =       (1 << 12), // Don't collide with the camera.
+    MATERIAL_BACKFACE =     (1 << 9), // Enables backfaces
+    MATERIAL_INVISIBLE =    (1 << 10), // Don't render.
+    MATERIAL_INTANGIBLE =   (1 << 11), // Don't collide with anything.
+    MATERIAL_CAM_ONLY =     (1 << 12), // Only collide with the camera.
+    MATERIAL_NO_CAM =       (1 << 13), // Don't collide with the camera.
 };
 
 enum TextureFlags {
@@ -39,6 +40,7 @@ typedef struct RenderSettings {
     unsigned vertexColour : 1;
     unsigned decal : 1;
     unsigned inter : 1;
+    unsigned backface : 1;
 } RenderSettings;
 
 typedef struct MaterialList {

@@ -19,6 +19,36 @@ float lerpf(float current, float target, float factor) {
     return current + ((target - current) * factor);
 }
 
+int approach(int current, int target, int inc) {
+    if (current < target) {
+        current += inc;
+        if (current > target) {
+            current = target;
+        }
+    } else {
+        current -= inc;
+        if (current < target) {
+            current = target;
+        }
+    }
+    return current;
+}
+
+float approachf(float current, float target, float inc) {
+    if (current < target) {
+        current += inc;
+        if (current > target) {
+            current = target;
+        }
+    } else {
+        current -= inc;
+        if (current < target) {
+            current = target;
+        }
+    }
+    return current;
+}
+
 /**
  * Normalise a set timer to play nice with both PAL and NTSC.
  * PAL timers will be 20% lower.

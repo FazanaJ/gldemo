@@ -69,8 +69,8 @@ void setup_fog(light_t light) {
         gEnvironment->skyColourTop[2] = 1.0f;
     }
     gEnvironment->flags = ENV_FOG;
-    gEnvironment->fogNear = 60.0f;
-    gEnvironment->fogFar = 140.0f;
+    gEnvironment->fogNear = 200.0f;
+    gEnvironment->fogFar = 500.0f;
     glFogf(GL_FOG_START, gEnvironment->fogNear);
     glFogf(GL_FOG_END, gEnvironment->fogFar);
     glFogfv(GL_FOG_COLOR, gEnvironment->fogColour);
