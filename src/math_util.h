@@ -1,7 +1,5 @@
 #pragma once
 
-#include <math.h>
-
 extern float gSineTable[];
 
 #define gCosineTable (gSineTable + 0x400)

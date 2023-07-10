@@ -1,10 +1,6 @@
 #pragma once
 
-#include <libdragon.h>
-#include <math.h>
-
-#include "math.h"
-#include "time.h"
+#include "object_data.h"
 
 enum ObjectFlags {
 	OBJ_FLAG_NONE,
@@ -36,25 +32,17 @@ typedef struct ObjectModel {
 } ObjectModel;
 
 typedef struct ObjectGraphics {
+	ObjectModel model;
 	char envColour[3];
 	char primColour[3];
 	char opacity;
 } ObjectGraphics;
 
-typedef struct PlayerData {
-	short health;
-	short healthBase;
-	short healthMax;
-} PlayerData;
-
-typedef struct ProjectileData {
-	short life;
-} ProjectileData;
-
 typedef struct Object {
 	ObjectGraphics *gfx;
 	void (*loopFunc)(struct Object *obj, int updateRate, float updateRateF);
 	struct ObjectList *entry;
+	struct Object *parent;
 	float cameraDist;
 	float viewDist;
 	float pos[3];

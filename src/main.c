@@ -7,7 +7,6 @@
 #include "camera.h"
 #include "render.h"
 #include "assets.h"
-#include "plane.h"
 #include "input.h"
 #include "math_util.h"
 #include "debug.h"
@@ -41,18 +40,20 @@ static const resolution_t sVideoModes[] = {
 };
 
 Material gTempMaterials[] = {
-    {NULL, 0, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_LIGHTING},
+    {NULL, 0, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_VTXCOL},
     {NULL, -1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_LIGHTING | MATERIAL_VTXCOL},
-    {NULL, 1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_XLU | MATERIAL_LIGHTING},
-    {NULL, 2, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_LIGHTING | MATERIAL_VTXCOL},
-    {NULL, 1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_LIGHTING | MATERIAL_VTXCOL},
+    {NULL, 1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_XLU},
+    {NULL, 2, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_VTXCOL},
+    {NULL, 1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_VTXCOL},
     {NULL, 3, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_XLU | MATERIAL_VTXCOL},
+    {NULL, 4, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_VTXCOL},
 };
 
 Config gConfig;
 
 
 static model64_t *gPlayerModel;
+static model64_t *gWorldModel;
 
 light_t light = {
     
@@ -77,13 +78,12 @@ void init_renderer(void) {
     setup_fog(light);
     init_materials();
     gPlayerModel = model64_load("rom:/humanoid.model64");
+    gWorldModel = model64_load("rom:/testarea.model64");
 }
 
 void setup(void) {
 
     init_renderer();
-    setup_plane();
-    make_plane_mesh();
 
     gPlayer = spawn_object_pos(OBJ_PLAYER, 0.0f, 0.0f, 0.0f);
     spawn_clutter(CLUTTER_BUSH, 4, 8, 0, 0, 0, 0);
@@ -140,7 +140,8 @@ void apply_render_settings(void) {
 
 rspq_block_t *sPlayerBlock;
 rspq_block_t *sBushBlock;
-rspq_block_t *sPlaneBlock;
+rspq_block_t *sPlaneBlockFloor;
+rspq_block_t *sPlaneBlockWall;
 rspq_block_t *sShadowBlock;
 
 
@@ -182,19 +183,30 @@ void render_game(void) {
     apply_render_settings();
     set_light(lightNeutral);
 
-    set_material(&gTempMaterials[0], MATERIAL_NULL);
-    if (sPlaneBlock == NULL) {
+    glPushMatrix();
+	glScalef(50.0f, 50.0f, 50.0f);
+    mesh_t *worldFloor = model64_get_mesh(gWorldModel, 1);
+    mesh_t *worldWall = model64_get_mesh(gWorldModel, 0);
+    if (sPlaneBlockFloor == NULL) {
         rspq_block_begin();
-        render_plane();
-        sPlaneBlock = rspq_block_end();
+        model64_draw_mesh(worldFloor);
+        sPlaneBlockFloor = rspq_block_end();
     }
-    rspq_block_run(sPlaneBlock);
+    if (sPlaneBlockWall == NULL) {
+        rspq_block_begin();
+        model64_draw_mesh(worldWall);
+        sPlaneBlockWall = rspq_block_end();
+    }
+    set_material(&gTempMaterials[0], MATERIAL_NULL);
+    rspq_block_run(sPlaneBlockFloor);
+    set_material(&gTempMaterials[6], MATERIAL_NULL);
+    rspq_block_run(sPlaneBlockWall);
+    glPopMatrix();
 
     render_shadow(gPlayer->pos);
 
     ClutterList *list = gClutterListHead;
     Clutter *obj;
-    
     while (list) {
         obj = list->clutter;
         if (obj->objectID == CLUTTER_BUSH/* && !(obj->flags & OBJ_FLAG_INVISIBLE)*/) {
@@ -223,7 +235,6 @@ void render_game(void) {
     glRotatef(SHORT_TO_DEGREES(gPlayer->faceAngle[2]), 0, 0, 1);
 	glScalef(0.18f, 0.25f, 0.25f);
     set_material(&gTempMaterials[1], MATERIAL_NULL);
-    rdpq_set_mode_standard();
     if (sPlayerBlock == NULL) {
         rspq_block_begin();
         model64_draw(gPlayerModel);

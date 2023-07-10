@@ -1,7 +1,5 @@
 #pragma once
 
-#include <libdragon.h>
-#include <debug.h>
 #include "../include/global.h"
 
 #define TIME_ITERATIONS 30

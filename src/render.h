@@ -1,8 +1,6 @@
 #pragma once
 
-#include <libdragon.h>
 #include <GL/gl.h>
-#include <GL/glu.h>
 #include <GL/gl_integration.h>
 
 enum EnvironmentFlags {

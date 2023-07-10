@@ -16,6 +16,7 @@ const TextureInfo sTextureIDs[] = {
     {"rom:/health.i8.sprite", TEX_CLAMP_H | TEX_CLAMP_V, 0},
     {"rom:/plant1.ia8.sprite", TEX_CLAMP_H | TEX_CLAMP_V, 0},
     {"rom:/shadow.i4.sprite", TEX_CLAMP_H | TEX_CLAMP_V | TEX_MIRROR_H | TEX_MIRROR_V, 0},
+    {"rom:/stone.ci4.sprite", TEX_NULL, 0},
 };
 
 RenderSettings sRenderSettings;
