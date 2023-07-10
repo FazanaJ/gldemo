@@ -47,6 +47,7 @@ Material gTempMaterials[] = {
     {NULL, 1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_VTXCOL},
     {NULL, 3, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_XLU | MATERIAL_VTXCOL},
     {NULL, 4, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_VTXCOL},
+    {NULL, 5, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_VTXCOL | MATERIAL_XLU},
 };
 
 Config gConfig;
@@ -141,6 +142,7 @@ void apply_render_settings(void) {
 rspq_block_t *sPlayerBlock;
 rspq_block_t *sBushBlock;
 rspq_block_t *sPlaneBlockFloor;
+rspq_block_t *sPlaneBlockWater;
 rspq_block_t *sPlaneBlockWall;
 rspq_block_t *sShadowBlock;
 
@@ -184,9 +186,9 @@ void render_game(void) {
     set_light(lightNeutral);
 
     glPushMatrix();
-	glScalef(50.0f, 50.0f, 50.0f);
     mesh_t *worldFloor = model64_get_mesh(gWorldModel, 1);
     mesh_t *worldWall = model64_get_mesh(gWorldModel, 0);
+    mesh_t *worldWater = model64_get_mesh(gWorldModel, 2);
     if (sPlaneBlockFloor == NULL) {
         rspq_block_begin();
         model64_draw_mesh(worldFloor);
@@ -197,10 +199,17 @@ void render_game(void) {
         model64_draw_mesh(worldWall);
         sPlaneBlockWall = rspq_block_end();
     }
+    if (sPlaneBlockWater == NULL) {
+        rspq_block_begin();
+        model64_draw_mesh(worldWater);
+        sPlaneBlockWater = rspq_block_end();
+    }
     set_material(&gTempMaterials[0], MATERIAL_NULL);
     rspq_block_run(sPlaneBlockFloor);
     set_material(&gTempMaterials[6], MATERIAL_NULL);
     rspq_block_run(sPlaneBlockWall);
+    set_material(&gTempMaterials[7], MATERIAL_INTER);
+    rspq_block_run(sPlaneBlockWater);
     glPopMatrix();
 
     render_shadow(gPlayer->pos);
@@ -443,11 +452,6 @@ int main(void) {
         cycle_textures(updateRate);
         rdpq_detach_wait();
         display_show(gFrameBuffers);
-
-        rdpq_font_begin(RGBA32(255, 0, 0, 255));
-        rdpq_font_position(16, 160);
-        rdpq_font_printf(gCurrentFont, "%X", gCamera->target);
-        rdpq_font_end();
 
         gGlobalTimer++;
         gGameTimer += updateRate;

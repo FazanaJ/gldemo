@@ -13,6 +13,7 @@ enum MaterialFlags {
     MATERIAL_DEPTH_WRITE =  (1 << 5),
     MATERIAL_VTXCOL =       (1 << 6),
     MATERIAL_DECAL =        (1 << 7),
+    MATERIAL_INTER =        (1 << 8),
 };
 
 enum TextureFlags {
@@ -33,6 +34,7 @@ typedef struct RenderSettings {
     unsigned texture : 1;
     unsigned vertexColour : 1;
     unsigned decal : 1;
+    unsigned inter : 1;
 } RenderSettings;
 
 typedef struct MaterialList {

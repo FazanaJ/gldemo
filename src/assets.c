@@ -17,6 +17,7 @@ const TextureInfo sTextureIDs[] = {
     {"rom:/plant1.ia8.sprite", TEX_CLAMP_H | TEX_CLAMP_V, 0},
     {"rom:/shadow.i4.sprite", TEX_CLAMP_H | TEX_CLAMP_V | TEX_MIRROR_H | TEX_MIRROR_V, 0},
     {"rom:/stone.ci4.sprite", TEX_NULL, 0},
+    {"rom:/water.ci8.sprite", TEX_NULL, 0},
 };
 
 RenderSettings sRenderSettings;
@@ -259,9 +260,15 @@ void set_render_settings(int flags) {
             glDepthFunc(GL_EQUAL);
             sRenderSettings.decal = true;
         }
+    } else if (flags & MATERIAL_INTER) {
+        if (!sRenderSettings.inter) {
+            glDepthFunc(GL_LESS_INTERPENETRATING_N64);
+            sRenderSettings.inter = true;
+        }
     } else {
-        if (sRenderSettings.decal) {
+        if (sRenderSettings.inter || sRenderSettings.decal) {
             glDepthFunc(GL_LESS);
+            sRenderSettings.inter = false;
             sRenderSettings.decal = false;
         }
     }
