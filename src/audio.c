@@ -12,8 +12,17 @@ static wav64_t sSoundTable[SOUND_TOTAL];
 
 static char sSoundChannelNum = 0;
 static char sSoundPrioTable[32];
+static short sNextSequenceID = -1;
+static short sCurrentSequenceID = -1;
+static short sSequenceFadeTimerSet;
+static short sSequenceFadeTimer;
+static xm64player_t sXMPlayer;
 
 #define CHANNEL_MAX_NUM 32
+
+static const char *sSequenceNames[] = {
+    "rom:/ToysXM-8bit.xm64",
+};
 
 void set_sound_channel_count(int channelCount) {
     mixer_close();
@@ -23,15 +32,35 @@ void set_sound_channel_count(int channelCount) {
 
 void init_audio(void) {
     audio_init(AUDIO_FREQUENCY, MIXER_BUFFER_SIZE);
-    mixer_init(16);
-    sSoundChannelNum = 16;
+    mixer_init(24);
+    sSoundChannelNum = 24;
     bzero(&sSoundPrioTable, sizeof(sSoundPrioTable));
     wav64_open(&sSoundTable[SOUND_LASER], "rom:/laser.wav64");
     wav64_open(&sSoundTable[SOUND_CANNON], "rom:/cannon.wav64");
+    set_background_music(0, 0);
+}
+
+void update_sequence(int updateRate) {
+    if (sNextSequenceID != sCurrentSequenceID) {
+        sSequenceFadeTimer -= updateRate;
+        if (sSequenceFadeTimer < 0) {
+            sSequenceFadeTimer = 0;
+            xm64player_open(&sXMPlayer, sSequenceNames[sNextSequenceID]);
+            xm64player_play(&sXMPlayer, 8);
+            sCurrentSequenceID = sNextSequenceID;
+        } else {
+            float fade;
+            fade = (float) sSequenceFadeTimer / (float) sSequenceFadeTimerSet;
+            for (int i = 0; i < 8; i++) {
+                mixer_ch_set_vol(16 + i, fade, fade);
+            }
+        }
+    }
 }
 
 void audio_loop(int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
+    update_sequence(updateRate);
     if (audio_can_write()) {    	
 		short *buf = audio_write_begin();
 		mixer_poll(buf, audio_get_buffer_length());
@@ -75,7 +104,7 @@ void play_sound_global(int soundID) {
 int get_sound_pan(int channel, float pos[3]) {
     float volume = 1.0f;
     float pan;
-    float dist = SQR(10.0f);
+    float dist = SQR(100.0f);
     volume = 1.0f - (DIST3(pos, gCamera->pos) / dist);
     if (gConfig.soundMode == SOUND_MONO) {
         pan = 0.5f;
@@ -118,4 +147,10 @@ void play_sound_spatial(int soundID, float pos[3]) {
     }
     mixer_ch_set_freq(channel, AUDIO_FREQUENCY * 2);
     wav64_play(&sSoundTable[soundID], channel);
+}
+
+void set_background_music(int seqID, int fadeTime) {
+    sNextSequenceID = seqID;
+    sSequenceFadeTimerSet = fadeTime;
+    sSequenceFadeTimer = fadeTime;
 }

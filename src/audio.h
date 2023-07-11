@@ -24,3 +24,4 @@ void audio_loop(int updateRate, float updateRateF);
 void set_sound_channel_count(int channelCount);
 void play_sound_global(int soundID);
 void play_sound_spatial(int soundID, float pos[3]);
+void set_background_music(int seqID, int fadeTime);

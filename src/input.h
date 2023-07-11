@@ -18,7 +18,10 @@ enum InputButtons {
     INPUT_DRIGHT,
     INPUT_DDOWN,
 
-    INPUT_TOTAL
+    INPUT_TOTAL,
+
+    INPUT_X = INPUT_CUP,
+    INPUT_Y,
 };
 
 enum InputType {

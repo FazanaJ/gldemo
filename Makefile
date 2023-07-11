@@ -8,14 +8,17 @@ assets_ttf = $(wildcard assets/fonts/*.ttf)
 assets_png = $(wildcard assets/textures/*.png)
 assets_wav = $(wildcard assets/sounds/*.wav)
 assets_gltf = $(wildcard assets/models/*.glb)
+assets_xm1 = $(wildcard assets/xm/*.xm)
 
 assets_conv = $(addprefix filesystem/,$(notdir $(assets_ttf:%.ttf=%.font64))) \
               $(addprefix filesystem/,$(notdir $(assets_png:%.png=%.sprite))) \
               $(addprefix filesystem/,$(notdir $(assets_wav:%.wav=%.wav64))) \
+			  $(addprefix filesystem/,$(notdir $(assets_xm1:%.xm=%.xm64))) \
               $(addprefix filesystem/,$(notdir $(assets_gltf:%.glb=%.model64)))
 
 MKSPRITE_FLAGS ?=
 MKFONT_FLAGS ?=
+AUDIOCONV_FLAGS ?=
 
 all: gldemo.z64
 
@@ -33,6 +36,11 @@ filesystem/%.wav64: assets/sounds/%.wav
 	@mkdir -p $(dir $@)
 	@echo "    [AUDIO] $@"
 	@$(N64_AUDIOCONV) -o filesystem $<
+
+filesystem/%.xm64: assets/xm/%.xm
+	@mkdir -p $(dir $@)
+	@echo "    [AUDIO] $@"
+	@$(N64_AUDIOCONV) $(AUDIOCONV_FLAGS) -o filesystem "$<"
 
 filesystem/%.model64: assets/models/%.glb
 	@mkdir -p $(dir $@)
