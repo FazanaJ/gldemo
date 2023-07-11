@@ -116,40 +116,47 @@ void update_inputs(int updateRate) {
     // Take the deadzone away from the stick reading. This eliminates the sudden increase in the curve.
     // Cap the reading at 75, which is around three quarters of the way, then normalise the stick mag from 0-1.
     // The end result is a smooth increase from neutral to furthest, with plenty of leeway for degraded sticks.
-    controller->stickX = pad.c[p].x;
-    if (fabs(controller->stickX) < DEADZONE) {
-        controller->stickX = 0;
+    controller->stickX[0] = pad.c[p].x;
+    if (fabs(controller->stickX[0]) < DEADZONE) {
+        controller->stickX[0] = 0;
     } else {
-        if (controller->stickX > 0) {
-            controller->stickX -= DEADZONE;
-            if (controller->stickX > 75) {
-                controller->stickX = 75;
+        if (controller->stickX[0] > 0) {
+            controller->stickX[0] -= DEADZONE;
+            if (controller->stickX[0] > 75) {
+                controller->stickX[0] = 75;
             }
         } else {
-            controller->stickX += DEADZONE;
-            if (controller->stickX < -75) {
-                controller->stickX = -75;
+            controller->stickX[0] += DEADZONE;
+            if (controller->stickX[0] < -75) {
+                controller->stickX[0] = -75;
             }
         }
     }
-    controller->stickY = pad.c[p].y;
-    if (fabs(controller->stickY) < DEADZONE) {
-        controller->stickY = 0;
+    controller->stickY[0] = pad.c[p].y;
+    if (fabs(controller->stickY[0]) < DEADZONE) {
+        controller->stickY[0] = 0;
     } else {
-        if (controller->stickY > 0) {
-            controller->stickY -= DEADZONE;
-            if (controller->stickY > 75) {
-                controller->stickY = 75;
+        if (controller->stickY[0] > 0) {
+            controller->stickY[0] -= DEADZONE;
+            if (controller->stickY[0] > 75) {
+                controller->stickY[0] = 75;
             }
         } else {
-            controller->stickY += DEADZONE;
-            if (controller->stickY < -75) {
-                controller->stickY = -75;
+            controller->stickY[0] += DEADZONE;
+            if (controller->stickY[0] < -75) {
+                controller->stickY[0] = -75;
             }
         }
     }
-    controller->stickMag = fabs(sqrtf((controller->stickX * controller->stickX) + (controller->stickY * controller->stickY))) / 75.0f;
-    controller->stickAngle = atan2s(-controller->stickY, controller->stickX);
+    controller->type = CONTROLLER_N64;
+    controller->stickMag[0] = fabs(sqrtf((controller->stickX[0] * controller->stickX[0]) + (controller->stickY[0] * controller->stickY[0]))) / 75.0f;
+    controller->stickAngle[0] = atan2s(-controller->stickY[0], controller->stickX[0]);
+
+    //Temp
+    controller->stickMag[1] = controller->stickMag[0];
+    controller->stickAngle[1] = controller->stickAngle[0];
+    controller->stickX[1] = controller->stickX[0];
+    controller->stickY[1] = controller->stickY[0];
     get_time_snapshot(PP_INPUT, DEBUG_SNAPSHOT_1_END);
 }
 
@@ -165,20 +172,24 @@ int get_input_released(int input, int numFrames) {
     return sInputData.button[INPUT_RELEASED][input] <= numFrames;
 }
 
-int get_stick_x(void) {
-    return sInputData.stickX;
+int get_stick_x(int type) {
+    return sInputData.stickX[type];
 }
 
-int get_stick_y(void) {
-    return sInputData.stickY;
+int get_stick_y(int type) {
+    return sInputData.stickY[type];
 }
 
-short get_stick_angle(void) {
-    return sInputData.stickAngle;
+short get_stick_angle(int type) {
+    return sInputData.stickAngle[type];
 }
 
-float get_stick_mag(void) {
-    return sInputData.stickMag;
+float get_stick_mag(int type) {
+    return sInputData.stickMag[type];
+}
+
+int get_controller_type(void) {
+    return sInputData.type;
 }
 
 void rumble_set(int timer) {

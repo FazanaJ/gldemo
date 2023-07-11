@@ -469,10 +469,10 @@ int main(void) {
                 add_subtitle("AA off.", 120, 0xFF0000FF);
                 break;
             case 0:
-                add_subtitle("AA fast.", 120, 0xFF0000FF);
+                add_subtitle("AA fast. That's reduced aliasing to you.", 120, 0xFF0000FF);
                 break;
             case 1:
-                add_subtitle("AA fancy.", 120, 0xFF0000FF);
+                add_subtitle("AA fancy. That means it's gonna look really nice.", 120, 0xFF0000FF);
                 break;
             }
         }

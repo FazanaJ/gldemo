@@ -27,13 +27,24 @@ enum InputType {
     INPUT_HELD
 };
 
+enum ControllerType {
+    CONTROLLER_N64,
+    CONTROLLER_GAMECUBE
+};
+
+enum StickType {
+    STICK_LEFT,
+    STICK_RIGHT
+};
+
 typedef struct Input {
-    float stickMag;
+    float stickMag[2];
     unsigned char button[3][INPUT_TOTAL];
-    char stickX;
-    char stickY;
+    char stickX[2];
+    char stickY[2];
     char pak;
-    short stickAngle;
+    char type;
+    short stickAngle[2];
 } Input;
 
 extern int gCurrentController;
@@ -44,9 +55,10 @@ void update_inputs(int updateRate);
 int get_input_pressed(int input, int numFrames);
 int get_input_held(int input);
 int get_input_released(int input, int numFrames);
-int get_stick_x(void);
-int get_stick_y(void);
-short get_stick_angle(void);
-float get_stick_mag(void);
+int get_stick_x(int type);
+int get_stick_y(int type);
+short get_stick_angle(int type);
+float get_stick_mag(int type);
 void rumble_set(int timer);
 void clear_input(int input);
+int get_controller_type(void);

@@ -17,6 +17,8 @@ typedef struct SubtitleData {
     unsigned char colour[4];
 } SubtitleData;
 
+int rdpq_font_width(rdpq_font_t *fnt, const char *text, int nch);
+
 static SubtitleData sSubtitleStruct[4];
 char gNumSubtitles = 0;
 short sSubtitlePrintY[sizeof(sSubtitleStruct) / sizeof(SubtitleData)];
@@ -29,12 +31,15 @@ void render_hud_subtitles(void) {
     int printY = 0;
     int topY = 0;
     int opacity = 0;
+    int curTextWidth[4];
 
     for (int i = 0; i < sizeof(sSubtitleStruct) / sizeof(SubtitleData); i++)
     {
-        if (sSubtitleStruct[i].colour[3] == 0)
+        if (sSubtitleStruct[i].colour[3] == 0) {
             continue;
-        textWidth = 100;//MAX(textWidth, get_text_width(&gfx, sSubtitleStruct[i].text, 0));
+        }
+        curTextWidth[i] = rdpq_font_width(gCurrentFont, sSubtitleStruct[i].text, strlen(sSubtitleStruct[i].text));
+        textWidth = MAX(textWidth, curTextWidth[i]);
         textHeights[i] = 12;//get_text_height(&gfx, sSubtitleStruct[i].text);
         sSubtitlePrintYTarget[i] = display_get_height()-36-printY-textHeights[i];
         topY = sSubtitlePrintY[i];
@@ -59,10 +64,9 @@ void render_hud_subtitles(void) {
             continue;
         }
         rdpq_font_begin(RGBA32(sSubtitleStruct[i].colour[0], sSubtitleStruct[i].colour[1], sSubtitleStruct[i].colour[2], sSubtitleStruct[i].colour[3]));
-        rdpq_font_position((display_get_width() / 2) - 40, sSubtitlePrintY[i] + 10);
+        rdpq_font_position((display_get_width() / 2) - (curTextWidth[i] / 2), sSubtitlePrintY[i] + 10);
         rdpq_font_print(gCurrentFont, sSubtitleStruct[i].text);
         rdpq_font_end();
-        rdpq_set_prim_color(RGBA32(0, 0, 0, opacity));
     }
     glDisable(GL_SCISSOR_TEST);
 }

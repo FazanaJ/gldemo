@@ -30,8 +30,8 @@ void camera_loop(int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
     Camera *c = gCamera;
     float zoom;
-    float stickX = get_stick_x();
-    float stickY = get_stick_y();
+    float stickX = get_stick_x(STICK_LEFT);
+    float stickY = get_stick_y(STICK_LEFT);
     short pitch;
     float pan;
 
@@ -44,16 +44,26 @@ void camera_loop(int updateRate, float updateRateF) {
         c->targetZoom = lerp(c->targetZoom, 0, 0.05f * updateRateF);
     }
 
-    if (get_input_held(INPUT_L)) {
-        float intendedPitch = stickY * 100.0f;
-        c->yawTarget -= (float) (stickX * ((8.0f * updateRateF)));
-        c->pan = lerp(c->pan, 0.0f, 0.025f * updateRateF);
-        c->zoomAdd = lerp(c->zoomAdd, 0, 0.05f * updateRateF);
-        c->lookPitch = lerp(c->lookPitch, intendedPitch, 0.1f * updateRateF);
+    if (get_controller_type() == CONTROLLER_N64) {
+        if (get_input_held(INPUT_L)) {
+            float intendedPitch = stickY * 100.0f;
+            c->yawTarget -= (float) (stickX * ((8.0f * updateRateF)));
+            c->pan = lerp(c->pan, 0.0f, 0.025f * updateRateF);
+            c->zoomAdd = lerp(c->zoomAdd, 0, 0.05f * updateRateF);
+            c->lookPitch = lerp(c->lookPitch, intendedPitch, 0.1f * updateRateF);
+        } else {
+            c->pan = lerp(c->pan, -stickX, 0.025f * updateRateF);
+            c->zoomAdd = lerp(c->zoomAdd, stickY, 0.05f * updateRateF);
+            c->lookPitch = lerp(c->lookPitch, 0.0f, 0.1f * updateRateF);
+        }
     } else {
+        float stickRX = get_stick_x(STICK_RIGHT);
+        float stickRY = get_stick_y(STICK_RIGHT);
+        float intendedPitch = stickRY * 100.0f;
+        c->yawTarget -= (float) (stickRX * ((8.0f * updateRateF)));
         c->pan = lerp(c->pan, -stickX, 0.025f * updateRateF);
         c->zoomAdd = lerp(c->zoomAdd, stickY, 0.05f * updateRateF);
-        c->lookPitch = lerp(c->lookPitch, 0.0f, 0.1f * updateRateF);
+        c->lookPitch = lerp(c->lookPitch, intendedPitch, 0.1f * updateRateF);
     }
 
     c->yaw = lerp_short(c->yaw, c->yawTarget, 0.25f * updateRateF);

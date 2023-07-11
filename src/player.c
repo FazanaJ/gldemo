@@ -25,8 +25,8 @@ void player_init(Object *obj) {
 void player_loop(Object *obj, int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
     Camera *c = gCamera;
-	float stickX = get_stick_x();
-    float intendedMag = get_stick_mag();
+	float stickX = get_stick_x(STICK_LEFT);
+    float intendedMag = get_stick_mag(STICK_LEFT);
     int moveTicks = timer_int(60);
     if (gCurrentController == -1) {
         get_time_snapshot(PP_PLAYER, DEBUG_SNAPSHOT_1_END);
@@ -53,7 +53,7 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
     }
 
     if (intendedMag > 0.01f && get_input_held(INPUT_L) == false) {
-        short intendedYaw = get_stick_angle();
+        short intendedYaw = get_stick_angle(STICK_LEFT);
         float moveLerp;
         INCREASE_VAR(c->moveTimer, updateRate, moveTicks);
         moveLerp = 1.0f - (((float) (moveTicks - c->moveTimer)) / (float) moveTicks);
