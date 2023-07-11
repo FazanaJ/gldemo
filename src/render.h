@@ -30,11 +30,13 @@ typedef struct Environment {
 
 extern Environment *gEnvironment;
 
+void init_renderer(void);
 void setup_light(light_t light);
 void set_light(light_t light);
 void setup_fog(light_t light);
 void project_camera(void);
 void render_sky(void);
 void render_end();
+void render_game(int updateRate, float updateRateF);
 
 void render_bush(void);

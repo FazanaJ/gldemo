@@ -20,10 +20,6 @@ surface_t *gFrameBuffers;
 rdpq_font_t *gCurrentFont;
 unsigned int gGlobalTimer;
 unsigned int gGameTimer;
-char gZTargetTimer = 0;
-char gZTargetOut = 0;
-
-GLenum shade_model = GL_SMOOTH;
 
 const char *gFontAssetTable[] = {
     "rom:/arial.font64"
@@ -39,48 +35,7 @@ static const resolution_t sVideoModes[] = {
     RESOLUTION_408x224
 };
 
-Material gTempMaterials[] = {
-    {NULL, 0, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_VTXCOL},
-    {NULL, -1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_LIGHTING | MATERIAL_VTXCOL},
-    {NULL, 1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_XLU},
-    {NULL, 2, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_VTXCOL},
-    {NULL, 1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_VTXCOL},
-    {NULL, 3, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_XLU | MATERIAL_VTXCOL},
-    {NULL, 4, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_VTXCOL},
-    {NULL, 5, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_VTXCOL | MATERIAL_XLU},
-};
-
 Config gConfig;
-
-
-static model64_t *gPlayerModel;
-static model64_t *gWorldModel;
-
-light_t light = {
-    
-    color: { 0.51f, 0.81f, 0.665f, 0.5f},
-    diffuse: {1.0f, 1.0f, 1.0f, 1.0f},
-    direction: {0.0f, -60.0f, 0.0f},
-    position: {1.0f, 0.0f, 0.0f, 0.0f},
-    radius: 10.0f,
-};
-
-light_t lightNeutral = {
-    
-    color: { 0.66f, 0.66f, 0.66f, 0.66f},
-    diffuse: {1.0f, 1.0f, 1.0f, 1.0f},
-    direction: {0.0f, -60.0f, 0.0f},
-    position: {1.0f, 0.0f, 0.0f, 0.0f},
-    radius: 10.0f,
-};
-
-void init_renderer(void) {
-    setup_light(lightNeutral);
-    setup_fog(light);
-    init_materials();
-    gPlayerModel = model64_load("rom:/humanoid.model64");
-    gWorldModel = model64_load("rom:/testarea.model64");
-}
 
 void setup(void) {
 
@@ -99,252 +54,6 @@ void setup(void) {
     spawn_object_pos(OBJ_NPC, 50.0f, 0.0f, 0.0f);
 
     camera_init();
-}
-
-void apply_anti_aliasing(int mode) {
-    switch (gConfig.antiAliasing) {
-    case AA_OFF:
-        glDisable(GL_MULTISAMPLE_ARB);
-        rdpq_mode_antialias(AA_NONE);
-        break;
-    case AA_FAST:
-        if (mode == AA_ACTOR) {
-            goto mrFancyPants;
-        }
-        glEnable(GL_MULTISAMPLE_ARB);
-        glHint(GL_MULTISAMPLE_HINT_N64, GL_FASTEST);
-        rdpq_mode_antialias(AA_REDUCED);
-        break;
-    case AA_FANCY:
-        mrFancyPants:
-        glEnable(GL_MULTISAMPLE_ARB);
-        glHint(GL_MULTISAMPLE_HINT_N64, GL_NICEST);
-        rdpq_mode_antialias(AA_STANDARD);
-        break;
-    }
-}
-
-void apply_render_settings(void) {
-    glAlphaFunc(GL_GREATER, 0.5f);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDepthFunc(GL_LESS);
-    glDisable(GL_ALPHA_TEST);
-    glDisable(GL_BLEND);
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    if (gConfig.dedither) {
-        *(volatile uint32_t*)0xA4400000 |= 0x10000;
-    } else {
-        *(volatile uint32_t*)0xA4400000 &= ~0x10000;
-    }
-}
-
-
-
-rspq_block_t *sPlayerBlock;
-rspq_block_t *sBushBlock;
-rspq_block_t *sPlaneBlockFloor;
-rspq_block_t *sPlaneBlockWater;
-rspq_block_t *sPlaneBlockWall;
-rspq_block_t *sShadowBlock;
-rspq_block_t *sDecal1Block;
-rspq_block_t *sDecal2Block;
-
-
-void render_shadow(float pos[3]) {
-    set_material(&gTempMaterials[5], MATERIAL_DECAL);
-    glPushMatrix();
-    glTranslatef(pos[0], pos[1], pos[2]);
-    if (sShadowBlock == NULL) {
-        rspq_block_begin();
-        glScalef(0.66f, 0.66f, 0.66f);
-        glBegin(GL_QUADS);
-        glColor3f(0, 0, 0);
-        glTexCoord2f(0, 0);
-        glVertex3i(-5.0f, 5.0f, 0);
-        glTexCoord2f(0, 2.048f);
-        glVertex3i(-5.0f, -5.0f, 0);
-        glTexCoord2f(2.048f, 2.048f);
-        glVertex3i(5.0f, -5.0f, 0);
-        glTexCoord2f(2.048f, 0);
-        glVertex3i(5.0f, 5.0f, 0);
-        glEnd();
-        sShadowBlock = rspq_block_end();
-    }
-    rspq_block_run(sShadowBlock);
-    glPopMatrix();
-}
-
-void render_game(int updateRate, float updateRateF) {
-    DEBUG_SNAPSHOT_1();
-    rdpq_attach(gFrameBuffers, &gZBuffer);
-    glShadeModel(shade_model);
-    gl_context_begin();
-    glEnable(GL_SCISSOR_TEST);
-    glScissor(0, gZTargetOut, display_get_width(), display_get_height() - (gZTargetOut * 2));
-    glClear(GL_DEPTH_BUFFER_BIT);
-    render_sky();
-    apply_anti_aliasing(AA_GEO);
-    project_camera();
-    apply_render_settings();
-    set_light(lightNeutral);
-
-    glPushMatrix();
-	glScalef(5.0f, 5.0f, 5.0f);
-    if (sPlaneBlockFloor == NULL) {
-        mesh_t *worldFloor = model64_get_mesh(gWorldModel, 1);
-        rspq_block_begin();
-        model64_draw_mesh(worldFloor);
-        sPlaneBlockFloor = rspq_block_end();
-    }
-    if (sPlaneBlockWall == NULL) {
-        mesh_t *worldWall = model64_get_mesh(gWorldModel, 0);
-        rspq_block_begin();
-        model64_draw_mesh(worldWall);
-        sPlaneBlockWall = rspq_block_end();
-    }
-    if (sPlaneBlockWater == NULL) {
-        mesh_t *worldWater = model64_get_mesh(gWorldModel, 2);
-        rspq_block_begin();
-        model64_draw_mesh(worldWater);
-        sPlaneBlockWater = rspq_block_end();
-    }
-    set_material(&gTempMaterials[0], MATERIAL_NULL);
-    rspq_block_run(sPlaneBlockFloor);
-    set_material(&gTempMaterials[6], MATERIAL_NULL);
-    rspq_block_run(sPlaneBlockWall);
-    set_material(&gTempMaterials[7], MATERIAL_INTER);
-    rspq_block_run(sPlaneBlockWater);
-    glPopMatrix();
-
-    render_shadow(gPlayer->pos);
-
-    ClutterList *list = gClutterListHead;
-    Clutter *obj;
-    while (list) {
-        obj = list->clutter;
-        if (obj->objectID == CLUTTER_BUSH/* && !(obj->flags & OBJ_FLAG_INVISIBLE)*/) {
-            glPushMatrix();
-            
-            set_material(&gTempMaterials[3], MATERIAL_NULL);
-            glTranslatef(obj->pos[0], obj->pos[1], obj->pos[2]);
-            glRotatef(SHORT_TO_DEGREES(gCamera->yaw), 0, 0, 1);
-            //glScalef(obj->scale[0], obj->scale[1], obj->scale[2]);
-            
-            if (sBushBlock == NULL) {
-                rspq_block_begin();
-                render_bush(); 
-                sBushBlock = rspq_block_end();
-            }
-            rspq_block_run(sBushBlock);
-            glPopMatrix();
-        }
-        list = list->next;
-    }
-    
-    apply_anti_aliasing(AA_ACTOR);
-
-    glPushMatrix();
-	glTranslatef(gPlayer->pos[0], gPlayer->pos[1], gPlayer->pos[2]);
-    glRotatef(SHORT_TO_DEGREES(gPlayer->faceAngle[2]), 0, 0, 1);
-	glScalef(0.9f, 1.25f, 1.25f);
-    set_material(&gTempMaterials[1], MATERIAL_NULL);
-    if (sPlayerBlock == NULL) {
-        rspq_block_begin();
-        model64_draw(gPlayerModel);
-        sPlayerBlock = rspq_block_end();
-    }
-    rspq_block_run(sPlayerBlock);
-    glPopMatrix();
-    
-    ObjectList *list2 = gObjectListHead;
-    Object *obj2;
-    
-    while (list2) {
-        obj2 = list2->obj;
-        if (obj2->objectID == OBJ_PROJECTILE) {
-            glPushMatrix();
-            set_material(&gTempMaterials[2], MATERIAL_NULL);
-            glTranslatef(obj2->pos[0], obj2->pos[1], obj2->pos[2]);
-            glRotatef(SHORT_TO_DEGREES(gCamera->yaw), 0, 0, 1);
-            //glScalef(obj2->scale[0], obj2->scale[1], obj2->scale[2]);
-            render_bush(); 
-            glPopMatrix();
-        } else if (obj2->objectID == OBJ_NPC) {
-            glPushMatrix();
-            set_material(&gTempMaterials[1], MATERIAL_NULL);
-            glTranslatef(obj2->pos[0], obj2->pos[1], obj2->pos[2]);
-            glRotatef(SHORT_TO_DEGREES(obj2->faceAngle[2]), 0, 0, 1);
-	        glScalef(0.9f, 1.25f, 1.25f);
-            rspq_block_run(sPlayerBlock);
-            glPopMatrix();
-        }
-        list2 = list2->next;
-    }
-    
-    if (sDecal1Block == NULL) {
-        rspq_block_begin();
-        glPushMatrix();
-        glTranslatef(25, 25, 0);
-        glBegin(GL_QUADS);
-        glColor3f(1.0f, 0, 1.0f);
-        glTexCoord2f(0, 0);
-        glVertex3i(-5, 5, 0);
-        glTexCoord2f(0, 1.024f);
-        glVertex3i(-5, -5, 0);
-        glTexCoord2f(1.024f, 1.024f);
-        glVertex3i(5, -5, 0);
-        glTexCoord2f(1.024f, 0);
-        glVertex3i(5, 5, 0);
-        glEnd();
-        glPopMatrix();
-        sDecal1Block = rspq_block_end();
-    }
-    if (sDecal2Block == NULL) {
-        rspq_block_begin();
-        glPushMatrix();
-        glTranslatef(25, 35, 0);
-        glBegin(GL_QUADS);
-        glColor3f(1.0f, 0, 1.0f);
-        glTexCoord2f(0, 0);
-        glVertex3i(-5, 5, 0);
-        glTexCoord2f(0, 1.024f);
-        glVertex3i(-5, -5, 0);
-        glTexCoord2f(1.024f, 1.024f);
-        glVertex3i(5, -5, 0);
-        glTexCoord2f(1.024f, 0);
-        glVertex3i(5, 5, 0);
-        glEnd();
-        glPopMatrix();
-        sDecal2Block = rspq_block_end();
-    }
-    set_material(&gTempMaterials[2], MATERIAL_DECAL);
-    rspq_block_run(sDecal1Block);
-    set_material(&gTempMaterials[4], MATERIAL_DECAL);
-    rspq_block_run(sDecal2Block);
-
-    
-    
-
-    get_time_snapshot(PP_RENDER, DEBUG_SNAPSHOT_1_END);
-    DEBUG_SNAPSHOT_1_RESET();
-    
-    render_end();
-    gl_context_end();
-    if (gConfig.regionMode == TV_PAL) {
-        gZTargetOut = gZTargetTimer * (1.5f * 1.2f);
-    } else {
-        gZTargetOut = gZTargetTimer * 1.5f;
-    }
-    if (gZTargetTimer) {
-        rdpq_set_mode_fill(RGBA32(0, 0, 0, 255));
-        rdpq_mode_blender(0);
-        rdpq_fill_rectangle(0, 0, display_get_width(), gZTargetOut);
-        rdpq_fill_rectangle(0, display_get_height() - gZTargetOut, display_get_width(), display_get_height());
-        rdpq_set_mode_standard();
-    }
-    render_hud(updateRate, updateRateF);
-    get_time_snapshot(PP_HUD, DEBUG_SNAPSHOT_1_END);
 }
 
 char sFirstBoot = 0;
@@ -446,6 +155,7 @@ int main(void) {
         DEBUG_SNAPSHOT_1();
 
         update_game_time(&updateRate, &updateRateF);
+        cycle_textures(updateRate);
         update_inputs(updateRate);
         update_game_entities(updateRate, updateRateF);
         camera_loop(updateRate, updateRateF);
@@ -454,10 +164,12 @@ int main(void) {
         render_game(updateRate, updateRateF);
         get_cpu_time(DEBUG_SNAPSHOT_1_END);
         
+        DEBUG_SNAPSHOT_1_RESET();
         process_profiler();
         if (gDebugData && gDebugData->enabled) {
             render_profiler();
         }
+        get_time_snapshot(PP_PROFILER, DEBUG_SNAPSHOT_1_END);
 
         if (get_input_pressed(INPUT_R, 0)) {
             gConfig.antiAliasing++;
@@ -477,7 +189,6 @@ int main(void) {
             }
         }
 
-        cycle_textures(updateRate);
         rdpq_detach_wait();
         display_show(gFrameBuffers);
 

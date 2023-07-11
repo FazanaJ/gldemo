@@ -16,7 +16,8 @@
     "HUD", \
     "Clutter", \
     "Camera", \
-    "Materials"
+    "Materials", \
+    "Profiler"
 
 
 enum ProfileTimers {
@@ -30,6 +31,7 @@ enum ProfileTimers {
     PP_CLUTTER,
     PP_CAMERA,
     PP_MATERIALS,
+    PP_PROFILER,
 
     PP_TOTAL
 };

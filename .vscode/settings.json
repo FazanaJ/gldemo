@@ -18,6 +18,7 @@
         "object.h": "c",
         "assets.h": "c",
         "main.h": "c",
-        "global.h": "c"
+        "global.h": "c",
+        "audio.h": "c"
     }
 }
