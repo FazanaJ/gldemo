@@ -34,9 +34,10 @@ void camera_loop(int updateRate, float updateRateF) {
     float stickY = get_stick_y(STICK_LEFT);
     short pitch;
     float pan;
+    PlayerData *data = (PlayerData *) c->parent->data;
 
     if (get_input_held(INPUT_Z)) {
-        c->yawTarget = c->parent->faceAngle[2] + 0x8000;
+        c->yawTarget = data->cameraAngle + 0x8000;
         INCREASE_VAR(gZTargetTimer, updateRate * 4, timer_int(20));
         c->targetZoom = lerp(c->targetZoom, 1, 0.05f * updateRateF);
     } else {
@@ -79,19 +80,25 @@ void camera_loop(int updateRate, float updateRateF) {
     intendedFocus[1] = c->parent->pos[1] - (pan * coss(c->yaw - 0x4000));
     intendedFocus[2] = c->parent->pos[2];
 
-    if (c->target) {
+    if (c->target || data->zTarget) {
+        Object *tar;
+        if (data->zTarget) {
+            tar = data->zTarget;
+        } else {
+            tar = c->target;
+        }
         float targetMag;
         if (get_input_held(INPUT_Z)) {
             targetMag = 0.5f;
         } else {
-            targetMag = 1.0f - (DIST3(c->parent->pos, c->target->pos) / SQR(15.0f));
+            targetMag = 1.0f - (DIST3(c->parent->pos, tar->pos) / SQR(30.0f));
             if (targetMag > 0.25f) {
                 targetMag = 0.25f;
             }
         }
-        c->lookFocus[0] = lerpf(c->lookFocus[0], (c->target->pos[0] - intendedFocus[0]) * targetMag, 0.035f * updateRateF);
-        c->lookFocus[1] = lerpf(c->lookFocus[1], (c->target->pos[1] - intendedFocus[1]) * targetMag, 0.035f * updateRateF);
-        c->lookFocus[2] = lerpf(c->lookFocus[2], (c->target->pos[2] - intendedFocus[2]) * targetMag, 0.035f * updateRateF);
+        c->lookFocus[0] = lerpf(c->lookFocus[0], (tar->pos[0] - intendedFocus[0]) * targetMag, 0.035f * updateRateF);
+        c->lookFocus[1] = lerpf(c->lookFocus[1], (tar->pos[1] - intendedFocus[1]) * targetMag, 0.035f * updateRateF);
+        c->lookFocus[2] = lerpf(c->lookFocus[2], (tar->pos[2] - intendedFocus[2]) * targetMag, 0.035f * updateRateF);
     } else {
         if (fabs(c->lookFocus[0]) > 0.01f) {
             c->lookFocus[0] = lerpf(c->lookFocus[0], 0.0f, 0.05f * updateRateF);
@@ -103,8 +110,6 @@ void camera_loop(int updateRate, float updateRateF) {
             c->lookFocus[2] = lerpf(c->lookFocus[2], 0.0f, 0.05f * updateRateF);
         }
     }
-
-    
 
     c->focus[0] = intendedFocus[0] + c->lookFocus[0];
     c->focus[1] = intendedFocus[1] + c->lookFocus[1];

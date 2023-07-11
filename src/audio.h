@@ -15,6 +15,7 @@ enum SoundChannelIDs {
 enum SoundIDs {
     SOUND_LASER,
     SOUND_CANNON,
+    SOUND_STEP_STONE,
 
     SOUND_TOTAL
 };
@@ -37,3 +38,4 @@ void set_sound_channel_count(int channelCount);
 void play_sound_global(int soundID);
 void play_sound_spatial(int soundID, float pos[3]);
 void set_background_music(int seqID, int fadeTime);
+void play_sound_spatial_pitch(int soundID, float pos[3], float pitch);

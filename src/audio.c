@@ -24,6 +24,7 @@ static xm64player_t sXMPlayer;
 static SoundData sSoundTable[] = {
     {"rom:/laser.wav64", 10},
     {"rom:/cannon.wav64", 10},
+    {"rom:/stonestep.wav64", 10},
 };
 
 static SequenceData sSequenceTable[] = {
@@ -162,6 +163,15 @@ void play_sound_spatial(int soundID, float pos[3]) {
         return;
     }
     mixer_ch_set_freq(channel, AUDIO_FREQUENCY * 2);
+    wav64_play(&sSoundTable[soundID].sound, channel);
+}
+
+void play_sound_spatial_pitch(int soundID, float pos[3], float pitch) {
+    int channel = find_sound_channel(sSoundTable[soundID].priority);
+    if (get_sound_pan(channel, pos) == 0) {
+        return;
+    }
+    mixer_ch_set_freq(channel, (AUDIO_FREQUENCY * 2) * pitch);
     wav64_play(&sSoundTable[soundID].sound, channel);
 }
 

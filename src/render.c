@@ -254,6 +254,11 @@ void apply_anti_aliasing(int mode) {
 
 void apply_render_settings(void) {
     rspq_block_run(sBeginModeBlock);
+    if (gConfig.regionMode == TV_PAL) {
+        gZTargetOut = gZTargetTimer * (1.5f * 1.2f);
+    } else {
+        gZTargetOut = gZTargetTimer * 1.5f;
+    }
     glScissor(0, gZTargetOut, display_get_width(), display_get_height() - (gZTargetOut * 2));
     if (gConfig.dedither) {
         *(volatile uint32_t*)0xA4400000 |= 0x10000;
@@ -307,7 +312,7 @@ void render_game(int updateRate, float updateRateF) {
     Clutter *obj;
     while (list) {
         obj = list->clutter;
-        if (obj->objectID == CLUTTER_BUSH/* && !(obj->flags & OBJ_FLAG_INVISIBLE)*/) {
+        if (obj->objectID == CLUTTER_BUSH && !(obj->flags & OBJ_FLAG_INVISIBLE)) {
             glPushMatrix();
             
             set_material(&gTempMaterials[3], MATERIAL_NULL);
@@ -412,11 +417,6 @@ void render_game(int updateRate, float updateRateF) {
     
     render_end();
     gl_context_end();
-    if (gConfig.regionMode == TV_PAL) {
-        gZTargetOut = gZTargetTimer * (1.5f * 1.2f);
-    } else {
-        gZTargetOut = gZTargetTimer * 1.5f;
-    }
     if (gZTargetTimer) {
         rdpq_set_mode_fill(RGBA32(0, 0, 0, 255));
         rdpq_mode_blender(0);

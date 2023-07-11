@@ -2,7 +2,7 @@
 
 #include "../include/global.h"
 
-#define TIME_ITERATIONS 120
+#define TIME_ITERATIONS 60
 #define TIME_AGGREGATE TIME_ITERATIONS
 #define TIME_TOTAL TIME_ITERATIONS + 1
 

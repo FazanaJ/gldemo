@@ -16,6 +16,7 @@ ClutterList *gClutterListHead = NULL;
 ClutterList *gClutterListTail = NULL;
 short gNumObjects = 0;
 short gNumClutter = 0;
+char gGamePaused = false;
 
 /**
  * Check if gObjectListHead is null first.
@@ -43,7 +44,7 @@ Object *allocate_object(void) {
     newObj->gfx = NULL;
     newObj->data = NULL;
     newObj->flags = OBJ_FLAG_NONE;
-    newObj->viewDist = 5.0f * 5.0f;
+    newObj->viewDist = SQR(300.0f);
 
     gNumObjects++;
 
@@ -71,7 +72,7 @@ Clutter *allocate_clutter(void) {
     }
     newObj->gfx = NULL;
     newObj->flags = OBJ_FLAG_NONE;
-    newObj->viewDist = 3.0f * 3.0f;
+    newObj->viewDist = SQR(200.0f);
 
     gNumClutter++;
 
@@ -122,6 +123,7 @@ static void set_object_functions(Object *obj, int objectID) {
     void (*initFunc)(Object *obj) = gObjectInits[objectID];
     if (gObjectData[objectID]) {
         obj->data = malloc(gObjectData[objectID]);
+        bzero(obj->data, gObjectData[objectID]);
     }
     if (initFunc != NULL) {
         (*initFunc)(obj);
@@ -327,6 +329,31 @@ Object *find_nearest_object(Object *obj, int objectID, float baseDist) {
     return bestObj;
 }
 
+Object *find_nearest_object_facing(Object *obj, int objectID, float baseDist, int range, int angle) {
+    float bestDist = SQR(baseDist);
+    ObjectList *objList = gObjectListHead;
+    Object *listObj;
+    Object *bestObj = NULL;
+    float dist;
+
+    while (objList) {
+        listObj = objList->obj;
+        if (listObj->objectID == objectID) {
+            short rot = (((angle) % 0xFFFF - 0x8000) - (atan2s(obj->pos[0] - listObj->pos[0], obj->pos[1] - listObj->pos[1]) - 0x4000) % 0xFFFF - 0x8000);
+            if (fabs(rot) < range) {
+                dist = DIST3(obj->pos, listObj->pos);
+                if (dist < bestDist) {
+                    bestObj = listObj;
+                    bestDist = dist;
+                }
+            }
+        }
+        objList = objList->next;
+    }
+
+    return bestObj;
+}
+
 /**
  * Loop through every element in the object list and run their loop function.
 */
@@ -372,7 +399,7 @@ static void update_clutter(int updateRate, float updateRateF) {
     while (clutterList) {
         clutter = clutterList->clutter;
         clutter->cameraDist = DIST3(clutter->pos, gCamera->pos);
-        if (clutter->cameraDist < clutter->viewDist) {
+        if (clutter->cameraDist <= clutter->viewDist) {
             clutter->flags &= ~OBJ_FLAG_INVISIBLE;
         } else {
             clutter->flags |= OBJ_FLAG_INVISIBLE;
@@ -386,6 +413,9 @@ static void update_clutter(int updateRate, float updateRateF) {
 }
 
 void update_game_entities(int updateRate, float updateRateF) {
-    update_objects(updateRate, updateRateF);
-    update_clutter(updateRate, updateRateF);
+    if (gGamePaused == false) {
+        update_objects(updateRate, updateRateF);
+        update_clutter(updateRate, updateRateF);
+        camera_loop(updateRate, updateRateF);
+    }
 }

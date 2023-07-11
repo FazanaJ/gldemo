@@ -21,37 +21,42 @@ int rdpq_font_width(rdpq_font_t *fnt, const char *text, int nch);
 
 static SubtitleData sSubtitleStruct[4];
 char gNumSubtitles = 0;
-short sSubtitlePrintY[sizeof(sSubtitleStruct) / sizeof(SubtitleData)];
+short sSubtitlePrintY[sizeof(sSubtitleStruct) / sizeof(SubtitleData)] = {
+    194, 188, 176, 164
+};
 short sSubtitlePrintYTarget[sizeof(sSubtitleStruct) / sizeof(SubtitleData)];
 
+// I know this works (mostly) It's stubbed so that it doesn't error for others.
 void render_hud_subtitles(void) {
-    int boxCoords[4];
+    /*int boxCoords[4];
     int textWidth = 0;
     int textHeights[sizeof(sSubtitleStruct) / sizeof(SubtitleData)];
     int printY = 0;
     int topY = 0;
     int opacity = 0;
     int curTextWidth[4];
+    int screenWidth = display_get_width();
+    int screenHeight = display_get_height();
 
-    for (int i = 0; i < sizeof(sSubtitleStruct) / sizeof(SubtitleData); i++)
-    {
+    for (int i = 0; i < sizeof(sSubtitleStruct) / sizeof(SubtitleData); i++) {
         if (sSubtitleStruct[i].colour[3] == 0) {
             continue;
         }
         curTextWidth[i] = rdpq_font_width(gCurrentFont, sSubtitleStruct[i].text, strlen(sSubtitleStruct[i].text));
         textWidth = MAX(textWidth, curTextWidth[i]);
         textHeights[i] = 12;//get_text_height(&gfx, sSubtitleStruct[i].text);
-        sSubtitlePrintYTarget[i] = display_get_height()-36-printY-textHeights[i];
+        sSubtitlePrintYTarget[i] = screenHeight-36-printY-textHeights[i];
         topY = sSubtitlePrintY[i];
         opacity = MAX(sSubtitleStruct[i].colour[3] * 0.75f, opacity);
         printY += textHeights[i];
     }
-    if (printY == 0)
+    if (printY == 0) {
         return;
+    }
     boxCoords[1] = topY - 4;
-    boxCoords[0] = (display_get_width() / 2) - (textWidth/2) - 4;
-    boxCoords[2] = (display_get_width() / 2) + (textWidth/2) + 4;
-    boxCoords[3] = display_get_height() - 32;
+    boxCoords[0] = (screenWidth / 2) - (textWidth/2) - 4;
+    boxCoords[2] = (screenWidth / 2) + (textWidth/2) + 4;
+    boxCoords[3] = screenHeight - 32;
     rdpq_set_prim_color(RGBA32(0, 0, 0, opacity));
     rdpq_set_mode_standard();
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
@@ -59,16 +64,17 @@ void render_hud_subtitles(void) {
     glEnable(GL_SCISSOR_TEST);
     rdpq_fill_rectangle(boxCoords[0], boxCoords[1], boxCoords[2], boxCoords[3]);
     //glScissor(boxCoords[0], display_get_height() - boxCoords[1], boxCoords[0] - boxCoords[2], boxCoords[1] - boxCoords[3]);
+    rdpq_font_begin(RGBA32(0, 0, 0, 0));
     for (int i = 0; i < sizeof(sSubtitleStruct) / sizeof(SubtitleData); i++) {
         if (sSubtitleStruct[i].colour[3] == 0) {
             continue;
         }
-        rdpq_font_begin(RGBA32(sSubtitleStruct[i].colour[0], sSubtitleStruct[i].colour[1], sSubtitleStruct[i].colour[2], sSubtitleStruct[i].colour[3]));
-        rdpq_font_position((display_get_width() / 2) - (curTextWidth[i] / 2), sSubtitlePrintY[i] + 10);
+        rdpq_set_prim_color(RGBA32(sSubtitleStruct[i].colour[0], sSubtitleStruct[i].colour[1], sSubtitleStruct[i].colour[2], sSubtitleStruct[i].colour[3]));
+        rdpq_font_position((screenWidth / 2) - (curTextWidth[i] / 2), sSubtitlePrintY[i] + 10);
         rdpq_font_print(gCurrentFont, sSubtitleStruct[i].text);
-        rdpq_font_end();
     }
-    glDisable(GL_SCISSOR_TEST);
+    rdpq_font_end();
+    glDisable(GL_SCISSOR_TEST);*/
 }
 
 void process_subtitle_timers(int updateRate, float updateRateF) {

@@ -134,7 +134,7 @@ void update_game_time(int *updateRate, float *updateRateF) {
     *updateRate = LOGIC_60FPS;
     while (deltaTime > 16666) {
         deltaTime -= 16666;
-        updateRate++;
+        *updateRate = *updateRate + 1;
         if (*updateRate == LOGIC_15FPS) {
             deltaTime = 0;
         }
@@ -158,7 +158,6 @@ int main(void) {
         cycle_textures(updateRate);
         update_inputs(updateRate);
         update_game_entities(updateRate, updateRateF);
-        camera_loop(updateRate, updateRateF);
         audio_loop(updateRate, updateRateF);
         
         render_game(updateRate, updateRateF);
@@ -178,13 +177,13 @@ int main(void) {
             }
             switch (gConfig.antiAliasing) {
             case -1:
-                add_subtitle("AA off.", 120, 0xFF0000FF);
+                add_subtitle("AA off.", 120, 0xFFFFFFFF);
                 break;
             case 0:
-                add_subtitle("AA fast. That's reduced aliasing to you.", 120, 0xFF0000FF);
+                add_subtitle("AA fast. That's reduced aliasing to you.", 120, 0xFFFFFFFF);
                 break;
             case 1:
-                add_subtitle("AA fancy. That means it's gonna look really nice.", 120, 0xFF0000FF);
+                add_subtitle("AA fancy. That means it's gonna look really nice.", 120, 0xFFFFFFFF);
                 break;
             }
         }

@@ -20,10 +20,12 @@ void player_init(Object *obj) {
     data->healthBase = 12;
     data->healthMax = data->healthBase;
     data->health = data->healthMax;
+    data->cameraAngle = 0;
 }
 
 void player_loop(Object *obj, int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
+    PlayerData *data = (PlayerData *) obj->data;
     Camera *c = gCamera;
 	float stickX = get_stick_x(STICK_LEFT);
     float intendedMag = get_stick_mag(STICK_LEFT);
@@ -33,11 +35,18 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
         return;
     }
 
-    Object *targetObj = find_nearest_object(obj, OBJ_NPC, 15.0f);
+    Object *targetObj = find_nearest_object_facing(obj, OBJ_NPC, 30.0f, 0x3000, obj->faceAngle[2]);
     if (targetObj) {
         gCamera->target = targetObj;
     } else {
         gCamera->target = NULL;
+    }
+
+    if (targetObj && get_input_pressed(INPUT_Z, 3)) {
+        clear_input(INPUT_Z);
+        data->zTarget = targetObj;
+    } else if (get_input_released(INPUT_Z, 0)) {
+        data->zTarget = NULL;
     }
 
     if (get_input_pressed(INPUT_B, 0) && gGameTimer > 120) {
@@ -49,10 +58,16 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
     }
 
     if (get_input_pressed(INPUT_A, 0) && gGameTimer > 120) {
-        play_sound_spatial(SOUND_CANNON, obj->pos);
+        play_sound_spatial_pitch(SOUND_CANNON, obj->pos, 1.0f);
     }
 
     if (intendedMag > 0.01f && get_input_held(INPUT_L) == false) {
+        data->walkTimer += updateRate;
+        if (data->walkTimer >= timer_int(20)) {
+            data->walkTimer = 0;
+            float pitchBend = random_float() / 16.0f;
+            play_sound_spatial_pitch(SOUND_STEP_STONE, obj->pos, 0.25f + pitchBend);
+        }
         short intendedYaw = get_stick_angle(STICK_LEFT);
         float moveLerp;
         INCREASE_VAR(c->moveTimer, updateRate, moveTicks);
@@ -61,6 +76,12 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
         if (gZTargetTimer == 0) {
             c->yawTarget -= (float) (stickX * ((2.0f * updateRateF) * moveLerp));
             obj->faceAngle[2] = lerp_short(obj->faceAngle[2], obj->moveAngle[2], 0.1f * updateRateF);
+            data->cameraAngle = obj->faceAngle[2];
+        } else {
+            if (data->zTarget) {
+                short intendedYaw = atan2s(obj->pos[0] - data->zTarget->pos[0], obj->pos[1] - data->zTarget->pos[1]) - 0x4000;
+                obj->faceAngle[2] = lerp_short(obj->faceAngle[2], intendedYaw, 0.1f * updateRateF);
+            }
         }
     } else {
         DECREASE_VAR(c->moveTimer, updateRate * 2, 0);

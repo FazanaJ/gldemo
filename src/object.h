@@ -99,3 +99,4 @@ void delete_object(Object *obj);
 void delete_clutter(Clutter *clutter);
 void update_game_entities(int updateRate, float updateRateF);
 Object *find_nearest_object(Object *obj, int objectID, float baseDist);
+Object *find_nearest_object_facing(Object *obj, int objectID, float baseDist, int range, int angle);
