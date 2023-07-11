@@ -147,6 +147,8 @@ rspq_block_t *sPlaneBlockFloor;
 rspq_block_t *sPlaneBlockWater;
 rspq_block_t *sPlaneBlockWall;
 rspq_block_t *sShadowBlock;
+rspq_block_t *sDecal1Block;
+rspq_block_t *sDecal2Block;
 
 
 void render_shadow(float pos[3]) {
@@ -280,36 +282,46 @@ void render_game(int updateRate, float updateRateF) {
         list2 = list2->next;
     }
     
+    if (sDecal1Block == NULL) {
+        rspq_block_begin();
+        glPushMatrix();
+        glTranslatef(25, 25, 0);
+        glBegin(GL_QUADS);
+        glColor3f(1.0f, 0, 1.0f);
+        glTexCoord2f(0, 0);
+        glVertex3i(-5, 5, 0);
+        glTexCoord2f(0, 1.024f);
+        glVertex3i(-5, -5, 0);
+        glTexCoord2f(1.024f, 1.024f);
+        glVertex3i(5, -5, 0);
+        glTexCoord2f(1.024f, 0);
+        glVertex3i(5, 5, 0);
+        glEnd();
+        glPopMatrix();
+        sDecal1Block = rspq_block_end();
+    }
+    if (sDecal2Block == NULL) {
+        rspq_block_begin();
+        glPushMatrix();
+        glTranslatef(25, 35, 0);
+        glBegin(GL_QUADS);
+        glColor3f(1.0f, 0, 1.0f);
+        glTexCoord2f(0, 0);
+        glVertex3i(-5, 5, 0);
+        glTexCoord2f(0, 1.024f);
+        glVertex3i(-5, -5, 0);
+        glTexCoord2f(1.024f, 1.024f);
+        glVertex3i(5, -5, 0);
+        glTexCoord2f(1.024f, 0);
+        glVertex3i(5, 5, 0);
+        glEnd();
+        glPopMatrix();
+        sDecal2Block = rspq_block_end();
+    }
     set_material(&gTempMaterials[2], MATERIAL_DECAL);
-    glPushMatrix();
-    glTranslatef(25, 25, 0);
-    glBegin(GL_QUADS);
-    glColor3f(1.0f, 0, 1.0f);
-    glTexCoord2f(0, 0);
-    glVertex3i(-5, 5, 0);
-    glTexCoord2f(0, 1.024f);
-    glVertex3i(-5, -5, 0);
-    glTexCoord2f(1.024f, 1.024f);
-    glVertex3i(5, -5, 0);
-    glTexCoord2f(1.024f, 0);
-    glVertex3i(5, 5, 0);
-    glEnd();
-    glPopMatrix();
+    rspq_block_run(sDecal1Block);
     set_material(&gTempMaterials[4], MATERIAL_DECAL);
-    glPushMatrix();
-    glTranslatef(25, 35, 0);
-    glBegin(GL_QUADS);
-    glColor3f(1.0f, 0, 1.0f);
-    glTexCoord2f(0, 0);
-    glVertex3i(-5, 5, 0);
-    glTexCoord2f(0, 1.024f);
-    glVertex3i(-5, -5, 0);
-    glTexCoord2f(1.024f, 1.024f);
-    glVertex3i(5, -5, 0);
-    glTexCoord2f(1.024f, 0);
-    glVertex3i(5, 5, 0);
-    glEnd();
-    glPopMatrix();
+    rspq_block_run(sDecal2Block);
 
     
     

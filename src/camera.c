@@ -74,7 +74,7 @@ void camera_loop(int updateRate, float updateRateF) {
         if (get_input_held(INPUT_Z)) {
             targetMag = 0.5f;
         } else {
-            targetMag = 1.0f - (DIST3(c->parent->pos, c->target->pos) / SQR(3.0f));
+            targetMag = 1.0f - (DIST3(c->parent->pos, c->target->pos) / SQR(15.0f));
             if (targetMag > 0.25f) {
                 targetMag = 0.25f;
             }

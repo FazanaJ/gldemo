@@ -33,7 +33,7 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
         return;
     }
 
-    Object *targetObj = find_nearest_object(obj, OBJ_NPC, 3.0f);
+    Object *targetObj = find_nearest_object(obj, OBJ_NPC, 15.0f);
     if (targetObj) {
         gCamera->target = targetObj;
     } else {
