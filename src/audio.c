@@ -15,8 +15,8 @@ static short sNextSequenceID = -1;
 static short sCurrentSequenceID = -1;
 static short sSequenceFadeTimerSet;
 static short sSequenceFadeTimer;
-static float sMusicVolume;
-static float sSoundVolume;
+float sMusicVolume;
+float sSoundVolume;
 static xm64player_t sXMPlayer;
 
 #define CHANNEL_MAX_NUM 32
@@ -52,6 +52,10 @@ void init_audio(void) {
     set_background_music(0, 0);
 }
 
+void set_music_volume(float volume) {
+    xm64player_set_vol(&sXMPlayer, volume);
+}
+
 void update_sequence(int updateRate) {
     if (sNextSequenceID != sCurrentSequenceID) {
         sSequenceFadeTimer -= updateRate;
@@ -65,12 +69,10 @@ void update_sequence(int updateRate) {
             xm64player_play(&sXMPlayer, s->channelCount);
             sCurrentSequenceID = sNextSequenceID;
         } else {
-            SequenceData *s = &sSequenceTable[sCurrentSequenceID];
             float fade;
             fade = ((float) sSequenceFadeTimer / (float) sSequenceFadeTimerSet) * sMusicVolume;
-            for (int i = 0; i < s->channelCount; i++) {
-                mixer_ch_set_vol((sSoundChannelNum - s->channelCount) + i, fade, fade);
-            }
+            set_music_volume(fade);
+            xm64player_set_vol(&sXMPlayer, fade);
         }
     }
 }

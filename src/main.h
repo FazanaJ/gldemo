@@ -38,15 +38,16 @@ enum SoundMode {
 };
 
 typedef struct Config {
-    signed antiAliasing : 2;
-    unsigned dedither : 1;
-    unsigned regionMode : 2;
-    unsigned screenMode : 2;
-    unsigned soundMode : 2;
-    signed screenPosX : 5;
-    signed screenPosY : 5;
-    unsigned soundVolume : 5;
-    unsigned musicVolume : 5;
+    char antiAliasing;
+    char dedither;
+    char regionMode;
+    char screenMode;
+    char soundMode;
+    char screenPosX;
+    char screenPosY;
+    char soundVolume;
+    char musicVolume;
+    char frameCap;
 } Config;
 
 extern surface_t gZBuffer;
@@ -56,3 +57,6 @@ extern Config gConfig;
 extern char gZTargetTimer;
 extern unsigned int gGlobalTimer;
 extern unsigned int gGameTimer;
+extern char gResetDisplay;
+
+void reset_display(void);

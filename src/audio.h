@@ -32,6 +32,9 @@ typedef struct SoundData {
     wav64_t sound;
 } SoundData;
 
+extern float sMusicVolume;
+extern float sSoundVolume;
+
 void init_audio(void);
 void audio_loop(int updateRate, float updateRateF);
 void set_sound_channel_count(int channelCount);
@@ -39,3 +42,4 @@ void play_sound_global(int soundID);
 void play_sound_spatial(int soundID, float pos[3]);
 void set_background_music(int seqID, int fadeTime);
 void play_sound_spatial_pitch(int soundID, float pos[3], float pitch);
+void set_music_volume(float volume);

@@ -9,6 +9,7 @@
 #include "math_util.h"
 #include "main.h"
 #include "camera.h"
+#include "menu.h"
 
 ObjectList *gObjectListHead = NULL;
 ObjectList *gObjectListTail = NULL;
@@ -413,7 +414,7 @@ static void update_clutter(int updateRate, float updateRateF) {
 }
 
 void update_game_entities(int updateRate, float updateRateF) {
-    if (gGamePaused == false) {
+    if (gMenuStatus == MENU_CLOSED) {
         update_objects(updateRate, updateRateF);
         update_clutter(updateRate, updateRateF);
         camera_loop(updateRate, updateRateF);

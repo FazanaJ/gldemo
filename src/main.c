@@ -14,12 +14,14 @@
 #include "object.h"
 #include "hud.h"
 #include "audio.h"
+#include "menu.h"
 
 surface_t gZBuffer;
 surface_t *gFrameBuffers;
 rdpq_font_t *gCurrentFont;
 unsigned int gGlobalTimer;
 unsigned int gGameTimer;
+char gResetDisplay = false;
 
 const char *gFontAssetTable[] = {
     "rom:/arial.font64"
@@ -64,7 +66,7 @@ void reset_display(void) {
         rdpq_close();
     }
     display_close();
-    display_init(sVideoModes[gConfig.screenMode], DEPTH_16_BPP, 3, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
+    display_init(sVideoModes[(unsigned) gConfig.screenMode], DEPTH_16_BPP, 3, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
     //gZBuffer = surface_alloc(FMT_RGBA16, display_get_width(), display_get_height());
     gZBuffer.flags = FMT_RGBA16 | SURFACE_FLAGS_OWNEDBUFFER;
     gZBuffer.width = display_get_width();
@@ -98,9 +100,15 @@ void init_save(void) {
     gConfig.antiAliasing = AA_FAST;
     gConfig.dedither = false;
     gConfig.regionMode = get_tv_type();
+    if (gConfig.regionMode == PAL50) {
+        gIsPal = true;
+    }
     //gConfig.regionMode = PAL60;
     gConfig.screenMode = SCREEN_4_3;
+    gConfig.frameCap = 0;
     gConfig.soundMode = SOUND_STEREO;
+    gConfig.musicVolume = 9;
+    gConfig.soundVolume = 9;
 }
 
 void init_game(void) {
@@ -159,6 +167,7 @@ int main(void) {
         update_inputs(updateRate);
         update_game_entities(updateRate, updateRateF);
         audio_loop(updateRate, updateRateF);
+        process_menus(updateRate, updateRateF);
         
         render_game(updateRate, updateRateF);
         get_cpu_time(DEBUG_SNAPSHOT_1_END);
@@ -170,26 +179,13 @@ int main(void) {
         }
         get_time_snapshot(PP_PROFILER, DEBUG_SNAPSHOT_1_END);
 
-        if (get_input_pressed(INPUT_R, 0)) {
-            gConfig.antiAliasing++;
-            if (gConfig.antiAliasing == -2) {
-                gConfig.antiAliasing = -1;
-            }
-            switch (gConfig.antiAliasing) {
-            case -1:
-                add_subtitle("AA off.", 120, 0xFFFFFFFF);
-                break;
-            case 0:
-                add_subtitle("AA fast. That's reduced aliasing to you.", 120, 0xFFFFFFFF);
-                break;
-            case 1:
-                add_subtitle("AA fancy. That means it's gonna look really nice.", 120, 0xFFFFFFFF);
-                break;
-            }
-        }
-
         rdpq_detach_wait();
         display_show(gFrameBuffers);
+
+        if (gResetDisplay) {
+            reset_display();
+            gResetDisplay = false;
+        }
 
         gGlobalTimer++;
         gGameTimer += updateRate;

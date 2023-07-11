@@ -13,6 +13,7 @@
 #include "assets.h"
 #include "math_util.h"
 #include "hud.h"
+#include "menu.h"
 
 Environment *gEnvironment;
 float gAspectRatio = 1.0f;
@@ -425,5 +426,6 @@ void render_game(int updateRate, float updateRateF) {
         rdpq_set_mode_standard();
     }
     render_hud(updateRate, updateRateF);
+    render_menus(updateRate, updateRateF);
     get_time_snapshot(PP_HUD, DEBUG_SNAPSHOT_1_END);
 }
