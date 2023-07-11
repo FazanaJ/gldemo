@@ -1,4 +1,5 @@
 #include <libdragon.h>
+#include <malloc.h>
 
 #include "audio.h"
 #include "../include/global.h"
@@ -8,20 +9,25 @@
 #include "math_util.h"
 #include "camera.h"
 
-static wav64_t sSoundTable[SOUND_TOTAL];
-
 static char sSoundChannelNum = 0;
 static char sSoundPrioTable[32];
 static short sNextSequenceID = -1;
 static short sCurrentSequenceID = -1;
 static short sSequenceFadeTimerSet;
 static short sSequenceFadeTimer;
+static float sMusicVolume;
+static float sSoundVolume;
 static xm64player_t sXMPlayer;
 
 #define CHANNEL_MAX_NUM 32
 
-static const char *sSequenceNames[] = {
-    "rom:/ToysXM-8bit.xm64",
+static SoundData sSoundTable[] = {
+    {"rom:/laser.wav64", 10},
+    {"rom:/cannon.wav64", 10},
+};
+
+static SequenceData sSequenceTable[] = {
+    {"rom:/ToysXM-8bit.xm64", 8},
 };
 
 void set_sound_channel_count(int channelCount) {
@@ -35,8 +41,13 @@ void init_audio(void) {
     mixer_init(24);
     sSoundChannelNum = 24;
     bzero(&sSoundPrioTable, sizeof(sSoundPrioTable));
-    wav64_open(&sSoundTable[SOUND_LASER], "rom:/laser.wav64");
-    wav64_open(&sSoundTable[SOUND_CANNON], "rom:/cannon.wav64");
+    sMusicVolume = 1.0f;
+    sSoundVolume = 1.0f;
+
+    for (int i = 0; i < sizeof(sSoundTable) / sizeof(SoundData); i++) {
+        wav64_open(&sSoundTable[i].sound, sSoundTable[i].path);
+    }
+
     set_background_music(0, 0);
 }
 
@@ -44,15 +55,20 @@ void update_sequence(int updateRate) {
     if (sNextSequenceID != sCurrentSequenceID) {
         sSequenceFadeTimer -= updateRate;
         if (sSequenceFadeTimer < 0) {
+            SequenceData *s = &sSequenceTable[sNextSequenceID];
             sSequenceFadeTimer = 0;
-            xm64player_open(&sXMPlayer, sSequenceNames[sNextSequenceID]);
-            xm64player_play(&sXMPlayer, 8);
+            for (int i = 0; i < s->channelCount; i++) {
+                mixer_ch_set_vol((sSoundChannelNum - s->channelCount) + i, sMusicVolume, sMusicVolume);
+            }
+            xm64player_open(&sXMPlayer, s->seqPath);
+            xm64player_play(&sXMPlayer, s->channelCount);
             sCurrentSequenceID = sNextSequenceID;
         } else {
+            SequenceData *s = &sSequenceTable[sCurrentSequenceID];
             float fade;
-            fade = (float) sSequenceFadeTimer / (float) sSequenceFadeTimerSet;
-            for (int i = 0; i < 8; i++) {
-                mixer_ch_set_vol(16 + i, fade, fade);
+            fade = ((float) sSequenceFadeTimer / (float) sSequenceFadeTimerSet) * sMusicVolume;
+            for (int i = 0; i < s->channelCount; i++) {
+                mixer_ch_set_vol((sSoundChannelNum - s->channelCount) + i, fade, fade);
             }
         }
     }
@@ -98,7 +114,7 @@ static int find_sound_channel(int priority) {
 }
 
 void play_sound_global(int soundID) {
-    wav64_play(&sSoundTable[soundID], 0);
+    wav64_play(&sSoundTable[soundID].sound, 0);
 }
 
 int get_sound_pan(int channel, float pos[3]) {
@@ -133,7 +149,7 @@ int get_sound_pan(int channel, float pos[3]) {
         }
     }
     if (volume > 0.0f) {
-        mixer_ch_set_vol_pan(channel, volume, pan);
+        mixer_ch_set_vol_pan(channel, volume * sSoundVolume, pan);
         return 1;
     } else {
         return 0;
@@ -141,12 +157,12 @@ int get_sound_pan(int channel, float pos[3]) {
 }
 
 void play_sound_spatial(int soundID, float pos[3]) {
-    int channel = find_sound_channel(10);
+    int channel = find_sound_channel(sSoundTable[soundID].priority);
     if (get_sound_pan(channel, pos) == 0) {
         return;
     }
     mixer_ch_set_freq(channel, AUDIO_FREQUENCY * 2);
-    wav64_play(&sSoundTable[soundID], channel);
+    wav64_play(&sSoundTable[soundID].sound, channel);
 }
 
 void set_background_music(int seqID, int fadeTime) {

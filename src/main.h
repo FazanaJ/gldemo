@@ -45,6 +45,8 @@ typedef struct Config {
     unsigned soundMode : 2;
     signed screenPosX : 5;
     signed screenPosY : 5;
+    unsigned soundVolume : 5;
+    unsigned musicVolume : 5;
 } Config;
 
 extern surface_t gZBuffer;

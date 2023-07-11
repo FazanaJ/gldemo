@@ -19,6 +19,18 @@ enum SoundIDs {
     SOUND_TOTAL
 };
 
+typedef struct SequenceData {
+    char *seqPath;
+    char channelCount;
+    char pad[3];
+} SequenceData;
+
+typedef struct SoundData {
+    char *path;
+    unsigned char priority;
+    wav64_t sound;
+} SoundData;
+
 void init_audio(void);
 void audio_loop(int updateRate, float updateRateF);
 void set_sound_channel_count(int channelCount);
