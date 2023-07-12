@@ -82,15 +82,44 @@ typedef struct ClutterList {
 } ClutterList;
 
 typedef struct ParticleInfo {
-	float vel[3];
+	short timer;
+	float forwardVel;
+	float forwardVelIncrease;
+	float zVel;
+	float zVelIncrease;
+	short moveAngle;
+	short moveAngleVel;
+	short moveAngleVelIncrease;
+	float scale[3];
+	float scaleIncrease[3];
+	unsigned char opacity;
+
+	float posRandom[3];
+	float forwardVelRandom;
+	float zVelRandom;
+	float scaleRandom[3];
+	short angleRandom;
+	short timerRandom;
+	char opacityRandom;
 } ParticleInfo;
 
 typedef struct Particle {
 	Material *material;
 	struct ParticleList *entry;
 	float pos[3];
-	float scale[3];
 	u_uint32_t flags;
+
+	short timer;
+	float forwardVel;
+	float forwardVelIncrease;
+	float zVel;
+	float zVelIncrease;
+	short moveAngle;
+	short moveAngleVel;
+	short moveAngleVelIncrease;
+	float scale[3];
+	float scaleIncrease[3];
+	unsigned char opacity;
 } Particle;
 
 typedef struct ParticleList {
@@ -116,7 +145,7 @@ Object *spawn_object_pos_angle(int objectID, float x, float y, float z, short pi
 Object *spawn_object_pos_angle_scale(int objectID, float x, float y, float z, short pitch, short roll, short yaw, float scaleX, float scaleY, float scaleZ);
 Object *spawn_object_pos_scale(int objectID, float x, float y, float z, float scaleX, float scaleY, float scaleZ);
 Clutter *spawn_clutter(int objectID, float x, float y, float z, short pitch, short roll, short yaw);
-Particle *spawn_particle(Material *material, ParticleInfo *info, float x, float y, float z);
+Particle *spawn_particle(Material *material, float x, float y, float z);
 void delete_object(Object *obj);
 void delete_clutter(Clutter *clutter);
 void update_game_entities(int updateRate, float updateRateF);

@@ -17,7 +17,8 @@
     "Clutter", \
     "Camera", \
     "Materials", \
-    "Profiler"
+    "Profiler", \
+    "Particles"
 
 
 enum ProfileTimers {
@@ -32,6 +33,7 @@ enum ProfileTimers {
     PP_CAMERA,
     PP_MATERIALS,
     PP_PROFILER,
+    PP_PARTICLES,
 
     PP_TOTAL
 };

@@ -252,7 +252,7 @@ Clutter *spawn_clutter(int objectID, float x, float y, float z, short pitch, sho
     return clutter;
 }
 
-Particle *spawn_particle(Material *material, ParticleInfo *info, float x, float y, float z) {
+Particle *spawn_particle(Material *material, float x, float y, float z) {
     Particle *particle = allocate_particle();
     if (particle == NULL) {
         return NULL;
@@ -276,7 +276,9 @@ static void free_object(Object *obj) {
         if (gObjectListHead->next) {
             gObjectListHead = gObjectListHead->next;
             gObjectListHead->prev = NULL;
-            gObjectListTail = gObjectListHead;
+            if (gObjectListTail == gObjectListHead) {
+                gObjectListTail = gObjectListHead;
+            }
         } else {
             gObjectListHead = NULL;
         }
@@ -305,7 +307,9 @@ static void free_clutter(Clutter *obj) {
         if (gClutterListHead->next) {
             gClutterListHead = gClutterListHead->next;
             gClutterListHead->prev = NULL;
-            gClutterListTail = gClutterListHead;
+            if (gClutterListTail == gClutterListHead) {
+                gClutterListTail = gClutterListHead;
+            }
         } else {
             gClutterListHead = NULL;
         }
@@ -324,6 +328,34 @@ static void free_clutter(Clutter *obj) {
     }
     free(obj);
     gNumClutter--;
+}
+
+static void free_particle(Particle *obj) {
+    if (obj->entry == gParticleListHead) {
+        if (gParticleListHead->next) {
+            gParticleListHead = gParticleListHead->next;
+            gParticleListHead->prev = NULL;
+            if (gParticleListTail == gParticleListHead) {
+                gParticleListTail = gParticleListHead;
+            }
+        } else {
+            gParticleListHead = NULL;
+        }
+    } else {
+        if (obj->entry == gParticleListTail) {
+            gParticleListTail = gParticleListTail->prev;
+        }
+        obj->entry->prev->next = obj->entry->next;
+        if (obj->entry->next) {
+            obj->entry->next->prev = obj->entry->prev;
+        }
+    }
+    free(obj->entry);
+    if (obj->material) {
+        free(obj->material);
+    }
+    free(obj);
+    gNumParticles--;
 }
 
 /**
@@ -458,10 +490,53 @@ static void update_clutter(int updateRate, float updateRateF) {
     get_time_snapshot(PP_CLUTTER, DEBUG_SNAPSHOT_1_END);
 }
 
+static void update_particles(int updateRate, float updateRateF) {
+    DEBUG_SNAPSHOT_1();
+    if (gParticleListHead == NULL) {
+        get_time_snapshot(PP_PARTICLES, DEBUG_SNAPSHOT_1_END);
+        return;
+    }
+    ParticleList *particleList = gParticleListHead;
+    Particle *particle;
+
+    while (particleList) {
+        particle = particleList->particle;
+
+        particle->timer -= updateRate;
+        if (particle->timer <= 0) {
+            particle->flags |= OBJ_FLAG_DELETE;
+        } else {
+            particle->forwardVel += particle->forwardVelIncrease * updateRateF;
+            if (particle->forwardVel < 0.0f) {
+                particle->forwardVel = 0.0f;
+            }
+            particle->zVel += particle->zVelIncrease * updateRateF;
+            particle->moveAngleVel += particle->moveAngleVelIncrease * updateRateF;
+            particle->moveAngle += particle->moveAngleVel * updateRateF;
+            for (int i = 0; i < 3; i++) {
+                particle->scale[i] += particle->scaleIncrease[i] * updateRateF;
+            }
+            float velX = particle->forwardVel * coss(particle->moveAngle);
+            float velY = particle->forwardVel * sins(particle->moveAngle);
+
+            particle->pos[0] += velX * updateRateF;
+            particle->pos[1] += velY * updateRateF;
+            particle->pos[2] += particle->zVel * updateRateF;
+        }
+
+        particleList = particleList->next;
+        if (particle->flags & OBJ_FLAG_DELETE) {
+            free_particle(particle);
+        }
+    }
+    get_time_snapshot(PP_PARTICLES, DEBUG_SNAPSHOT_1_END);
+}
+
 void update_game_entities(int updateRate, float updateRateF) {
     if (gMenuStatus == MENU_CLOSED) {
         update_objects(updateRate, updateRateF);
         update_clutter(updateRate, updateRateF);
+        update_particles(updateRate, updateRateF);
         camera_loop(updateRate, updateRateF);
     }
 }

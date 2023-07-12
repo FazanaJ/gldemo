@@ -79,7 +79,7 @@ void init_renderer(void) {
     init_particles();
     gPlayerModel = model64_load("rom:/humanoid.model64");
     gWorldModel = model64_load("rom:/testarea.model64");
-    
+
     rspq_block_begin();
     glAlphaFunc(GL_GREATER, 0.5f);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -297,10 +297,12 @@ void render_particles(void) {
     while (list) {
         particle = list->particle;
         glPushMatrix();
-        set_material(&gTempMaterials[2], MATERIAL_NULL);
+        if (particle->material) {
+            set_particle_texture(particle->material);
+        }
         glTranslatef(particle->pos[0], particle->pos[1], particle->pos[2]);
         glRotatef(SHORT_TO_DEGREES(gCamera->yaw), 0, 0, 1);
-        //glScalef(particle->scale[0], particle->scale[1], particle->scale[2]);
+        glScalef(particle->scale[0], particle->scale[1], particle->scale[2]);
         rspq_block_run(sParticleBlock); 
         glPopMatrix();
         list = list->next;

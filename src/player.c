@@ -58,7 +58,23 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
     }
 
     if (get_input_pressed(INPUT_A, 0) && gGameTimer > 120) {
+        Particle *part;
         play_sound_spatial_pitch(SOUND_CANNON, obj->pos, 1.0f);
+        for (int i = 0; i < 7; i++) {
+            part = spawn_particle(NULL, obj->pos[0], obj->pos[1], obj->pos[2] + 5.0f);
+            part->zVel = 0.0f;
+            part->zVelIncrease = 0.01f;
+            part->moveAngle = random_float() * 0x10000;
+            part->forwardVel = 0.5f;
+            part->forwardVelIncrease = -0.025f;
+            part->timer = 120;
+            part->scale[0] = 0.2f;
+            part->scale[1] = 0.2f;
+            part->scale[2] = 0.2f;
+            part->scaleIncrease[0] = 0.005f;
+            part->scaleIncrease[1] = 0.005f;
+            part->scaleIncrease[2] = 0.005f;
+        }
     }
 
     if (intendedMag > 0.01f && get_input_held(INPUT_L) == false) {

@@ -45,6 +45,7 @@ void init_materials(void) {
     glDisable(GL_COLOR_MATERIAL);
     glDepthFunc(GL_LESS);
     glEnable(GL_CULL_FACE);
+    glEnable(GL_TEXTURE_2D);
     sParticleMaterialBlock = rspq_block_end();
 }
 
@@ -176,6 +177,7 @@ void set_particle_render_settings(void) {
     sRenderSettings.inter = false;
     sRenderSettings.decal = false;
     sRenderSettings.backface = false;
+    sRenderSettings.texture = true;
     if (gEnvironment->flags & ENV_FOG) {
         if (!sRenderSettings.fog) {
             glEnable(GL_FOG);
@@ -328,4 +330,18 @@ void set_material(Material *material, int flags) {
     sCurrentMaterial = material;
     sPrevRenderFlags = flags;
     get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
+}
+
+void set_particle_texture(Material *material) {
+    DEBUG_SNAPSHOT_1();
+    if (material->textureID != -1) {
+        //if (material->index == NULL) {
+            if (load_texture(material) == -1) {
+                get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
+                return;
+            }
+        //}
+        material->index->loadTimer = 120;
+        glBindTexture(GL_TEXTURE_2D, material->index->texture);
+    }
 }
