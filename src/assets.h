@@ -10,7 +10,7 @@ enum MaterialFlags {
     MATERIAL_LIGHTING =     (1 << 2), // Enables light calculation.
     MATERIAL_FOG =          (1 << 3), // Enables fog.
     MATERIAL_ENVMAP =       (1 << 4), // Enables environment mapping.
-    MATERIAL_DEPTH_WRITE =  (1 << 5), // Enables depth write.
+    MATERIAL_DEPTH_READ =  (1 << 5), // Enables depth write.
     MATERIAL_VTXCOL =       (1 << 6), // Enables vertex colours
     MATERIAL_DECAL =        (1 << 7), // Enables surface decal projection.
     MATERIAL_INTER =        (1 << 8), // Enables interpenetrating surfaces.
@@ -35,7 +35,7 @@ typedef struct RenderSettings {
     unsigned lighting : 1;
     unsigned fog : 1;
     unsigned envmap : 1;
-    unsigned depthWrite : 1;
+    unsigned depthRead : 1;
     unsigned texture : 1;
     unsigned vertexColour : 1;
     unsigned decal : 1;
@@ -71,3 +71,4 @@ void setup_textures(GLuint textures[], sprite_t *sprites[], const char *texture_
 void set_material(Material *material, int flags);
 void cycle_textures(int updateRate);
 void init_materials(void);
+void set_particle_render_settings(void);

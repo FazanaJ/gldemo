@@ -62,8 +62,11 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
     }
 
     if (intendedMag > 0.01f && get_input_held(INPUT_L) == false) {
-        data->walkTimer += updateRate;
-        if (data->walkTimer >= timer_int(20)) {
+        if (intendedMag < 0.25f) {
+            intendedMag = 0.25f;
+        }
+        data->walkTimer += updateRateF * (intendedMag * 12.0f);
+        if (data->walkTimer >= 200) {
             data->walkTimer = 0;
             float pitchBend = random_float() / 16.0f;
             play_sound_spatial_pitch(SOUND_STEP_STONE, obj->pos, 0.25f + pitchBend);

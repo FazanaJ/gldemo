@@ -15,8 +15,11 @@ ObjectList *gObjectListHead = NULL;
 ObjectList *gObjectListTail = NULL;
 ClutterList *gClutterListHead = NULL;
 ClutterList *gClutterListTail = NULL;
+ParticleList *gParticleListHead = NULL;
+ParticleList *gParticleListTail = NULL;
 short gNumObjects = 0;
 short gNumClutter = 0;
+short gNumParticles = 0;
 char gGamePaused = false;
 
 /**
@@ -53,31 +56,58 @@ Object *allocate_object(void) {
 }
 
 Clutter *allocate_clutter(void) {
-    Clutter *newObj = malloc(sizeof(Clutter));
-    bzero(newObj, sizeof(Clutter));
-    newObj->entry = malloc(sizeof(ClutterList));
+    Clutter *newClutter = malloc(sizeof(Clutter));
+    bzero(newClutter, sizeof(Clutter));
+    newClutter->entry = malloc(sizeof(ClutterList));
 
     if (gClutterListHead == NULL) {
-        gClutterListHead = newObj->entry;
+        gClutterListHead = newClutter->entry;
         gClutterListHead->next = NULL;
         gClutterListHead->prev = NULL;
         gClutterListTail = gClutterListHead;
-        gClutterListHead->clutter = newObj;
+        gClutterListHead->clutter = newClutter;
     } else {
-        ClutterList *list = newObj->entry;
+        ClutterList *list = newClutter->entry;
         gClutterListTail->next = list;
         list->prev = gClutterListTail;
         list->next = NULL;
-        list->clutter = newObj;
+        list->clutter = newClutter;
         gClutterListTail = list;
     }
-    newObj->gfx = NULL;
-    newObj->flags = OBJ_FLAG_NONE;
-    newObj->viewDist = SQR(200.0f);
+    newClutter->gfx = NULL;
+    newClutter->flags = OBJ_FLAG_NONE;
+    newClutter->viewDist = SQR(200.0f);
 
     gNumClutter++;
 
-    return newObj;
+    return newClutter;
+}
+
+Particle *allocate_particle(void) {
+    Particle *newParticle = malloc(sizeof(Particle));
+    bzero(newParticle, sizeof(Particle));
+    newParticle->entry = malloc(sizeof(ParticleList));
+
+    if (gParticleListHead == NULL) {
+        gParticleListHead = newParticle->entry;
+        gParticleListHead->next = NULL;
+        gParticleListHead->prev = NULL;
+        gParticleListTail = gParticleListHead;
+        gParticleListHead->particle = newParticle;
+    } else {
+        ParticleList *list = newParticle->entry;
+        gParticleListTail->next = list;
+        list->prev = gParticleListTail;
+        list->next = NULL;
+        list->particle = newParticle;
+        gParticleListTail = list;
+    }
+    newParticle->material = NULL;
+    newParticle->flags = OBJ_FLAG_NONE;
+
+    gNumParticles++;
+
+    return newParticle;
 }
 
 void projectile_init(Object *obj) {
@@ -205,21 +235,36 @@ Object *spawn_object_pos_scale(int objectID, float x, float y, float z, float sc
 }
 
 Clutter *spawn_clutter(int objectID, float x, float y, float z, short pitch, short roll, short yaw) {
-    Clutter *obj = allocate_clutter();
-    if (obj == NULL) {
+    Clutter *clutter = allocate_clutter();
+    if (clutter == NULL) {
         return NULL;
     }
-    obj->pos[0] = x;
-    obj->pos[1] = y;
-    obj->pos[2] = z;
-    obj->faceAngle[0] = pitch;
-    obj->faceAngle[1] = roll;
-    obj->faceAngle[2] = yaw;
-    obj->scale[0] = 1.0f;
-    obj->scale[1] = 1.0f;
-    obj->scale[2] = 1.0f;
-    obj->objectID = objectID;
-    return obj;
+    clutter->pos[0] = x;
+    clutter->pos[1] = y;
+    clutter->pos[2] = z;
+    clutter->faceAngle[0] = pitch;
+    clutter->faceAngle[1] = roll;
+    clutter->faceAngle[2] = yaw;
+    clutter->scale[0] = 1.0f;
+    clutter->scale[1] = 1.0f;
+    clutter->scale[2] = 1.0f;
+    clutter->objectID = objectID;
+    return clutter;
+}
+
+Particle *spawn_particle(Material *material, ParticleInfo *info, float x, float y, float z) {
+    Particle *particle = allocate_particle();
+    if (particle == NULL) {
+        return NULL;
+    }
+    particle->pos[0] = x;
+    particle->pos[1] = y;
+    particle->pos[2] = z;
+    particle->scale[0] = 1.0f;
+    particle->scale[1] = 1.0f;
+    particle->scale[2] = 1.0f;
+    particle->material = material;
+    return particle;
 }
 
 /**

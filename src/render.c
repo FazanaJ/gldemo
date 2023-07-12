@@ -14,24 +14,26 @@
 #include "math_util.h"
 #include "hud.h"
 #include "menu.h"
+#include "object.h"
 
 Environment *gEnvironment;
 float gAspectRatio = 1.0f;
 static rspq_block_t *sRenderEndBlock;
 static rspq_block_t *sRenderSkyBlock;
 static rspq_block_t *sBeginModeBlock;
+static rspq_block_t *sParticleBlock;
 char gZTargetTimer = 0;
 char gZTargetOut = 0;
 
 Material gTempMaterials[] = {
-    {NULL, 0, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_VTXCOL},
-    {NULL, -1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_LIGHTING | MATERIAL_VTXCOL},
-    {NULL, 1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_XLU},
-    {NULL, 2, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_VTXCOL},
-    {NULL, 1, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_VTXCOL},
-    {NULL, 3, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_XLU | MATERIAL_VTXCOL},
-    {NULL, 4, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_VTXCOL},
-    {NULL, 5, MATERIAL_DEPTH_WRITE | MATERIAL_FOG | MATERIAL_VTXCOL | MATERIAL_XLU},
+    {NULL, 0, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL},
+    {NULL, -1, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_LIGHTING | MATERIAL_VTXCOL},
+    {NULL, 1, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_XLU},
+    {NULL, 2, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_VTXCOL},
+    {NULL, 1, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_VTXCOL},
+    {NULL, 3, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_XLU | MATERIAL_VTXCOL},
+    {NULL, 4, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL},
+    {NULL, 5, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL | MATERIAL_XLU},
 };
 
 static model64_t *gPlayerModel;
@@ -55,24 +57,29 @@ light_t lightNeutral = {
     radius: 10.0f,
 };
 
+static void init_particles(void) {
+    rspq_block_begin();
+    glBegin(GL_QUADS);
+    glTexCoord2f(0, 0);
+    glVertex3i(-5, 0, 5);
+    glTexCoord2f(0, 1.024f);
+    glVertex3i(-5, 0, -5);
+    glTexCoord2f(1.024f, 1.024f);
+    glVertex3i(5, 0, -5);
+    glTexCoord2f(1.024f, 0);
+    glVertex3i(5, 0, 5);
+    glEnd();
+    sParticleBlock = rspq_block_end();
+}
+
 void init_renderer(void) {
     setup_light(lightNeutral);
     setup_fog(light);
     init_materials();
+    init_particles();
     gPlayerModel = model64_load("rom:/humanoid.model64");
     gWorldModel = model64_load("rom:/testarea.model64");
-    rspq_block_begin();
-    glDisable(GL_MULTISAMPLE_ARB);
-    glDisable(GL_TEXTURE_2D);
-    glDisable(GL_LIGHTING);
-    glDisable(GL_FOG);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_SCISSOR_TEST);
-    glDisable(GL_ALPHA_TEST);
-    glDisable(GL_BLEND);
-    glScissor(0, 0, display_get_width(), display_get_height());
-    sRenderEndBlock = rspq_block_end();
-
+    
     rspq_block_begin();
     glAlphaFunc(GL_GREATER, 0.5f);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -82,8 +89,23 @@ void init_renderer(void) {
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glShadeModel(GL_SMOOTH);
+    glDepthMask(GL_TRUE);
     glEnable(GL_SCISSOR_TEST);
     sBeginModeBlock = rspq_block_end();
+
+    rspq_block_begin();
+    glDisable(GL_MULTISAMPLE_ARB);
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_FOG);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_SCISSOR_TEST);
+    glDisable(GL_ALPHA_TEST);
+    glDisable(GL_BLEND);
+    glDepthMask(GL_FALSE);
+    glScissor(0, 0, display_get_width(), display_get_height());
+    sRenderEndBlock = rspq_block_end();
+
 }
 
 void setup_light(light_t light) {
@@ -129,7 +151,7 @@ void setup_fog(light_t light) {
     }
     gEnvironment->flags = ENV_FOG;
     gEnvironment->fogNear = 150.0f;
-    gEnvironment->fogFar = 500.0f;
+    gEnvironment->fogFar = 400.0f;
     glFogf(GL_FOG_START, gEnvironment->fogNear);
     glFogf(GL_FOG_END, gEnvironment->fogFar);
     glFogfv(GL_FOG_COLOR, gEnvironment->fogColour);
@@ -265,6 +287,23 @@ void apply_render_settings(void) {
         *(volatile uint32_t*)0xA4400000 |= 0x10000;
     } else {
         *(volatile uint32_t*)0xA4400000 &= ~0x10000;
+    }
+}
+
+void render_particles(void) {
+    ParticleList *list = gParticleListHead;
+    Particle *particle;
+    
+    while (list) {
+        particle = list->particle;
+        glPushMatrix();
+        set_material(&gTempMaterials[2], MATERIAL_NULL);
+        glTranslatef(particle->pos[0], particle->pos[1], particle->pos[2]);
+        glRotatef(SHORT_TO_DEGREES(gCamera->yaw), 0, 0, 1);
+        //glScalef(particle->scale[0], particle->scale[1], particle->scale[2]);
+        rspq_block_run(sParticleBlock); 
+        glPopMatrix();
+        list = list->next;
     }
 }
 
@@ -412,6 +451,11 @@ void render_game(int updateRate, float updateRateF) {
     rspq_block_run(sDecal1Block);
     set_material(&gTempMaterials[4], MATERIAL_DECAL);
     rspq_block_run(sDecal2Block);
+
+    
+    apply_anti_aliasing(AA_GEO);
+    set_particle_render_settings();
+    render_particles();
 
     get_time_snapshot(PP_RENDER, DEBUG_SNAPSHOT_1_END);
     DEBUG_SNAPSHOT_1_RESET();

@@ -27,6 +27,7 @@ MaterialList *gMaterialListTail;
 static Material *sCurrentMaterial;
 short gNumTextures;
 short gNumTextureLoads;
+static rspq_block_t *sParticleMaterialBlock;
 
 void init_materials(void) {
     bzero(&sRenderSettings, sizeof(RenderSettings));
@@ -36,6 +37,15 @@ void init_materials(void) {
     gNumTextures = 0;
     gNumTextureLoads = 0;
     sCurrentMaterial = NULL;
+    rspq_block_begin();
+    glDisable(GL_ALPHA_TEST);
+    glEnable(GL_BLEND);
+    glDepthMask(GL_FALSE);
+    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_COLOR_MATERIAL);
+    glDepthFunc(GL_LESS);
+    glEnable(GL_CULL_FACE);
+    sParticleMaterialBlock = rspq_block_end();
 }
 
 void bind_new_texture(MaterialList *material) {
@@ -157,6 +167,28 @@ void cycle_textures(int updateRate) {
     get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
 }
 
+void set_particle_render_settings(void) {
+    rspq_block_run(sParticleMaterialBlock);
+    sRenderSettings.cutout = false;
+    sRenderSettings.xlu = true;
+    sRenderSettings.depthRead = true;
+    sRenderSettings.vertexColour = false;
+    sRenderSettings.inter = false;
+    sRenderSettings.decal = false;
+    sRenderSettings.backface = false;
+    if (gEnvironment->flags & ENV_FOG) {
+        if (!sRenderSettings.fog) {
+            glEnable(GL_FOG);
+            sRenderSettings.fog = true;
+        }
+    } else {
+        if (sRenderSettings.fog) {
+            glDisable(GL_FOG);
+            sRenderSettings.fog = false;
+        }
+    }
+}
+
 void set_render_settings(int flags) {
     if (flags & MATERIAL_CUTOUT) {
         if (!sRenderSettings.cutout) {
@@ -182,15 +214,15 @@ void set_render_settings(int flags) {
             sRenderSettings.xlu = false;
         }
     }
-    if (flags & MATERIAL_DEPTH_WRITE) {
-        if (!sRenderSettings.depthWrite) {
+    if (flags & MATERIAL_DEPTH_READ) {
+        if (!sRenderSettings.depthRead) {
             glEnable(GL_DEPTH_TEST);
-            sRenderSettings.depthWrite = true;
+            sRenderSettings.depthRead = true;
         }
     } else {
-        if (sRenderSettings.depthWrite) {
+        if (sRenderSettings.depthRead) {
             glDisable(GL_DEPTH_TEST);
-            sRenderSettings.depthWrite = false;
+            sRenderSettings.depthRead = false;
         }
     }
     if (flags & MATERIAL_LIGHTING) {
@@ -206,7 +238,7 @@ void set_render_settings(int flags) {
     }
     if (flags & MATERIAL_FOG && gEnvironment->flags & ENV_FOG) {
         if (!sRenderSettings.fog) {
-            //glEnable(GL_FOG);
+            glEnable(GL_FOG);
             sRenderSettings.fog = true;
         }
     } else {

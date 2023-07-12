@@ -1,6 +1,7 @@
 #pragma once
 
 #include "object_data.h"
+#include "assets.h"
 
 enum ObjectFlags {
 	OBJ_FLAG_NONE,
@@ -80,11 +81,31 @@ typedef struct ClutterList {
 	struct ClutterList *prev;
 } ClutterList;
 
+typedef struct ParticleInfo {
+	float vel[3];
+} ParticleInfo;
+
+typedef struct Particle {
+	Material *material;
+	struct ParticleList *entry;
+	float pos[3];
+	float scale[3];
+	u_uint32_t flags;
+} Particle;
+
+typedef struct ParticleList {
+	Particle *particle;
+	struct ParticleList *next;
+	struct ParticleList *prev;
+} ParticleList;
+
 extern Object *gPlayer;
 extern ObjectList *gObjectListHead;
 extern ObjectList *gObjectListTail;
 extern ClutterList *gClutterListHead;
 extern ClutterList *gClutterListTail;
+extern ParticleList *gParticleListHead;
+extern ParticleList *gParticleListTail;
 extern short gNumObjects;
 extern short gNumClutter;
 
@@ -95,6 +116,7 @@ Object *spawn_object_pos_angle(int objectID, float x, float y, float z, short pi
 Object *spawn_object_pos_angle_scale(int objectID, float x, float y, float z, short pitch, short roll, short yaw, float scaleX, float scaleY, float scaleZ);
 Object *spawn_object_pos_scale(int objectID, float x, float y, float z, float scaleX, float scaleY, float scaleZ);
 Clutter *spawn_clutter(int objectID, float x, float y, float z, short pitch, short roll, short yaw);
+Particle *spawn_particle(Material *material, ParticleInfo *info, float x, float y, float z);
 void delete_object(Object *obj);
 void delete_clutter(Clutter *clutter);
 void update_game_entities(int updateRate, float updateRateF);
