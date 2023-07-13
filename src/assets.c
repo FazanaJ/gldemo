@@ -332,7 +332,7 @@ void set_material(Material *material, int flags) {
     get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
 }
 
-void set_particle_texture(Material *material) {
+void set_texture(Material *material) {
     DEBUG_SNAPSHOT_1();
     if (material->textureID != -1) {
         //if (material->index == NULL) {
@@ -344,4 +344,5 @@ void set_particle_texture(Material *material) {
         material->index->loadTimer = 120;
         glBindTexture(GL_TEXTURE_2D, material->index->texture);
     }
+    get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
 }

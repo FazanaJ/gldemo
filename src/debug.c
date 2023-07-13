@@ -179,7 +179,7 @@ void render_profiler(void) {
     rdpq_font_position(8, gFrameBuffers->height - 18);
     rdpq_font_printf(gCurrentFont, "Tex: %d | Loads: %d", gNumTextures, gNumTextureLoads);
     rdpq_font_position(8, gFrameBuffers->height - 28);
-    rdpq_font_printf(gCurrentFont, "Obj: %d | Clu: %d", gNumObjects, gNumClutter);
+    rdpq_font_printf(gCurrentFont, "Obj: %d | Clu: %d | Par: %d", gNumObjects, gNumClutter, gNumParticles);
     rdpq_font_end();
 }
 

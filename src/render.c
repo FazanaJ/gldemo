@@ -335,7 +335,7 @@ void render_particles(void) {
         particle = list->particle;
         glPushMatrix();
         if (particle->material) {
-            set_particle_texture(particle->material);
+            set_texture(particle->material);
         }
         glTranslateRotateScalef(gCamera->yaw, 
         particle->pos[0], particle->pos[1], particle->pos[2], 

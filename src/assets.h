@@ -72,4 +72,4 @@ void set_material(Material *material, int flags);
 void cycle_textures(int updateRate);
 void init_materials(void);
 void set_particle_render_settings(void);
-void set_particle_texture(Material *material);
+void set_texture(Material *material);
