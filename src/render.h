@@ -19,6 +19,10 @@ typedef struct{
 
 } light_t;
 
+typedef struct {
+    GLfloat m[4][4];
+} gl_matrix_t;
+
 typedef struct Environment {
     GLfloat fogColour[4];
     GLfloat skyColourTop[4];

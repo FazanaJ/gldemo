@@ -32,7 +32,6 @@ void camera_loop(int updateRate, float updateRateF) {
     float zoom;
     float stickX = get_stick_x(STICK_LEFT);
     float stickY = get_stick_y(STICK_LEFT);
-    short pitch;
     float pan;
     PlayerData *data = (PlayerData *) c->parent->data;
 
@@ -70,7 +69,7 @@ void camera_loop(int updateRate, float updateRateF) {
     c->yaw = lerp_short(c->yaw, c->yawTarget, 0.25f * updateRateF);
     c->zoom = lerp(c->zoom, c->intendedZoom, 0.05f * updateRateF);
 
-    pitch = c->pitch + c->lookPitch;
+    c->viewPitch = c->pitch + c->lookPitch;
     zoom = (float) (c->zoomAdd + c->zoom + c->targetZoom) / 20.0f;
     pan = (float) c->pan / 20.0f;
 
@@ -117,6 +116,6 @@ void camera_loop(int updateRate, float updateRateF) {
 
     c->pos[0] = intendedFocus[0] + ((zoom) * coss(c->yaw - 0x4000));
     c->pos[1] = intendedFocus[1] + ((zoom) * sins(c->yaw - 0x4000));
-    c->pos[2] = intendedFocus[2] + 10.0f + (17.5f * sins(pitch + 0x4000));
+    c->pos[2] = intendedFocus[2] + 10.0f + (17.5f * sins(c->viewPitch + 0x4000));
     get_time_snapshot(PP_CAMERA, DEBUG_SNAPSHOT_1_END);
 }

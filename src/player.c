@@ -19,7 +19,7 @@ void player_init(Object *obj) {
 
     data->healthBase = 12;
     data->healthMax = data->healthBase;
-    data->health = data->healthMax;
+    data->health = data->healthBase;
     data->cameraAngle = 0;
 }
 
@@ -33,6 +33,13 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
     if (gCurrentController == -1) {
         get_time_snapshot(PP_PLAYER, DEBUG_SNAPSHOT_1_END);
         return;
+    }
+
+    if (get_input_pressed(INPUT_DLEFT, 0)) {
+        data->health--;
+    }
+    if (get_input_pressed(INPUT_DRIGHT, 0)) {
+        data->health++;
     }
 
     Object *targetObj = find_nearest_object_facing(obj, OBJ_NPC, 30.0f, 0x3000, obj->faceAngle[2]);
@@ -61,7 +68,7 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
         Particle *part;
         play_sound_spatial_pitch(SOUND_CANNON, obj->pos, 1.0f);
         for (int i = 0; i < 7; i++) {
-            part = spawn_particle(NULL, obj->pos[0], obj->pos[1], obj->pos[2] + 5.0f);
+            part = spawn_particle(OBJ_NULL, obj->pos[0], obj->pos[1], obj->pos[2] + 5.0f);
             part->zVel = 0.0f;
             part->zVelIncrease = 0.01f;
             part->moveAngle = random_float() * 0x10000;

@@ -252,7 +252,7 @@ Clutter *spawn_clutter(int objectID, float x, float y, float z, short pitch, sho
     return clutter;
 }
 
-Particle *spawn_particle(Material *material, float x, float y, float z) {
+Particle *spawn_particle(int particleID, float x, float y, float z) {
     Particle *particle = allocate_particle();
     if (particle == NULL) {
         return NULL;
@@ -263,7 +263,7 @@ Particle *spawn_particle(Material *material, float x, float y, float z) {
     particle->scale[0] = 1.0f;
     particle->scale[1] = 1.0f;
     particle->scale[2] = 1.0f;
-    particle->material = material;
+    particle->material = NULL;
     return particle;
 }
 

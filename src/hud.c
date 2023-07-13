@@ -11,6 +11,8 @@
 #include "input.h"
 #include "math_util.h"
 
+static sprite_t *sHealthSprite;
+
 typedef struct SubtitleData {
     char text[128];
     int timer;
@@ -134,19 +136,96 @@ void clear_subtitles(void) {
     }
 }
 
-void render_health(void) {
+void render_health(float updateRateF) {
     if (gPlayer && gPlayer->data) {
         PlayerData *data = (PlayerData *) gPlayer->data;
 
-        rdpq_font_begin(RGBA32(255, 0, 0, 255));
+        if (sHealthSprite == NULL) {
+            sHealthSprite = sprite_load("rom:/health.i8.sprite");
+        }
+
+        int x = 0;
+        int y = 0;
+        int i;
+
+        /*rdpq_font_begin(RGBA32(255, 0, 0, 255));
         rdpq_font_position(16, 16);
         rdpq_font_printf(gCurrentFont, "HP: %d/%d", data->health, data->healthMax);
-        rdpq_font_end();
+        rdpq_font_end();*/
+        rdpq_mode_push();
+        rdpq_set_mode_standard();
+        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+        rdpq_set_prim_color(RGBA32(215, 40, 57, 192));
+        rdpq_mode_combiner(RDPQ_COMBINER_TEX_FLAT);
+        if (data->health > 0) {
+            for (i = 0; i < data->health - 4; i += 4) {
+                rdpq_sprite_blit(sHealthSprite, 16 + x, 12 + y, &(rdpq_blitparms_t) {.scale_x = 0.33f, .scale_y = 0.33f});
+                x += 12;
+                y -= 1;
+                if ((i / 4) % 8 == 7) {
+                    y += 20;
+                    x = 0;
+                }
+            }
+            int heartSpeed = (gGlobalTimer * 0x200) * updateRateF;
+            if (data->health < data->healthMax / 4) {
+                heartSpeed *= 2.5f;
+            } else if (data->health < data->healthMax / 2) {
+                heartSpeed *= 1.5f;
+            }
+            float addSize = sins(heartSpeed);
+            float heartScale = 0.450f + (addSize / 20.0f);
+            if (addSize < -0.9f) {
+                addSize = -0.9f;
+            }
+            switch(data->health % 4) {
+            case 1: // Quarter
+                rdpq_set_scissor(16 + x - addSize, 8 + y - addSize, 16 + x + 8, 8 + y + 8);
+                rdpq_sprite_blit(sHealthSprite, 16 + x - addSize, 8 + y - addSize, &(rdpq_blitparms_t){.scale_x = heartScale, .scale_y = heartScale});
+                break;
+            case 2: // Half
+                rdpq_set_scissor(16 + x - addSize, 0, 16 + x + 8, 100);
+                rdpq_sprite_blit(sHealthSprite, 16 + x - addSize, 8 + y - addSize, &(rdpq_blitparms_t){.scale_x = heartScale, .scale_y = heartScale});
+                break;
+            case 3: // Three Quarters
+                rdpq_set_scissor(16 + x - addSize, 0, 16 + x + 8, 100);
+                rdpq_sprite_blit(sHealthSprite, 16 + x - addSize, 8 + y - addSize, &(rdpq_blitparms_t){.scale_x = heartScale, .scale_y = heartScale});
+                rdpq_set_scissor(24 + x, 16 + y, 32 + x + addSize, 24 + y + addSize);
+                rdpq_sprite_blit(sHealthSprite, 16 + x - addSize, 8 + y - addSize, &(rdpq_blitparms_t){.scale_x = heartScale, .scale_y = heartScale});
+                break;
+            case 0: // Full
+                rdpq_sprite_blit(sHealthSprite, 16 + x - addSize, 8 + y - addSize, &(rdpq_blitparms_t){.scale_x = heartScale, .scale_y = heartScale});
+                break;
+            }
+            rdpq_set_scissor(0, 0, display_get_width(), display_get_height());
+            x += 12;
+            y -= 1;
+            if (((i / 4) % 8) == 7) {
+                y += 20;
+                x = 0;
+            }
+            i += 4;
+        } else {
+            i = 0;
+        }
+        rdpq_mode_blender(0);
+        rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+        rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+        for (; i < data->healthMax; i += 4) {
+            rdpq_fill_rectangle(21 + x, 16 + y, 21 + x + 2, 16 + y + 2);
+            x += 12;
+            y -= 1;
+            if ((i / 4) % 8 == 7) {
+                y += 20;
+                x = 0;
+            }
+        }
     }
+    rdpq_mode_pop();
 }
 
 void render_hud(int updateRate, float updateRateF) {
-    //render_health();
+    render_health(updateRateF);
     process_subtitle_timers(updateRate, updateRateF);
     render_hud_subtitles();
 
@@ -156,4 +235,19 @@ void render_hud(int updateRate, float updateRateF) {
         rdpq_font_print(gCurrentFont, "Press Start");
         rdpq_font_end();
     }
+
+    
+    /*static sprite_t *background;
+
+    if (!background) {
+        background = sprite_load("rom:/wheat.rgba32.sprite");
+    }
+    
+    rdpq_mode_push();
+    //rdpq_mode_tlut(TLUT_RGBA16);
+    rdpq_set_mode_standard();
+    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    //rdpq_tex_upload_tlut(sprite_get_palette(background), 0, 16);
+    rdpq_sprite_blit(background, 120, 120, NULL);
+    rdpq_mode_pop();*/
 }

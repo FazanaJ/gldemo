@@ -26,7 +26,7 @@ void init_debug(void) {
     //rdpq_debug_log(true);
     gDebugData = malloc(sizeof(DebugData));
     bzero(gDebugData, sizeof(DebugData));
-    gDebugData->enabled = true;
+    gDebugData->enabled = false;
 }
 
 void reset_profiler_times(void) {

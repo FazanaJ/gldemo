@@ -5,7 +5,7 @@ src = $(wildcard src/*.c)
 src += $(wildcard assets/*.c)
 overlay += $(wildcard src/overlays/*.c)
 assets_ttf = $(wildcard assets/fonts/*.ttf)
-assets_png = $(wildcard assets/textures/*.png)
+assets_png = $(wildcard assets/textures/*.png) $(wildcard assets/icons/*.png)
 assets_wav = $(wildcard assets/sounds/*.wav)
 assets_gltf = $(wildcard assets/models/*.glb)
 assets_xm1 = $(wildcard assets/xm/*.xm)
@@ -28,6 +28,11 @@ filesystem/%.font64: assets/fonts/%.ttf
 	@$(N64_MKFONT) $(MKFONT_FLAGS) -o filesystem "$<"
 
 filesystem/%.sprite: assets/textures/%.png
+	@mkdir -p $(dir $@)
+	@echo "    [SPRITE] $@"
+	@$(N64_MKSPRITE) --compress -o "$(dir $@)" "$<"
+
+filesystem/%.sprite: assets/icons/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
 	@$(N64_MKSPRITE) --compress -o "$(dir $@)" "$<"

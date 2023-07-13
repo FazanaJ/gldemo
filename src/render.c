@@ -290,6 +290,43 @@ void apply_render_settings(void) {
     }
 }
 
+void glTranslateRotatef(short angle, GLfloat x, GLfloat y, GLfloat z) {
+    float c = coss(angle);
+    float s = sins(angle);
+
+    gl_matrix_t rotation = (gl_matrix_t){ .m={
+        {c, s, 0.0f, 0.0f},
+        {-s, c, 0.0f, 0.0f},
+        {0.0f, 0.0f, 1.0f, 0.0f},
+        {x, y, z, 1.0f},
+    }};
+
+    glMultMatrixf(rotation.m[0]);
+}
+
+void glTranslateRotateScalef(short angle, GLfloat x, GLfloat y, GLfloat z, GLfloat scaleX, GLfloat scaleY, GLfloat scaleZ) {
+    float c = coss(angle);
+    float s = sins(angle);
+
+    gl_matrix_t rotation = (gl_matrix_t){ .m={
+        {c, s, 0.0f, 0.0f},
+        {-s, c, 0.0f, 0.0f},
+        {0.0f, 0.0f, 1.0f, 0.0f},
+        {x, y, z, 1.0f},
+    }};
+
+    glMultMatrixf(rotation.m[0]);
+
+    gl_matrix_t scale = (gl_matrix_t){ .m={
+        {scaleX, 0.0f, 0.0f, 0.0f},
+        {0.0f, scaleY, 0.0f, 0.0f},
+        {0.0f, 0.0f, scaleZ, 0.0f},
+        {0.0f, 0.0f, 0.0f, 1.0f},
+    }};
+
+    glMultMatrixf(scale.m[0]);
+}
+
 void render_particles(void) {
     ParticleList *list = gParticleListHead;
     Particle *particle;
@@ -300,10 +337,10 @@ void render_particles(void) {
         if (particle->material) {
             set_particle_texture(particle->material);
         }
-        glTranslatef(particle->pos[0], particle->pos[1], particle->pos[2]);
-        glRotatef(SHORT_TO_DEGREES(gCamera->yaw), 0, 0, 1);
-        glScalef(particle->scale[0], particle->scale[1], particle->scale[2]);
-        rspq_block_run(sParticleBlock); 
+        glTranslateRotateScalef(gCamera->yaw, 
+        particle->pos[0], particle->pos[1], particle->pos[2], 
+        particle->scale[0], particle->scale[1], particle->scale[2]);
+        rspq_block_run(sParticleBlock);
         glPopMatrix();
         list = list->next;
     }
@@ -358,10 +395,7 @@ void render_game(int updateRate, float updateRateF) {
             glPushMatrix();
             
             set_material(&gTempMaterials[3], MATERIAL_NULL);
-            glTranslatef(obj->pos[0], obj->pos[1], obj->pos[2]);
-            glRotatef(SHORT_TO_DEGREES(gCamera->yaw), 0, 0, 1);
-            //glScalef(obj->scale[0], obj->scale[1], obj->scale[2]);
-            
+            glTranslateRotatef(gCamera->yaw, obj->pos[0], obj->pos[1], obj->pos[2]);            
             if (sBushBlock == NULL) {
                 rspq_block_begin();
                 render_bush(); 
@@ -376,9 +410,7 @@ void render_game(int updateRate, float updateRateF) {
     apply_anti_aliasing(AA_ACTOR);
 
     glPushMatrix();
-	glTranslatef(gPlayer->pos[0], gPlayer->pos[1], gPlayer->pos[2]);
-    glRotatef(SHORT_TO_DEGREES(gPlayer->faceAngle[2]), 0, 0, 1);
-	glScalef(0.9f, 1.25f, 1.25f);
+    glTranslateRotateScalef(gPlayer->faceAngle[2], gPlayer->pos[0], gPlayer->pos[1], gPlayer->pos[2], 0.9f, 1.25f, 1.25f);
     set_material(&gTempMaterials[1], MATERIAL_NULL);
     if (sPlayerBlock == NULL) {
         rspq_block_begin();
@@ -396,17 +428,13 @@ void render_game(int updateRate, float updateRateF) {
         if (obj2->objectID == OBJ_PROJECTILE) {
             glPushMatrix();
             set_material(&gTempMaterials[2], MATERIAL_NULL);
-            glTranslatef(obj2->pos[0], obj2->pos[1], obj2->pos[2]);
-            glRotatef(SHORT_TO_DEGREES(gCamera->yaw), 0, 0, 1);
-            //glScalef(obj2->scale[0], obj2->scale[1], obj2->scale[2]);
+            glTranslateRotatef(gCamera->yaw, obj2->pos[0], obj2->pos[1], obj2->pos[2]);
             render_bush(); 
             glPopMatrix();
         } else if (obj2->objectID == OBJ_NPC) {
             glPushMatrix();
             set_material(&gTempMaterials[1], MATERIAL_NULL);
-            glTranslatef(obj2->pos[0], obj2->pos[1], obj2->pos[2]);
-            glRotatef(SHORT_TO_DEGREES(obj2->faceAngle[2]), 0, 0, 1);
-	        glScalef(0.9f, 1.25f, 1.25f);
+            glTranslateRotateScalef(obj2->faceAngle[2], obj2->pos[0], obj2->pos[1], obj2->pos[2], 0.9f, 1.25f, 1.25f);
             rspq_block_run(sPlayerBlock);
             glPopMatrix();
         }

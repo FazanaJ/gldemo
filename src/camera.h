@@ -14,6 +14,7 @@ typedef struct Camera {
 	short targetZoom;
 	short zoomAdd;
 	short pitch;
+	short viewPitch;
 	short lookPitch;
 	short roll;
 	short yaw;
