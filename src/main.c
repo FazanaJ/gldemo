@@ -117,8 +117,10 @@ void init_save(void) {
     gConfig.screenMode = SCREEN_4_3;
     gConfig.frameCap = 0;
     gConfig.soundMode = SOUND_STEREO;
-    gConfig.musicVolume = 9;
+    gConfig.musicVolume = 1;
     gConfig.soundVolume = 9;
+    sMusicVolume = (float) gConfig.musicVolume / (float) 9.0f;
+    sSoundVolume = (float) gConfig.soundVolume / (float) 9.0f;
 }
 
 void init_game(void) {

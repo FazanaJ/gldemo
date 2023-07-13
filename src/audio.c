@@ -8,6 +8,7 @@
 #include "main.h"
 #include "math_util.h"
 #include "camera.h"
+#include "menu.h"
 
 static char sSoundChannelNum = 0;
 static char sSoundPrioTable[32];
@@ -66,6 +67,7 @@ void update_sequence(int updateRate) {
                 mixer_ch_set_vol((sSoundChannelNum - s->channelCount) + i, sMusicVolume, sMusicVolume);
             }
             xm64player_open(&sXMPlayer, s->seqPath);
+            xm64player_set_vol(&sXMPlayer, sMusicVolume);
             xm64player_play(&sXMPlayer, s->channelCount);
             sCurrentSequenceID = sNextSequenceID;
         } else {

@@ -12,6 +12,12 @@
 #include "math_util.h"
 
 static sprite_t *sHealthSprite;
+static rspq_block_t *sHealthBlock;
+static rspq_block_t *sHealthEmptyBlock;
+static unsigned short sPrevHealth;
+static unsigned short sPrevHealthMax;
+static short sHealthPosX;
+static short sHealthPosY;
 
 typedef struct SubtitleData {
     char text[128];
@@ -136,6 +142,55 @@ void clear_subtitles(void) {
     }
 }
 
+void generate_health_block(int hpMin, int hpMax) {
+        int x = 0;
+        int y = 0;
+        int i;
+
+        rspq_block_begin();
+        rdpq_mode_push();
+        rdpq_set_mode_standard();
+        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+        rdpq_set_prim_color(RGBA32(215, 40, 57, 192));
+        rdpq_mode_combiner(RDPQ_COMBINER_TEX_FLAT);
+        if (hpMin > 0) {
+            for (i = 0; i < hpMin; i += 4) {
+                if (i < hpMin - 4) {
+                    rdpq_sprite_blit(sHealthSprite, 16 + x, 12 + y, &(rdpq_blitparms_t) {.scale_x = 0.33f, .scale_y = 0.33f});
+                } else {
+                    sHealthPosX = x;
+                    sHealthPosY = y;
+                }
+                x += 12;
+                y -= 1;
+                if ((i / 4) % 8 == 7) {
+                    y += 20;
+                    x = 0;
+                }
+            }
+        } else {
+            i = 0;
+        }
+        sHealthBlock = rspq_block_end();
+        rspq_block_begin();
+        rdpq_mode_blender(0);
+        rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+        rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+        for (; i < hpMax; i += 4) {
+            rdpq_fill_rectangle(21 + x, 16 + y, 21 + x + 2, 16 + y + 2);
+            x += 12;
+            y -= 1;
+            if ((i / 4) % 8 == 7) {
+                y += 20;
+                x = 0;
+            }
+        }
+    rdpq_mode_pop();
+    sHealthEmptyBlock = rspq_block_end();
+    sPrevHealth = hpMin;
+    sPrevHealthMax = hpMax;
+}
+
 void render_health(float updateRateF) {
     if (gPlayer && gPlayer->data) {
         PlayerData *data = (PlayerData *) gPlayer->data;
@@ -144,30 +199,18 @@ void render_health(float updateRateF) {
             sHealthSprite = sprite_load("rom:/health.i8.sprite");
         }
 
-        int x = 0;
-        int y = 0;
-        int i;
-
-        /*rdpq_font_begin(RGBA32(255, 0, 0, 255));
-        rdpq_font_position(16, 16);
-        rdpq_font_printf(gCurrentFont, "HP: %d/%d", data->health, data->healthMax);
-        rdpq_font_end();*/
-        rdpq_mode_push();
-        rdpq_set_mode_standard();
-        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-        rdpq_set_prim_color(RGBA32(215, 40, 57, 192));
-        rdpq_mode_combiner(RDPQ_COMBINER_TEX_FLAT);
-        if (data->health > 0) {
-            for (i = 0; i < data->health - 4; i += 4) {
-                rdpq_sprite_blit(sHealthSprite, 16 + x, 12 + y, &(rdpq_blitparms_t) {.scale_x = 0.33f, .scale_y = 0.33f});
-                x += 12;
-                y -= 1;
-                if ((i / 4) % 8 == 7) {
-                    y += 20;
-                    x = 0;
-                }
+        if (sHealthBlock == NULL || sHealthEmptyBlock == NULL || sPrevHealth != data->health || sPrevHealthMax != data->healthMax) {
+            if (sHealthBlock) {
+                rspq_block_free(sHealthBlock);
             }
-            int heartSpeed = (gGlobalTimer * 0x200) * updateRateF;
+            if (sHealthEmptyBlock) {
+                rspq_block_free(sHealthEmptyBlock);
+            }
+            generate_health_block(data->health, data->healthMax);
+        }
+        if (data->health > 0) {
+            rspq_block_run(sHealthBlock);
+            int heartSpeed = (gGameTimer * 0x200);
             if (data->health < data->healthMax / 4) {
                 heartSpeed *= 2.5f;
             } else if (data->health < data->healthMax / 2) {
@@ -178,6 +221,8 @@ void render_health(float updateRateF) {
             if (addSize < -0.9f) {
                 addSize = -0.9f;
             }
+            int x = sHealthPosX;
+            int y = sHealthPosY;
             switch(data->health % 4) {
             case 1: // Quarter
                 rdpq_set_scissor(16 + x - addSize, 8 + y - addSize, 16 + x + 8, 8 + y + 8);
@@ -197,31 +242,10 @@ void render_health(float updateRateF) {
                 rdpq_sprite_blit(sHealthSprite, 16 + x - addSize, 8 + y - addSize, &(rdpq_blitparms_t){.scale_x = heartScale, .scale_y = heartScale});
                 break;
             }
-            rdpq_set_scissor(0, 0, display_get_width(), display_get_height());
-            x += 12;
-            y -= 1;
-            if (((i / 4) % 8) == 7) {
-                y += 20;
-                x = 0;
-            }
-            i += 4;
-        } else {
-            i = 0;
-        }
-        rdpq_mode_blender(0);
-        rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
-        rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-        for (; i < data->healthMax; i += 4) {
-            rdpq_fill_rectangle(21 + x, 16 + y, 21 + x + 2, 16 + y + 2);
-            x += 12;
-            y -= 1;
-            if ((i / 4) % 8 == 7) {
-                y += 20;
-                x = 0;
-            }
+            rdpq_set_scissor(0, 0, display_get_width(), display_get_height()); 
         }
     }
-    rdpq_mode_pop();
+    rspq_block_run(sHealthEmptyBlock);
 }
 
 void render_hud(int updateRate, float updateRateF) {
