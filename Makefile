@@ -30,12 +30,12 @@ filesystem/%.font64: assets/fonts/%.ttf
 filesystem/%.sprite: assets/textures/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) --compress 2 -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/icons/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) --compress 2 -o "$(dir $@)" "$<"
 
 filesystem/%.wav64: assets/sounds/%.wav
 	@mkdir -p $(dir $@)

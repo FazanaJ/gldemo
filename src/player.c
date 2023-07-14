@@ -42,6 +42,16 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
         data->health++;
     }
 
+    if (get_input_pressed(INPUT_DDOWN, 0)) {
+        data->healthMax--;
+        if (data->health > data->healthMax) {
+            data->health = data->healthMax;
+        }
+    }
+    if (get_input_pressed(INPUT_DUP, 0)) {
+        data->healthMax++;
+    }
+
     Object *targetObj = find_nearest_object_facing(obj, OBJ_NPC, 30.0f, 0x3000, obj->faceAngle[2]);
     if (targetObj) {
         gCamera->target = targetObj;

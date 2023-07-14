@@ -23,7 +23,6 @@ static rspq_block_t *sRenderSkyBlock;
 static rspq_block_t *sBeginModeBlock;
 static rspq_block_t *sParticleBlock;
 char gZTargetTimer = 0;
-char gZTargetOut = 0;
 
 Material gTempMaterials[] = {
     {NULL, 0, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL},
@@ -276,13 +275,14 @@ void apply_anti_aliasing(int mode) {
 }
 
 void apply_render_settings(void) {
+    int targetPos;
     rspq_block_run(sBeginModeBlock);
     if (gConfig.regionMode == TV_PAL) {
-        gZTargetOut = gZTargetTimer * (1.5f * 1.2f);
+        targetPos = gZTargetTimer * (1.5f * 1.2f);
     } else {
-        gZTargetOut = gZTargetTimer * 1.5f;
+        targetPos = gZTargetTimer * 1.5f;
     }
-    glScissor(0, gZTargetOut, display_get_width(), display_get_height() - (gZTargetOut * 2));
+    glScissor(0, targetPos, display_get_width(), display_get_height() - (targetPos * 2));
     if (gConfig.dedither) {
         *(volatile uint32_t*)0xA4400000 |= 0x10000;
     } else {
@@ -488,18 +488,9 @@ void render_game(int updateRate, float updateRateF) {
     render_particles();
 
     get_time_snapshot(PP_RENDER, DEBUG_SNAPSHOT_1_END);
-    DEBUG_SNAPSHOT_1_RESET();
     
     render_end();
     gl_context_end();
-    if (gZTargetTimer) {
-        rdpq_set_mode_fill(RGBA32(0, 0, 0, 255));
-        rdpq_mode_blender(0);
-        rdpq_fill_rectangle(0, 0, display_get_width(), gZTargetOut);
-        rdpq_fill_rectangle(0, display_get_height() - gZTargetOut, display_get_width(), display_get_height());
-        rdpq_set_mode_standard();
-    }
     render_hud(updateRate, updateRateF);
     render_menus(updateRate, updateRateF);
-    get_time_snapshot(PP_HUD, DEBUG_SNAPSHOT_1_END);
 }

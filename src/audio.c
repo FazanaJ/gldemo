@@ -69,12 +69,12 @@ void update_sequence(int updateRate) {
             xm64player_open(&sXMPlayer, s->seqPath);
             xm64player_set_vol(&sXMPlayer, sMusicVolume);
             xm64player_play(&sXMPlayer, s->channelCount);
+            set_music_volume(sMusicVolume);
             sCurrentSequenceID = sNextSequenceID;
         } else {
             float fade;
             fade = ((float) sSequenceFadeTimer / (float) sSequenceFadeTimerSet) * sMusicVolume;
             set_music_volume(fade);
-            xm64player_set_vol(&sXMPlayer, fade);
         }
     }
 }

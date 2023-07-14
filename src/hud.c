@@ -10,6 +10,7 @@
 #include "main.h"
 #include "input.h"
 #include "math_util.h"
+#include "debug.h"
 
 static sprite_t *sHealthSprite;
 static rspq_block_t *sHealthBlock;
@@ -147,7 +148,7 @@ void generate_health_block(int hpMin, int hpMax, int hpBase) {
     int y = 0;
     int i;
     char c[3] = {215, 40, 57};
-    int newColour = false;
+    int newColour = 0;
     
     if (sHealthSprite == NULL) {
         sHealthSprite = sprite_load("rom:/health.i8.sprite");
@@ -177,6 +178,7 @@ void generate_health_block(int hpMin, int hpMax, int hpBase) {
     glEnd();
     rdpq_mode_push();
     rdpq_set_mode_standard();
+    glDisable(GL_MULTISAMPLE_ARB);
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
     rdpq_set_prim_color(RGBA32(c[0], c[1], c[2], 192));
     rdpq_mode_combiner(RDPQ_COMBINER_TEX_FLAT);
@@ -197,14 +199,22 @@ void generate_health_block(int hpMin, int hpMax, int hpBase) {
             if ((i / 4) % 8 == 7) {
                 y += 18;
                 x = 0;
-                if (y > 16 && newColour == false) {
-                    newColour = true;
-                    c[0] = 255;
-                    c[1] = 255;
-                    c[2] = 0;
+                if (y > 16) {
+                    if (i < hpMin - 4) {
+                        if (newColour == 0) {
+                            c[0] = 255;
+                            c[1] = 255;
+                            c[2] = 0;
+                        } else {
+                            c[0] = 255;
+                            c[1] = 128;
+                            c[2] = 0;
+                        }
+                        rdpq_set_prim_color(RGBA32(c[0], c[1], c[2], 192));
+                    }
                     x = 0;
                     y = 0;
-                    rdpq_set_prim_color(RGBA32(c[0], c[1], c[2], 192));
+                    newColour++;
                 }
             }
         }
@@ -223,12 +233,69 @@ void generate_health_block(int hpMin, int hpMax, int hpBase) {
         if ((i / 4) % 8 == 7) {
             y += 18;
             x = 0;
+            if (y > 16) {
+                x = 0;
+                y = 0;
+            }
         }
     }
     rdpq_mode_pop();
     sHealthEmptyBlock = rspq_block_end();
     sPrevHealth = hpMin;
     sPrevHealthMax = hpMax;
+}
+
+void render_health_bg(int numHealth, int hpMax) {
+    PlayerData *data = (PlayerData *) gPlayer->data;
+    int heartSpeed = (gGameTimer * 0x200);
+    if (data->health <= data->healthMax / 4) {
+        heartSpeed *= 2.5f;
+    } else if (data->health <= data->healthMax / 2) {
+        heartSpeed *= 1.5f;
+    }
+    float addSize = sins(heartSpeed);
+    float heartScale = 0.450f + (addSize / 20.0f);
+    if (addSize < -0.9f) {
+        addSize = -0.9f;
+    }
+    int x = sHealthPosX;
+    int y = sHealthPosY;
+    surface_t surf = sprite_get_pixels(sHealthSprite);
+    rdpq_set_prim_color(RGBA32(0, 0, 0, 160));
+    // If this isn't even the last heart then skip the funnies
+    if ((data->healthMax / 4) < (data->health / 4)) {
+        return;
+    } else if ((data->healthMax / 4) != (data->health / 4)) {
+        goto fullHealth;
+    }
+    switch (hpMax % 4) {
+    case 0: // 4/4
+        fullHealth:
+        // Draw right half
+        if (numHealth == 1) {
+            rdpq_set_scissor(24 + x, 8 + y - addSize, 32 + x + addSize, 16 + y);
+            rdpq_tex_blit(&surf, 16 + x - addSize, 8 + y - addSize, &(rdpq_blitparms_t){.scale_x = heartScale, .scale_y = heartScale});
+        } else {
+            rdpq_set_scissor(24 + x, 0, 24 + x + 8 + addSize, 100);
+            rdpq_tex_blit(&surf, 16 + x - addSize, 8 + y - addSize, &(rdpq_blitparms_t){.scale_x = heartScale, .scale_y = heartScale});
+        }
+        firstQuart:
+        if (numHealth == 3) {
+            rdpq_set_scissor(16 + x - addSize, 16 + y, 24 + x, 24 + y + addSize);
+            rdpq_tex_blit(&surf, 16 + x - addSize, 8 + y - addSize, &(rdpq_blitparms_t){.scale_x = heartScale, .scale_y = heartScale});
+        }
+        break;
+    case 3: // 3/4
+        if (numHealth != 1) {
+            rdpq_set_scissor(24 + x, 16 + y, 32 + x + addSize, 24 + y + addSize);
+            rdpq_tex_blit(&surf, 16 + x - addSize, 8 + y - addSize, &(rdpq_blitparms_t){.scale_x = heartScale, .scale_y = heartScale});
+        }
+        goto firstQuart;
+        break;
+    case 2: // 2/4
+        goto firstQuart;
+        break;
+    }    
 }
 
 void render_health(float updateRateF) {
@@ -244,12 +311,12 @@ void render_health(float updateRateF) {
             }
             generate_health_block(data->health, data->healthMax, data->healthBase);
         }
+        rspq_block_run(sHealthBlock);
         if (data->health > 0) {
-            rspq_block_run(sHealthBlock);
             int heartSpeed = (gGameTimer * 0x200);
-            if (data->health < data->healthMax / 4) {
+            if (data->health <= data->healthMax / 4) {
                 heartSpeed *= 2.5f;
-            } else if (data->health < data->healthMax / 2) {
+            } else if (data->health <= data->healthMax / 2) {
                 heartSpeed *= 1.5f;
             }
             float addSize = sins(heartSpeed);
@@ -264,16 +331,19 @@ void render_health(float updateRateF) {
             case 1: // Quarter
                 rdpq_set_scissor(16 + x - addSize, 8 + y - addSize, 16 + x + 8, 8 + y + 8);
                 rdpq_tex_blit(&surf, 16 + x - addSize, 8 + y - addSize, &(rdpq_blitparms_t){.scale_x = heartScale, .scale_y = heartScale});
+                render_health_bg(3, data->healthMax);
                 break;
             case 2: // Half
                 rdpq_set_scissor(16 + x - addSize, 0, 16 + x + 8, 100);
                 rdpq_tex_blit(&surf, 16 + x - addSize, 8 + y - addSize, &(rdpq_blitparms_t){.scale_x = heartScale, .scale_y = heartScale});
+                render_health_bg(2, data->healthMax);
                 break;
             case 3: // Three Quarters
                 rdpq_set_scissor(16 + x - addSize, 0, 16 + x + 8, 100);
                 rdpq_tex_blit(&surf, 16 + x - addSize, 8 + y - addSize, &(rdpq_blitparms_t){.scale_x = heartScale, .scale_y = heartScale});
                 rdpq_set_scissor(24 + x, 16 + y, 32 + x + addSize, 24 + y + addSize);
                 rdpq_tex_blit(&surf, 16 + x - addSize, 8 + y - addSize, &(rdpq_blitparms_t){.scale_x = heartScale, .scale_y = heartScale});
+                render_health_bg(1, data->healthMax);
                 break;
             case 0: // Full
                 rdpq_tex_blit(&surf, 16 + x - addSize, 8 + y - addSize, &(rdpq_blitparms_t){.scale_x = heartScale, .scale_y = heartScale});
@@ -285,12 +355,30 @@ void render_health(float updateRateF) {
     rspq_block_run(sHealthEmptyBlock);
 }
 
+void render_ztarget(void) {
+    int targetPos;
+    if (gConfig.regionMode == TV_PAL) {
+        targetPos = gZTargetTimer * (1.5f * 1.2f);
+    } else {
+        targetPos = gZTargetTimer * 1.5f;
+    }
+    if (targetPos) {
+        rdpq_set_mode_fill(RGBA32(0, 0, 0, 255));
+        rdpq_mode_blender(0);
+        rdpq_fill_rectangle(0, 0, display_get_width(), targetPos);
+        rdpq_fill_rectangle(0, display_get_height() - targetPos, display_get_width(), display_get_height());
+        rdpq_set_mode_standard();
+    }
+}
+
 void render_hud(int updateRate, float updateRateF) {
+    DEBUG_SNAPSHOT_1();
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(0.0f, display_get_width(), display_get_height(), 0.0f, -1.0f, 1.0f);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+    render_ztarget();
     render_health(updateRateF);
     process_subtitle_timers(updateRate, updateRateF);
     render_hud_subtitles();
@@ -301,4 +389,5 @@ void render_hud(int updateRate, float updateRateF) {
         rdpq_font_print(gCurrentFont, "Press Start");
         rdpq_font_end();
     }
+    get_time_snapshot(PP_HUD, DEBUG_SNAPSHOT_1_END);
 }
