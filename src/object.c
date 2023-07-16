@@ -537,6 +537,6 @@ void update_game_entities(int updateRate, float updateRateF) {
         update_objects(updateRate, updateRateF);
         update_clutter(updateRate, updateRateF);
         update_particles(updateRate, updateRateF);
-        camera_loop(updateRate, updateRateF);
     }
+    camera_loop(updateRate, updateRateF);
 }

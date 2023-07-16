@@ -6,11 +6,16 @@
 #include "input.h"
 #include "main.h"
 #include "audio.h"
+#include "math_util.h"
 
-char gMenuStatus = 0;
-static char sMenuSwapTimer = 0;
+char gMenuStatus = MENU_TITLE;
+char gMenuPrev = MENU_TITLE;
 char gIsPal = false;
-static short gMenuSelection[2];
+static char sMenuSwapTimer = 0;
+static short sMenuSelection[2];
+static short sMenuSelectionPrev[2];
+static char sMenuSelectionTimer[2] = {0, 0};
+static char sMenuSelectionType[2] = {0, 0};
 
 void menu_reset_display(void) {
     reset_display();
@@ -77,7 +82,7 @@ void render_menu_options(int updateRate, float updateRateF) {
         if (m->flags & OPTION_STUB || (m->flags & OPTION_PAL_ONLY && gIsPal == false)) {
             continue;
         }
-        if (i == gMenuSelection[1]) {
+        if (i == sMenuSelection[1]) {
             rdpq_set_prim_color(RGBA32(255, 0, 0, 255));
         } else {
             rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
@@ -99,72 +104,195 @@ void render_menu_options(int updateRate, float updateRateF) {
     rdpq_font_end();
 }
 
-void process_option_menu(int updateRate) {
-    if (get_input_pressed(INPUT_DUP, 3)) {
-        gMenuSelection[1]--;
-        while (gMenuSelection[1] > -1 && (sMenuOptions[gMenuSelection[1]].flags & OPTION_STUB || (sMenuOptions[gMenuSelection[1]].flags & OPTION_PAL_ONLY && gIsPal == false))) {
-            gMenuSelection[1]--;
-        }
-        if (gMenuSelection[1] == -1) {
-            gMenuSelection[1] = (sizeof(sMenuOptions) / sizeof(MenuOption)) -1;
-        }
-        clear_input(INPUT_DUP);
-    } else if (get_input_pressed(INPUT_DDOWN, 3)) {
-        gMenuSelection[1]++;
-        while (gMenuSelection[1] <= (sizeof(sMenuOptions) / sizeof(MenuOption) -1) && (sMenuOptions[gMenuSelection[1]].flags & OPTION_STUB || (sMenuOptions[gMenuSelection[1]].flags & OPTION_PAL_ONLY && gIsPal == false))) {
-            gMenuSelection[1]++;
-        }
-        if (gMenuSelection[1] >= sizeof(sMenuOptions) / sizeof(MenuOption)) {
-            gMenuSelection[1] = 0;
-        }
-        clear_input(INPUT_DDOWN);
+void render_menu_title(int updateRate, float updateRateF) {
+
+    if (gCurrentController == -1) {
+        return;
     }
 
-    if (get_input_pressed(INPUT_DLEFT, 3)) {
-        MenuOption *m = &sMenuOptions[gMenuSelection[1]];
-        clear_input(INPUT_DLEFT);
-        *m->valuePtr = *m->valuePtr - 1;
-        if (*m->valuePtr < m->minValue) {
-            if (m->flags & OPTION_WRAP) {
-                *m->valuePtr = m->maxValue;
-            } else {
-                *m->valuePtr = m->minValue;
-            }
+    rdpq_font_begin(RGBA32(255, 255, 255, 255));
+    rdpq_font_position(32, display_get_height() - 80);
+    
+        if (0 == sMenuSelection[1]) {
+            rdpq_set_prim_color(RGBA32(255, 0, 0, 255));
+        } else {
+            rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
         }
+
+    rdpq_font_print(gCurrentFont, "Play");
+    rdpq_font_position(32, display_get_height() - 70);
+    
+        if (1 == sMenuSelection[1]) {
+            rdpq_set_prim_color(RGBA32(255, 0, 0, 255));
+        } else {
+            rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+        }
+
+    rdpq_font_print(gCurrentFont, "Options");
+    rdpq_font_end();
+}
+
+void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short *selectionY,  int minX, int minY, int maxX, int maxY) {
+    int stickMag;
+
+    if (flags & MENUSTICK_STICKX) {
+        stickMag = get_stick_x(STICK_LEFT);
+        DECREASE_VAR(sMenuSelectionTimer[0], updateRate, 0);
+        if (fabs(stickMag) > 40) {
+            if (sMenuSelectionTimer[0] == 0) {
+                if (sMenuSelectionType[0] == 0) {
+                    sMenuSelectionTimer[0] = 30;
+                    sMenuSelectionType[0] = 1;
+                } else {
+                    sMenuSelectionTimer[0] = 10;
+                }
+                if (stickMag < 0) {
+                    if (*selectionX > minX) {
+                        *selectionX = *selectionX - 1;
+                    } else {
+                        if (flags & MENUSTICK_WRAPX) {
+                            *selectionX = maxX;
+                        }
+                    }
+                } else {
+                    if (*selectionX < maxX) {
+                        *selectionX = *selectionX + 1;
+                    } else {
+                        if (flags & MENUSTICK_WRAPX) {
+                            *selectionX = minX;
+                        }
+                    }
+                }
+            }
+        } else {
+            sMenuSelectionType[0] = 0;
+            sMenuSelectionTimer[0] = 0;
+        }
+    }
+    if (flags & MENUSTICK_STICKY) {
+        stickMag = get_stick_y(STICK_LEFT);
+        DECREASE_VAR(sMenuSelectionTimer[1], updateRate, 0);
+        if (fabs(stickMag) > 40) {
+            if (sMenuSelectionTimer[1] == 0) {
+                if (sMenuSelectionType[1] == 0) {
+                    sMenuSelectionTimer[1] = 30;
+                    sMenuSelectionType[1] = 1;
+                } else {
+                    sMenuSelectionTimer[1] = 10;
+                }
+                if (stickMag > 0) {
+                    if (*selectionY > minY) {
+                        *selectionY = *selectionY - 1;
+                    } else {
+                        if (flags & MENUSTICK_WRAPY) {
+                            *selectionY = maxY - 1;
+                        }
+                    }
+                } else {
+                    if (*selectionY < maxY - 1) {
+                        *selectionY = *selectionY + 1;
+                    } else {
+                        if (flags & MENUSTICK_WRAPY) {
+                            *selectionY = minY;
+                        }
+                    }
+                }
+            }
+        } else {
+            sMenuSelectionType[1] = 0;
+            sMenuSelectionTimer[1] = 0;
+        }
+    }
+}
+
+void process_option_menu(int updateRate) {
+    int xWrap = 0;
+    MenuOption *m = &sMenuOptions[sMenuSelection[1]];
+    if (m->flags & OPTION_WRAP) {
+        xWrap = MENUSTICK_WRAPX;
+    }
+    int prevMenuSelection = sMenuSelection[1];
+    short tempVar = *m->valuePtr;
+    handle_menu_stick_input(updateRate, MENUSTICK_STICKX | MENUSTICK_STICKY | MENUSTICK_WRAPY | xWrap, &tempVar, &sMenuSelection[1], m->minValue, 0, m->maxValue, sizeof(sMenuOptions) / sizeof(MenuOption));
+    if (tempVar != *m->valuePtr) {
+        *m->valuePtr = tempVar;
         if (m->func) {
             (m->func)();
         }
     }
-    if (get_input_pressed(INPUT_DRIGHT, 3)) {
-        MenuOption *m = &sMenuOptions[gMenuSelection[1]];
-        clear_input(INPUT_DRIGHT);
-        *m->valuePtr = *m->valuePtr + 1;
-        if (*m->valuePtr > m->maxValue) {
-            if (m->flags & OPTION_WRAP) {
-                *m->valuePtr = m->minValue;
-            } else {
-                *m->valuePtr = m->maxValue;
+    if (prevMenuSelection != sMenuSelection[1]) {
+        if (prevMenuSelection < sMenuSelection[1]) {
+            while (sMenuSelection[1] <= (sizeof(sMenuOptions) / sizeof(MenuOption) -1) && (sMenuOptions[sMenuSelection[1]].flags & OPTION_STUB || (sMenuOptions[sMenuSelection[1]].flags & OPTION_PAL_ONLY && gIsPal == false))) {
+                sMenuSelection[1]++;
+            }
+            if (sMenuSelection[1] == -1) {
+                sMenuSelection[1] = (sizeof(sMenuOptions) / sizeof(MenuOption)) -1;
+            }
+        } else {
+            while (sMenuSelection[1] > 0 && (sMenuOptions[sMenuSelection[1]].flags & OPTION_STUB || (sMenuOptions[sMenuSelection[1]].flags & OPTION_PAL_ONLY && gIsPal == false))) {
+                sMenuSelection[1]--;
+            }
+            if (sMenuSelection[1] >= sizeof(sMenuOptions) / sizeof(MenuOption)) {
+                sMenuSelection[1] = 0;
             }
         }
-        if (m->func) {
-            (m->func)();
+    }
+}
+
+void process_title_menu(int updateRate) {
+    if (gCurrentController == -1) {
+        return;
+    }
+
+    handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &sMenuSelection[1], 0, 0, 0, 2);
+
+    if (get_input_pressed(INPUT_A, 3) && sMenuSwapTimer == 0) {
+        clear_input(INPUT_A);
+        switch (sMenuSelection[1]) {
+        case 0:
+            gMenuStatus = MENU_CLOSED;
+            gMenuPrev = gMenuStatus;
+            sMenuSelectionPrev[0] = sMenuSelection[0];
+            sMenuSelectionPrev[1] = sMenuSelection[1];
+            sMenuSelection[0] = 0;
+            sMenuSelection[1] = 0;
+            break;
+        case 1:
+            gMenuPrev = gMenuStatus;
+            sMenuSelectionPrev[0] = sMenuSelection[0];
+            sMenuSelectionPrev[1] = sMenuSelection[1];
+            sMenuSelection[0] = 0;
+            sMenuSelection[1] = 0;
+            gMenuStatus = MENU_OPTIONS;
+            sMenuSwapTimer = 30;
+            break;
         }
     }
 }
 
 void process_menus(int updateRate, float updateRateF) {
+    DECREASE_VAR(sMenuSwapTimer, updateRate, 0);
     switch (gMenuStatus) {
     case MENU_CLOSED:
         if (get_input_pressed(INPUT_START, 3) && sMenuSwapTimer == 0) {
             clear_input(INPUT_START);
+            gMenuPrev = gMenuStatus;
             gMenuStatus = MENU_OPTIONS;
+            sMenuSwapTimer = 30;
         }
+        return;
+    case MENU_TITLE:
+        process_title_menu(updateRate);
         return;
     case MENU_OPTIONS:
         process_option_menu(updateRate);
-        if (get_input_pressed(INPUT_START, 3) && sMenuSwapTimer == 0) {
+        if ((get_input_pressed(INPUT_START, 3) || get_input_pressed(INPUT_B, 3)) && sMenuSwapTimer == 0) {
             clear_input(INPUT_START);
-            gMenuStatus = MENU_CLOSED;
+            clear_input(INPUT_B);
+            sMenuSelection[0] = sMenuSelectionPrev[0];
+            sMenuSelection[1] = sMenuSelectionPrev[1];
+            gMenuStatus = gMenuPrev;
+            sMenuSwapTimer = 30;
         }
         return;
     }
@@ -173,6 +301,9 @@ void process_menus(int updateRate, float updateRateF) {
 void render_menus(int updateRate, float updateRateF) {
     switch (gMenuStatus) {
     case MENU_CLOSED:
+        return;
+    case MENU_TITLE:
+        render_menu_title(updateRate, updateRateF);
         return;
     case MENU_OPTIONS:
         render_menu_options(updateRate, updateRateF);

@@ -22,9 +22,20 @@ typedef struct MenuOption {
 
 enum MenuStatus {
     MENU_CLOSED,
+    MENU_TITLE,
     MENU_OPTIONS,
 
     MENU_TOTAL
+};
+
+enum MenuStickFlags {
+    MENUSTICK_NULL,
+    MENUSTICK_STICKX = (1 << 0),
+    MENUSTICK_STICKY = (1 << 1),
+    MENUSTICK_WRAPX = (1 << 2),
+    MENUSTICK_WRAPY = (1 << 3),
+
+    MENUSTICK_TOTAL
 };
 
 extern char gMenuStatus;
