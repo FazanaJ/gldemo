@@ -373,13 +373,15 @@ void render_ztarget(void) {
 
 void render_hud(int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0.0f, display_get_width(), display_get_height(), 0.0f, -1.0f, 1.0f);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    render_ztarget();
-    render_health(updateRateF);
+    if (gPlayer) {
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho(0.0f, display_get_width(), display_get_height(), 0.0f, -1.0f, 1.0f);
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+        render_ztarget();
+        render_health(updateRateF);
+    }
     process_subtitle_timers(updateRate, updateRateF);
     render_hud_subtitles();
 

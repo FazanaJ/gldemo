@@ -15,6 +15,7 @@
 #include "hud.h"
 #include "audio.h"
 #include "menu.h"
+#include "scene.h"
 
 surface_t gZBuffer;
 surface_t *gFrameBuffers;
@@ -38,25 +39,6 @@ static const resolution_t sVideoModes[] = {
 };
 
 Config gConfig;
-
-void setup(void) {
-
-    init_renderer();
-
-    gPlayer = spawn_object_pos(OBJ_PLAYER, 0.0f, 0.0f, 0.0f);
-    spawn_clutter(CLUTTER_BUSH, 20, 40, 0, 0, 0, 0);
-    spawn_clutter(CLUTTER_BUSH, 10, 45, 0, 0, 0, 0);
-    spawn_clutter(CLUTTER_BUSH, 35, -100, 0, 0, 0, 0);
-    spawn_clutter(CLUTTER_BUSH, 75, -25, 0, 0, 0, 0);
-    spawn_clutter(CLUTTER_BUSH, 60, 40, 0, 0, 0, 0);
-    spawn_clutter(CLUTTER_BUSH, -25, 45, 0, 0, 0, 0);
-    spawn_clutter(CLUTTER_BUSH, -95, 40, 0, 0, 0, 0);
-    spawn_clutter(CLUTTER_BUSH, 45, 0, 0, 0, 0, 0);
-    spawn_clutter(CLUTTER_BUSH, 75, -75, 0, 0, 0, 0);
-    spawn_object_pos(OBJ_NPC, 50.0f, 0.0f, 0.0f);
-
-    camera_init();
-}
 
 char sFirstBoot = 0;
 
@@ -134,6 +116,11 @@ void init_game(void) {
     gGameTimer = 0;
 }
 
+/**
+ * Generate the delta time values.
+ * Use a while loop with a frame debt system to generate accurate integer delta, with just a regular comparison for floats.
+ * Multiply the float value by 1.2 for PAL users. For integer, use timer_int(int timer) to set a region corrected timer instead.
+*/
 void update_game_time(int *updateRate, float *updateRateF) {
     static unsigned int prevTime = 0;
     static unsigned int deltaTime = 0;
@@ -167,7 +154,8 @@ int main(void) {
 
     init_game();    
     gCurrentFont = rdpq_font_load(gFontAssetTable[0]);
-    setup();
+    init_renderer();
+    load_scene(0);
 
     while (1) {
         gFrameBuffers = display_get();

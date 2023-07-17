@@ -21,6 +21,7 @@ typedef struct MenuOption {
 } MenuOption;
 
 enum MenuStatus {
+    MENU_PREV = -1,
     MENU_CLOSED,
     MENU_TITLE,
     MENU_OPTIONS,

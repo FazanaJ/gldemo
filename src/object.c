@@ -122,11 +122,32 @@ void projectile_loop(Object *obj, int updateRate, float updateRateF) {
 
     data->life --;
 
-    obj->pos[0] += (obj->forwardVel * sins(obj->moveAngle[2])) / 10.0f;
-    obj->pos[1] -= (obj->forwardVel * coss(obj->moveAngle[2])) / 10.0f;
-
     if (data->life == 0) {
         delete_object(obj);
+    }
+}
+
+void object_move(Object *obj, float updateRateF) {
+    if (obj->forwardVel != 0.0f) {
+        obj->pos[0] += ((obj->forwardVel * sins(obj->moveAngle[2])) / 20.0f) * updateRateF;
+        obj->pos[1] -= ((obj->forwardVel * coss(obj->moveAngle[2])) / 20.0f) * updateRateF;
+    }
+}
+
+void object_gravity(Object *obj, float updateRateF) {
+    float weightMax = -(obj->weight * 10.0f);
+    if (obj->yVel > weightMax) {
+        obj->yVel -= (obj->weight) * updateRateF;
+        if (obj->yVel < weightMax) {
+            obj->yVel = weightMax;
+        }
+    }
+    if (obj->yVel != 0.0f) {
+        obj->pos[2] += (obj->yVel / 10.0f) * updateRateF;
+        if (obj->yVel < 0.0f && obj->pos[2] - obj->floorHeight < 0.0f) {
+            obj->pos[2] = obj->floorHeight;
+            obj->yVel = 0.0f;
+        }
     }
 }
 
@@ -150,6 +171,12 @@ static const unsigned short gObjectData[] = {
     sizeof(ProjectileData),
 };
 
+static const int gObjectFlags[] = {
+    0,
+    OBJ_FLAG_MOVE | OBJ_FLAG_GRAVITY,
+    OBJ_FLAG_MOVE,
+};
+
 static void set_object_functions(Object *obj, int objectID) {
     void (*initFunc)(Object *obj) = gObjectInits[objectID];
     if (gObjectData[objectID]) {
@@ -160,6 +187,7 @@ static void set_object_functions(Object *obj, int objectID) {
         (*initFunc)(obj);
     }
     obj->loopFunc = gObjectLoops[objectID];
+    obj->flags = gObjectFlags[objectID];
 }
 
 Object *spawn_object_pos(int objectID, float x, float y, float z) {
@@ -383,6 +411,9 @@ void clear_objects(void) {
     while (gClutterListHead) {
         free_clutter(gClutterListHead->clutter);
     }
+    while (gParticleListHead) {
+        free_particle(gParticleListHead->particle);
+    }
 }
 
 Object *find_nearest_object(Object *obj, int objectID, float baseDist) {
@@ -448,13 +479,19 @@ static void update_objects(int updateRate, float updateRateF) {
     while (objList) {
         obj = objList->obj;
         obj->cameraDist = DIST3(obj->pos, gCamera->pos);
-        if (obj->loopFunc) {
-            (objList->obj->loopFunc)(objList->obj, updateRate, updateRateF);
-        }
         if (obj->cameraDist < obj->viewDist) {
             obj->flags &= ~OBJ_FLAG_INVISIBLE;
         } else {
             obj->flags |= OBJ_FLAG_INVISIBLE;
+        }
+        if (obj->loopFunc) {
+            (objList->obj->loopFunc)(objList->obj, updateRate, updateRateF);
+        }
+        if (obj->flags & OBJ_FLAG_MOVE) {
+            object_move(obj, updateRateF);
+        }
+        if (obj->flags & OBJ_FLAG_GRAVITY) {
+            object_gravity(obj, updateRateF);
         }
         objList = objList->next;
         if (obj->flags & OBJ_FLAG_DELETE) {

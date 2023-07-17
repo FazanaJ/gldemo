@@ -18,6 +18,8 @@ const TextureInfo sTextureIDs[] = {
     {"rom:/shadow.i4.sprite", TEX_MIRROR_H | TEX_MIRROR_V, 0},
     {"rom:/stone.ci4.sprite", TEX_NULL, 0},
     {"rom:/water.ci8.sprite", TEX_NULL, 0},
+    {"rom:/kitchentile.i8.sprite", TEX_NULL, 0},
+    {"rom:/introsign.i4.sprite", TEX_NULL, 0},
 };
 
 RenderSettings sRenderSettings;

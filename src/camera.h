@@ -25,6 +25,9 @@ typedef struct Camera {
 	char moveTimer;
 } Camera;
 
+#define CAMERA_CUTSCENE 0
+#define CAMERA_TARGET 1
+
 extern Camera *gCamera;
 
 void camera_init(void);

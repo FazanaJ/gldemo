@@ -7,15 +7,42 @@
 #include "main.h"
 #include "audio.h"
 #include "math_util.h"
+#include "scene.h"
+
+#define NUM_MENU_PREVS 4
 
 char gMenuStatus = MENU_TITLE;
-char gMenuPrev = MENU_TITLE;
+char gMenuPrev[NUM_MENU_PREVS];
 char gIsPal = false;
 static char sMenuSwapTimer = 0;
 static short sMenuSelection[2];
-static short sMenuSelectionPrev[2];
+static short sMenuSelectionPrev[NUM_MENU_PREVS][2];
 static char sMenuSelectionTimer[2] = {0, 0};
 static char sMenuSelectionType[2] = {0, 0};
+static unsigned char sMenuStackPos = 0;
+
+void menu_set_forward(int menuID) {
+    sMenuSelectionPrev[sMenuStackPos][0] = sMenuSelection[0];
+    sMenuSelectionPrev[sMenuStackPos][1] = sMenuSelection[1];
+    sMenuSelection[0] = 0;
+    sMenuSelection[1] = 0;
+    gMenuPrev[sMenuStackPos] = gMenuStatus;
+    sMenuSwapTimer = 30;
+    gMenuStatus = menuID;
+    sMenuStackPos++;
+}
+
+void menu_set_backward(int menuID) {
+    sMenuStackPos--;
+    sMenuSelection[0] = sMenuSelectionPrev[sMenuStackPos][0];
+    sMenuSelection[1] = sMenuSelectionPrev[sMenuStackPos][1];
+    sMenuSwapTimer = 30;
+    if (menuID == MENU_PREV) {
+        gMenuStatus = gMenuPrev[sMenuStackPos];
+    } else {
+        gMenuStatus = menuID;
+    }
+}
 
 void menu_reset_display(void) {
     reset_display();
@@ -138,7 +165,7 @@ void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short
     if (flags & MENUSTICK_STICKX) {
         stickMag = get_stick_x(STICK_LEFT);
         DECREASE_VAR(sMenuSelectionTimer[0], updateRate, 0);
-        if (fabs(stickMag) > 40) {
+        if (fabs(stickMag) > 40 || get_input_held(INPUT_DLEFT) || get_input_held(INPUT_DRIGHT)) {
             if (sMenuSelectionTimer[0] == 0) {
                 if (sMenuSelectionType[0] == 0) {
                     sMenuSelectionTimer[0] = 30;
@@ -146,7 +173,7 @@ void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short
                 } else {
                     sMenuSelectionTimer[0] = 10;
                 }
-                if (stickMag < 0) {
+                if (stickMag < 0 || get_input_held(INPUT_DLEFT)) {
                     if (*selectionX > minX) {
                         *selectionX = *selectionX - 1;
                     } else {
@@ -172,7 +199,7 @@ void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short
     if (flags & MENUSTICK_STICKY) {
         stickMag = get_stick_y(STICK_LEFT);
         DECREASE_VAR(sMenuSelectionTimer[1], updateRate, 0);
-        if (fabs(stickMag) > 40) {
+        if (fabs(stickMag) > 40 || get_input_held(INPUT_DUP) || get_input_held(INPUT_DDOWN)) {
             if (sMenuSelectionTimer[1] == 0) {
                 if (sMenuSelectionType[1] == 0) {
                     sMenuSelectionTimer[1] = 30;
@@ -180,7 +207,7 @@ void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short
                 } else {
                     sMenuSelectionTimer[1] = 10;
                 }
-                if (stickMag > 0) {
+                if (stickMag > 0 || get_input_held(INPUT_DUP)) {
                     if (*selectionY > minY) {
                         *selectionY = *selectionY - 1;
                     } else {
@@ -251,19 +278,15 @@ void process_title_menu(int updateRate) {
         switch (sMenuSelection[1]) {
         case 0:
             gMenuStatus = MENU_CLOSED;
-            gMenuPrev = gMenuStatus;
-            sMenuSelectionPrev[0] = sMenuSelection[0];
-            sMenuSelectionPrev[1] = sMenuSelection[1];
+            gMenuPrev[0] = gMenuStatus;
+            sMenuSelectionPrev[0][0] = sMenuSelection[0];
+            sMenuSelectionPrev[0][1] = sMenuSelection[1];
             sMenuSelection[0] = 0;
             sMenuSelection[1] = 0;
+            load_scene(1);
             break;
         case 1:
-            gMenuPrev = gMenuStatus;
-            sMenuSelectionPrev[0] = sMenuSelection[0];
-            sMenuSelectionPrev[1] = sMenuSelection[1];
-            sMenuSelection[0] = 0;
-            sMenuSelection[1] = 0;
-            gMenuStatus = MENU_OPTIONS;
+            menu_set_forward(MENU_OPTIONS);
             sMenuSwapTimer = 30;
             break;
         }
@@ -276,9 +299,7 @@ void process_menus(int updateRate, float updateRateF) {
     case MENU_CLOSED:
         if (get_input_pressed(INPUT_START, 3) && sMenuSwapTimer == 0) {
             clear_input(INPUT_START);
-            gMenuPrev = gMenuStatus;
-            gMenuStatus = MENU_OPTIONS;
-            sMenuSwapTimer = 30;
+            menu_set_forward(MENU_OPTIONS);
         }
         return;
     case MENU_TITLE:
@@ -289,10 +310,7 @@ void process_menus(int updateRate, float updateRateF) {
         if ((get_input_pressed(INPUT_START, 3) || get_input_pressed(INPUT_B, 3)) && sMenuSwapTimer == 0) {
             clear_input(INPUT_START);
             clear_input(INPUT_B);
-            sMenuSelection[0] = sMenuSelectionPrev[0];
-            sMenuSelection[1] = sMenuSelectionPrev[1];
-            gMenuStatus = gMenuPrev;
-            sMenuSwapTimer = 30;
+            menu_set_backward(MENU_PREV);
         }
         return;
     }

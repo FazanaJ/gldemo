@@ -21,6 +21,7 @@ void player_init(Object *obj) {
     data->healthMax = data->healthBase;
     data->health = data->healthBase;
     data->cameraAngle = 0;
+    obj->weight = 1.0f;
 }
 
 void player_loop(Object *obj, int updateRate, float updateRateF) {
@@ -75,22 +76,28 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
     }
 
     if (get_input_pressed(INPUT_A, 0) && gGameTimer > 120) {
-        Particle *part;
-        play_sound_spatial_pitch(SOUND_CANNON, obj->pos, 1.0f);
-        for (int i = 0; i < 7; i++) {
-            part = spawn_particle(OBJ_NULL, obj->pos[0], obj->pos[1], obj->pos[2] + 5.0f);
-            part->zVel = 0.0f;
-            part->zVelIncrease = 0.01f;
-            part->moveAngle = random_float() * 0x10000;
-            part->forwardVel = 0.5f;
-            part->forwardVelIncrease = -0.025f;
-            part->timer = 120;
-            part->scale[0] = 0.2f;
-            part->scale[1] = 0.2f;
-            part->scale[2] = 0.2f;
-            part->scaleIncrease[0] = 0.005f;
-            part->scaleIncrease[1] = 0.005f;
-            part->scaleIncrease[2] = 0.005f;
+        if (get_input_held(INPUT_Z)) {
+            if (obj->yVel == 0.0f) {
+                obj->yVel = 10.0f;
+            }
+        } else {
+            Particle *part;
+            play_sound_spatial_pitch(SOUND_CANNON, obj->pos, 1.0f);
+            for (int i = 0; i < 7; i++) {
+                part = spawn_particle(OBJ_NULL, obj->pos[0], obj->pos[1], obj->pos[2] + 5.0f);
+                part->zVel = 0.0f;
+                part->zVelIncrease = 0.01f;
+                part->moveAngle = random_float() * 0x10000;
+                part->forwardVel = 0.5f;
+                part->forwardVelIncrease = -0.025f;
+                part->timer = 120;
+                part->scale[0] = 0.2f;
+                part->scale[1] = 0.2f;
+                part->scale[2] = 0.2f;
+                part->scaleIncrease[0] = 0.005f;
+                part->scaleIncrease[1] = 0.005f;
+                part->scaleIncrease[2] = 0.005f;
+            }
         }
     }
 
@@ -133,11 +140,6 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
 
     if (obj->forwardVel > 0.0f) {
         DECREASE_VAR(obj->forwardVel, updateRateF * 0.25f, 0);
-    }
-
-    if (obj->forwardVel != 0.0f) {
-        obj->pos[0] += ((obj->forwardVel * sins(obj->moveAngle[2])) / 20.0f) * updateRateF;
-        obj->pos[1] -= ((obj->forwardVel * coss(obj->moveAngle[2])) / 20.0f) * updateRateF;
     }
 
     get_time_snapshot(PP_PLAYER, DEBUG_SNAPSHOT_1_END);

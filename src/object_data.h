@@ -8,6 +8,9 @@ typedef struct PlayerData {
 	short healthMax;
 	short cameraAngle;
 	struct Object *zTarget;
+	char action;
+
+
 	unsigned char walkTimer;
 } PlayerData;
 

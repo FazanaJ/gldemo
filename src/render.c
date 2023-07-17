@@ -15,6 +15,7 @@
 #include "hud.h"
 #include "menu.h"
 #include "object.h"
+#include "scene.h"
 
 Environment *gEnvironment;
 float gAspectRatio = 1.0f;
@@ -36,7 +37,6 @@ Material gTempMaterials[] = {
 };
 
 static model64_t *gPlayerModel;
-static model64_t *gWorldModel;
 
 light_t light = {
     
@@ -77,7 +77,6 @@ void init_renderer(void) {
     init_materials();
     init_particles();
     gPlayerModel = model64_load("rom:/humanoid.model64");
-    gWorldModel = model64_load("rom:/testarea.model64");
 
     rspq_block_begin();
     glAlphaFunc(GL_GREATER, 0.5f);
@@ -219,9 +218,6 @@ void render_end(void) {
 
 rspq_block_t *sPlayerBlock;
 rspq_block_t *sBushBlock;
-rspq_block_t *sPlaneBlockFloor;
-rspq_block_t *sPlaneBlockWater;
-rspq_block_t *sPlaneBlockWall;
 rspq_block_t *sShadowBlock;
 rspq_block_t *sDecal1Block;
 rspq_block_t *sDecal2Block;
@@ -357,35 +353,21 @@ void render_game(int updateRate, float updateRateF) {
     apply_render_settings();
     set_light(lightNeutral);
 
-    glPushMatrix();
-	glScalef(5.0f, 5.0f, 5.0f);
-    if (sPlaneBlockFloor == NULL) {
-        mesh_t *worldFloor = model64_get_mesh(gWorldModel, 1);
-        rspq_block_begin();
-        model64_draw_mesh(worldFloor);
-        sPlaneBlockFloor = rspq_block_end();
-    }
-    if (sPlaneBlockWall == NULL) {
-        mesh_t *worldWall = model64_get_mesh(gWorldModel, 0);
-        rspq_block_begin();
-        model64_draw_mesh(worldWall);
-        sPlaneBlockWall = rspq_block_end();
-    }
-    if (sPlaneBlockWater == NULL) {
-        mesh_t *worldWater = model64_get_mesh(gWorldModel, 2);
-        rspq_block_begin();
-        model64_draw_mesh(worldWater);
-        sPlaneBlockWater = rspq_block_end();
-    }
-    set_material(&gTempMaterials[0], MATERIAL_NULL);
-    rspq_block_run(sPlaneBlockFloor);
-    set_material(&gTempMaterials[6], MATERIAL_NULL);
-    rspq_block_run(sPlaneBlockWall);
-    set_material(&gTempMaterials[7], MATERIAL_INTER);
-    rspq_block_run(sPlaneBlockWater);
-    glPopMatrix();
+    if (sCurrentScene && sCurrentScene->model) {
+        SceneMesh *s = sCurrentScene->meshList;
 
-    render_shadow(gPlayer->pos);
+        while (s != NULL) {
+            if (s->material) {
+                set_material(s->material, s->flags);
+            }
+            rspq_block_run(s->renderBlock);
+            s = s->next;
+        }
+    }
+
+    if (gPlayer) {
+        render_shadow(gPlayer->pos);
+    }
 
     ClutterList *list = gClutterListHead;
     Clutter *obj;
@@ -409,16 +391,18 @@ void render_game(int updateRate, float updateRateF) {
     
     apply_anti_aliasing(AA_ACTOR);
 
-    glPushMatrix();
-    glTranslateRotateScalef(gPlayer->faceAngle[2], gPlayer->pos[0], gPlayer->pos[1], gPlayer->pos[2], 0.9f, 1.25f, 1.25f);
-    set_material(&gTempMaterials[1], MATERIAL_NULL);
-    if (sPlayerBlock == NULL) {
-        rspq_block_begin();
-        model64_draw(gPlayerModel);
-        sPlayerBlock = rspq_block_end();
+    if (gPlayer) {
+        glPushMatrix();
+        glTranslateRotateScalef(gPlayer->faceAngle[2], gPlayer->pos[0], gPlayer->pos[1], gPlayer->pos[2], 0.9f, 1.25f, 1.25f);
+        set_material(&gTempMaterials[1], MATERIAL_NULL);
+        if (sPlayerBlock == NULL) {
+            rspq_block_begin();
+            model64_draw(gPlayerModel);
+            sPlayerBlock = rspq_block_end();
+        }
+        rspq_block_run(sPlayerBlock);
+        glPopMatrix();
     }
-    rspq_block_run(sPlayerBlock);
-    glPopMatrix();
     
     ObjectList *list2 = gObjectListHead;
     Object *obj2;

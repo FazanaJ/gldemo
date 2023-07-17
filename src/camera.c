@@ -24,12 +24,20 @@ void camera_init(void) {
     gCamera->intendedZoom = 400;
     if (gPlayer) {
         gCamera->parent = gPlayer;
+        gCamera->mode = CAMERA_TARGET;
+    } else {
+        gCamera->mode = CAMERA_CUTSCENE;
     }
+    gCamera->focus[0] = 0;
+    gCamera->focus[1] = 0;
+    gCamera->focus[2] = 1;
+
+    gCamera->pos[0] = 5.0f;
+    gCamera->pos[1] = 0.0f;
+    gCamera->pos[2] = 1.0f;
 }
 
-void camera_loop(int updateRate, float updateRateF) {
-    DEBUG_SNAPSHOT_1();
-    Camera *c = gCamera;
+void camera_update_target(Camera *c, int updateRate, float updateRateF) {
     float zoom;
     float stickX = get_stick_x(STICK_LEFT);
     float stickY = get_stick_y(STICK_LEFT);
@@ -120,5 +128,14 @@ void camera_loop(int updateRate, float updateRateF) {
     c->pos[0] = intendedFocus[0] + ((zoom) * coss(c->yaw - 0x4000));
     c->pos[1] = intendedFocus[1] + ((zoom) * sins(c->yaw - 0x4000));
     c->pos[2] = intendedFocus[2] + 10.0f + (17.5f * sins(c->viewPitch + 0x4000));
+}
+
+void camera_loop(int updateRate, float updateRateF) {
+    DEBUG_SNAPSHOT_1();
+    Camera *c = gCamera;
+
+    if (c->mode == CAMERA_TARGET) {
+        camera_update_target(c, updateRate, updateRateF);
+    }
     get_time_snapshot(PP_CAMERA, DEBUG_SNAPSHOT_1_END);
 }

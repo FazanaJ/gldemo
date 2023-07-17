@@ -7,6 +7,8 @@ enum ObjectFlags {
 	OBJ_FLAG_NONE,
 	OBJ_FLAG_DELETE = 		(1 << 0),
 	OBJ_FLAG_INVISIBLE = 	(1 << 1),
+	OBJ_FLAG_MOVE = 		(1 << 2),
+	OBJ_FLAG_GRAVITY = 		(1 << 3),
 };
 
 enum ObjectIDs {
@@ -47,7 +49,9 @@ typedef struct Object {
 	float cameraDist;
 	float viewDist;
 	float pos[3];
-	float vel[3];
+	float yVel;
+	float yVelMax;
+	float weight;
 	float scale[3];
 	float forwardVel;
 	u_uint32_t flags;
@@ -55,6 +59,7 @@ typedef struct Object {
 	uint16_t moveAngle[3];
 	void *data;
 	short objectID;
+	short floorHeight;
 } Object;
 
 typedef struct ObjectList {
@@ -152,3 +157,5 @@ void delete_clutter(Clutter *clutter);
 void update_game_entities(int updateRate, float updateRateF);
 Object *find_nearest_object(Object *obj, int objectID, float baseDist);
 Object *find_nearest_object_facing(Object *obj, int objectID, float baseDist, int range, int angle);
+void object_move(Object *obj, float updateRateF);
+void clear_objects(void);
