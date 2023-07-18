@@ -115,7 +115,7 @@ int load_texture(Material *material) {
     list->textureID = material->textureID;
     glGenTextures(1, &list->texture);
     bind_new_texture(list);
-    list->loadTimer = 120;
+    list->loadTimer = 10;
     material->index = list;
     gNumTextures++;
     return 0;
@@ -126,9 +126,11 @@ void free_material(MaterialList *material) {
         if (gMaterialListHead->next) {
             gMaterialListHead = gMaterialListHead->next;
             gMaterialListHead->prev = NULL;
-            gMaterialListTail = gMaterialListHead;
         } else {
             gMaterialListHead = NULL;
+            if (material == gMaterialListTail) {
+                gMaterialListTail = NULL;
+            }
         }
     } else {
         if (material == gMaterialListTail) {
@@ -314,7 +316,7 @@ void set_material(Material *material, int flags) {
             glEnable(GL_TEXTURE_2D);
             sRenderSettings.texture = true;
         }
-        material->index->loadTimer = 120;
+        material->index->loadTimer = 10;
         glBindTexture(GL_TEXTURE_2D, material->index->texture);
     } else {
         if (sRenderSettings.texture) {
@@ -343,7 +345,7 @@ void set_texture(Material *material) {
                 return;
             }
         //}
-        material->index->loadTimer = 120;
+        material->index->loadTimer = 10;
         glBindTexture(GL_TEXTURE_2D, material->index->texture);
     }
     get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);

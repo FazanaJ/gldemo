@@ -25,6 +25,7 @@ enum MenuStatus {
     MENU_CLOSED,
     MENU_TITLE,
     MENU_OPTIONS,
+    MENU_CONFIG,
 
     MENU_TOTAL
 };

@@ -32,6 +32,13 @@ void menu_set_forward(int menuID) {
     sMenuStackPos++;
 }
 
+void menu_set_sideward(int menuID) {
+    sMenuSelection[0] = 0;
+    sMenuSelection[1] = 0;
+    sMenuSwapTimer = 30;
+    gMenuStatus = menuID;
+}
+
 void menu_set_backward(int menuID) {
     sMenuStackPos--;
     sMenuSelection[0] = sMenuSelectionPrev[sMenuStackPos][0];
@@ -95,7 +102,7 @@ static char *sMenuOptionStrings[] = {
     "25"
 };
 
-void render_menu_options(int updateRate, float updateRateF) {
+void render_menu_config(int updateRate, float updateRateF) {
     int posY;
     rdpq_set_mode_standard();
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
@@ -156,6 +163,45 @@ void render_menu_title(int updateRate, float updateRateF) {
         }
 
     rdpq_font_print(gCurrentFont, "Options");
+    rdpq_font_end();
+}
+
+
+void render_menu_options(int updateRate, float updateRateF) {
+
+    if (gCurrentController == -1) {
+        return;
+    }
+
+    rdpq_font_begin(RGBA32(255, 255, 255, 255));
+    rdpq_font_position(32, display_get_height() - 80);
+    
+        if (0 == sMenuSelection[1]) {
+            rdpq_set_prim_color(RGBA32(255, 0, 0, 255));
+        } else {
+            rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+        }
+
+    rdpq_font_print(gCurrentFont, "Continue");
+    rdpq_font_position(32, display_get_height() - 70);
+    
+        if (1 == sMenuSelection[1]) {
+            rdpq_set_prim_color(RGBA32(255, 0, 0, 255));
+        } else {
+            rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+        }
+
+    rdpq_font_print(gCurrentFont, "Options");
+    rdpq_font_end();
+    
+        if (2 == sMenuSelection[1]) {
+            rdpq_set_prim_color(RGBA32(255, 0, 0, 255));
+        } else {
+            rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+        }
+
+    rdpq_font_position(32, display_get_height() - 60);
+    rdpq_font_print(gCurrentFont, "Quit");
     rdpq_font_end();
 }
 
@@ -232,7 +278,7 @@ void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short
     }
 }
 
-void process_option_menu(int updateRate) {
+void process_config_menu(int updateRate) {
     int xWrap = 0;
     MenuOption *m = &sMenuOptions[sMenuSelection[1]];
     if (m->flags & OPTION_WRAP) {
@@ -266,6 +312,32 @@ void process_option_menu(int updateRate) {
     }
 }
 
+void process_options_menu(int updateRate) {
+    handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &sMenuSelection[1], 0, 0, 0, 3);
+
+    if (get_input_pressed(INPUT_A, 5)) {
+        clear_input(INPUT_A);
+        switch (sMenuSelection[1]) {
+        case 0:
+            menu_set_backward(MENU_PREV);
+            break;
+        case 1:
+            menu_set_forward(MENU_CONFIG);
+            break;
+        case 2:
+            menu_set_sideward(MENU_TITLE);
+            load_scene(0);
+            break;
+        }
+    }
+
+    if ((get_input_pressed(INPUT_START, 3) || get_input_pressed(INPUT_B, 3)) && sMenuSwapTimer == 0) {
+        clear_input(INPUT_START);
+        clear_input(INPUT_B);
+        menu_set_backward(MENU_PREV);
+    }
+}
+
 void process_title_menu(int updateRate) {
     if (gCurrentController == -1) {
         return;
@@ -277,16 +349,11 @@ void process_title_menu(int updateRate) {
         clear_input(INPUT_A);
         switch (sMenuSelection[1]) {
         case 0:
-            gMenuStatus = MENU_CLOSED;
-            gMenuPrev[0] = gMenuStatus;
-            sMenuSelectionPrev[0][0] = sMenuSelection[0];
-            sMenuSelectionPrev[0][1] = sMenuSelection[1];
-            sMenuSelection[0] = 0;
-            sMenuSelection[1] = 0;
+            menu_set_sideward(MENU_CLOSED);
             load_scene(1);
             break;
         case 1:
-            menu_set_forward(MENU_OPTIONS);
+            menu_set_forward(MENU_CONFIG);
             sMenuSwapTimer = 30;
             break;
         }
@@ -306,7 +373,9 @@ void process_menus(int updateRate, float updateRateF) {
         process_title_menu(updateRate);
         return;
     case MENU_OPTIONS:
-        process_option_menu(updateRate);
+        process_options_menu(updateRate);
+    case MENU_CONFIG:
+        process_config_menu(updateRate);
         if ((get_input_pressed(INPUT_START, 3) || get_input_pressed(INPUT_B, 3)) && sMenuSwapTimer == 0) {
             clear_input(INPUT_START);
             clear_input(INPUT_B);
@@ -325,6 +394,9 @@ void render_menus(int updateRate, float updateRateF) {
         return;
     case MENU_OPTIONS:
         render_menu_options(updateRate, updateRateF);
+        return;
+    case MENU_CONFIG:
+        render_menu_config(updateRate, updateRateF);
         return;
     }
 }
