@@ -29,6 +29,16 @@ enum TextureFlags {
     TEX_CLAMP_V =   (1 << 3),
 };
 
+enum FileFormat {
+    DFS_SPRITE,
+    DFS_WAV64,
+    DFS_MODEL64,
+    DFS_XM64,
+    DFS_FONT64,
+
+    DFS_TOTAL
+};
+
 typedef struct RenderSettings {
     unsigned cutout : 1;
     unsigned xlu : 1;
@@ -73,3 +83,4 @@ void cycle_textures(int updateRate);
 void init_materials(void);
 void set_particle_render_settings(void);
 void set_texture(Material *material);
+char *asset_dir(char *dir, int format);

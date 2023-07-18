@@ -74,7 +74,7 @@ void init_renderer(void) {
     setup_fog(light);
     init_materials();
     init_particles();
-    gPlayerModel = model64_load("rom:/humanoid.model64");
+    gPlayerModel = model64_load(asset_dir("humanoid", DFS_MODEL64));
 
     rspq_block_begin();
     glAlphaFunc(GL_GREATER, 0.5f);

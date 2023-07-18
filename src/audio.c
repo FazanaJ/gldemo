@@ -23,13 +23,13 @@ static xm64player_t sXMPlayer;
 #define CHANNEL_MAX_NUM 32
 
 static SoundData sSoundTable[] = {
-    {"rom:/laser.wav64", 10},
-    {"rom:/cannon.wav64", 10},
-    {"rom:/stonestep.wav64", 10},
+    {"laser", 10},
+    {"cannon", 10},
+    {"stonestep", 10},
 };
 
 static SequenceData sSequenceTable[] = {
-    {"rom:/ToysXM-8bit.xm64", 8},
+    {"ToysXM-8bit", 8},
 };
 
 void set_sound_channel_count(int channelCount) {
@@ -47,7 +47,7 @@ void init_audio(void) {
     sSoundVolume = 1.0f;
 
     for (int i = 0; i < sizeof(sSoundTable) / sizeof(SoundData); i++) {
-        wav64_open(&sSoundTable[i].sound, sSoundTable[i].path);
+        wav64_open(&sSoundTable[i].sound, asset_dir(sSoundTable[i].path, DFS_WAV64));
     }
 
     set_background_music(0, 0);
@@ -66,7 +66,7 @@ void update_sequence(int updateRate) {
             for (int i = 0; i < s->channelCount; i++) {
                 mixer_ch_set_vol((sSoundChannelNum - s->channelCount) + i, sMusicVolume, sMusicVolume);
             }
-            xm64player_open(&sXMPlayer, s->seqPath);
+            xm64player_open(&sXMPlayer, asset_dir(s->seqPath, DFS_XM64));
             xm64player_set_vol(&sXMPlayer, sMusicVolume);
             xm64player_play(&sXMPlayer, s->channelCount);
             set_music_volume(sMusicVolume);

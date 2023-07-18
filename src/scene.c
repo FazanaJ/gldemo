@@ -27,8 +27,8 @@ ObjectMap sTestAreaObjs[] = {
 };
 
 SceneIDs sSceneTable[] = {
-    {"rom:/intro.model64", NULL, NULL},
-    {"rom:/testarea.model64", sTestAreaObjs, NULL},
+    {"intro", NULL, NULL},
+    {"testarea", sTestAreaObjs, NULL},
 };
 
 char sSceneTexIDs[][4] = {
@@ -73,7 +73,7 @@ void load_scene(int sceneID) {
     SceneIDs *t = &sSceneTable[sceneID];
     sCurrentScene = malloc(sizeof(SceneBlock));
     SceneBlock *s = sCurrentScene;
-    s->model = model64_load(t->model);
+    s->model = model64_load(asset_dir(t->model, DFS_MODEL64));
     s->meshList = NULL;
     s->sceneID = sceneID;
     int numMeshes = model64_get_mesh_count(s->model);

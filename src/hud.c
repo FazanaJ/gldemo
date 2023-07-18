@@ -151,7 +151,7 @@ void generate_health_block(int hpMin, int hpMax, int hpBase) {
     int newColour = 0;
     
     if (sHealthSprite == NULL) {
-        sHealthSprite = sprite_load("rom:/health.i8.sprite");
+        sHealthSprite = sprite_load(asset_dir("health.i8", DFS_SPRITE));
     }
 
     rspq_block_begin();

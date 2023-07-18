@@ -12,14 +12,14 @@
 #include "main.h"
 
 const TextureInfo sTextureIDs[] = {
-    {"rom:/grass0.ci4.sprite", TEX_NULL, 0},
-    {"rom:/health.i8.sprite", TEX_CLAMP_H | TEX_CLAMP_V, 0},
-    {"rom:/plant1.ia8.sprite", TEX_CLAMP_H | TEX_CLAMP_V, 0},
-    {"rom:/shadow.i4.sprite", TEX_MIRROR_H | TEX_MIRROR_V, 0},
-    {"rom:/stone.ci4.sprite", TEX_NULL, 0},
-    {"rom:/water.ci8.sprite", TEX_NULL, 0},
-    {"rom:/kitchentile.i8.sprite", TEX_NULL, 0},
-    {"rom:/introsign.i4.sprite", TEX_NULL, 0},
+    {"grass0.ci4", TEX_NULL, 0},
+    {"health.i8", TEX_CLAMP_H | TEX_CLAMP_V, 0},
+    {"plant1.ia8", TEX_CLAMP_H | TEX_CLAMP_V, 0},
+    {"shadow.i4", TEX_MIRROR_H | TEX_MIRROR_V, 0},
+    {"stone.ci4", TEX_NULL, 0},
+    {"water.ci8", TEX_NULL, 0},
+    {"kitchentile.i8", TEX_NULL, 0},
+    {"introsign.i4", TEX_NULL, 0},
 };
 
 RenderSettings sRenderSettings;
@@ -86,6 +86,21 @@ void bind_new_texture(MaterialList *material) {
     glSpriteTextureN64(GL_TEXTURE_2D, material->sprite, &(rdpq_texparms_t){.s.repeats = repeatH, .t.repeats = repeatV, .s.mirror = mirrorH, .t.mirror = mirrorV});
 }
 
+static char *sFileFormatString[] = {
+    "sprite",
+    "wav64",
+    "model64",
+    "xm64",
+    "font64"
+};
+
+static char sFileFormatName[40];
+
+char *asset_dir(char *dir, int format) {
+    sprintf(sFileFormatName, "rom:/%s.%s", dir, sFileFormatString[format]);
+    return sFileFormatName;
+}
+
 int load_texture(Material *material) {
     MaterialList *list = gMaterialListHead;
     // Check if the texture is already loaded, and bind it to the index.
@@ -111,7 +126,7 @@ int load_texture(Material *material) {
         gMaterialListTail = gMaterialListTail->next;
     }
     list->next = NULL;
-    list->sprite = sprite_load(sTextureIDs[material->textureID].file);
+    list->sprite = sprite_load(asset_dir(sTextureIDs[material->textureID].file, DFS_SPRITE));
     list->textureID = material->textureID;
     glGenTextures(1, &list->texture);
     bind_new_texture(list);

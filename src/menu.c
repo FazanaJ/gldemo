@@ -32,11 +32,12 @@ void menu_set_forward(int menuID) {
     sMenuStackPos++;
 }
 
-void menu_set_sideward(int menuID) {
+void menu_set_reset(int menuID) {
     sMenuSelection[0] = 0;
     sMenuSelection[1] = 0;
     sMenuSwapTimer = 30;
     gMenuStatus = menuID;
+    sMenuStackPos = 0;
 }
 
 void menu_set_backward(int menuID) {
@@ -325,7 +326,7 @@ void process_options_menu(int updateRate) {
             menu_set_forward(MENU_CONFIG);
             break;
         case 2:
-            menu_set_sideward(MENU_TITLE);
+            menu_set_reset(MENU_TITLE);
             load_scene(0);
             break;
         }
@@ -349,7 +350,7 @@ void process_title_menu(int updateRate) {
         clear_input(INPUT_A);
         switch (sMenuSelection[1]) {
         case 0:
-            menu_set_sideward(MENU_CLOSED);
+            menu_set_reset(MENU_CLOSED);
             load_scene(1);
             break;
         case 1:

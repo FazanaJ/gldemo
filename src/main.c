@@ -75,7 +75,7 @@ void init_video(void) {
 void memory_error_screen(void) {
     if (get_memory_size() == 0x400000) {
         display_init(RESOLUTION_320x240, DEPTH_16_BPP, 1, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
-        sprite_t *background = sprite_load("rom:/memory_error.rgba16.sprite");
+        sprite_t *background = sprite_load(asset_dir("memory_error.rgba16", DFS_SPRITE));
         graphics_draw_sprite(display_get(), 0, 0, background);
         while (1);
     }
