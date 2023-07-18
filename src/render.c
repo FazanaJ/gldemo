@@ -32,8 +32,6 @@ Material gTempMaterials[] = {
     {NULL, 2, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_VTXCOL},
     {NULL, 1, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_VTXCOL},
     {NULL, 3, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_XLU | MATERIAL_VTXCOL},
-    {NULL, 4, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL},
-    {NULL, 5, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL | MATERIAL_XLU},
 };
 
 static model64_t *gPlayerModel;
@@ -95,6 +93,7 @@ void init_renderer(void) {
     glDisable(GL_MULTISAMPLE_ARB);
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_LIGHTING);
+    glDisable(GL_COLOR_MATERIAL);
     glDisable(GL_FOG);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_SCISSOR_TEST);
@@ -189,6 +188,7 @@ void render_sky(void) {
         glVertex2i(display_get_width(), display_get_height());
         glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
         glVertex2i(display_get_width(), 0);
+        glColor3f(1, 1, 1);
         glEnd();
         sRenderSkyBlock = rspq_block_end();
     }
