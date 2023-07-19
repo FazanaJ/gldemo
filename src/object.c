@@ -277,6 +277,7 @@ Clutter *spawn_clutter(int objectID, float x, float y, float z, short pitch, sho
     clutter->scale[1] = 1.0f;
     clutter->scale[2] = 1.0f;
     clutter->objectID = objectID;
+    clutter->gfx = malloc(sizeof(ObjectGraphics));
     return clutter;
 }
 

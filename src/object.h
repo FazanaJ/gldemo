@@ -2,6 +2,7 @@
 
 #include "object_data.h"
 #include "assets.h"
+#include "render.h"
 
 enum ObjectFlags {
 	OBJ_FLAG_NONE,
@@ -23,15 +24,11 @@ enum ClutterIDs {
 	CLUTTER_BUSH,
 };
 
-typedef struct Mesh {
-	char b;
-} Mesh;
-
 typedef struct ObjectModel {
+	Material material;
+	gl_matrix_t matrix;
 	struct ObjectModel *next;
-	sprite_t *texture;
-	Mesh *mesh;
-	void *matrix;
+	mesh_t *mesh;
 } ObjectModel;
 
 typedef struct ObjectGraphics {

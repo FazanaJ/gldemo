@@ -1,4 +1,6 @@
 #include <libdragon.h>
+#include <malloc.h>
+#include <string.h>
 
 #include "menu.h"
 #include "../include/global.h"
@@ -20,6 +22,125 @@ static short sMenuSelectionPrev[NUM_MENU_PREVS][2];
 static char sMenuSelectionTimer[2] = {0, 0};
 static char sMenuSelectionType[2] = {0, 0};
 static unsigned char sMenuStackPos = 0;
+static MenuListRoot *sMenuDisplay = NULL;
+
+void free_menu_display(void) {
+    if (sMenuDisplay) {
+        if (sMenuDisplay->list) {
+            MenuListEntry *curList = sMenuDisplay->tail;
+            MenuListEntry *prev = sMenuDisplay->tail;
+            while (prev) {
+                prev = curList->prev;
+                free(curList->text);
+                free(curList);
+                curList = prev;
+            }
+        }
+        free(sMenuDisplay);
+        sMenuDisplay = NULL;
+    }
+}
+
+void init_menu_display(int x, int y) {
+    if (sMenuDisplay == NULL) {
+        sMenuDisplay = malloc(sizeof(MenuListRoot));
+    }
+
+    sMenuDisplay->x = x;
+    sMenuDisplay->y = y;
+    sMenuDisplay->tail = NULL;
+    sMenuDisplay->list = NULL;
+    sMenuDisplay->listCount = 0;
+}
+
+void add_menu_text(char *text, int index, unsigned int colour, int flags) {
+    MenuListEntry *newList;
+    newList = malloc(sizeof(MenuListEntry));
+    if (sMenuDisplay->list != NULL) {
+        MenuListEntry *list = sMenuDisplay->list;
+        while (index > 0 && list) {
+            list = list->next;
+            index--;
+        }
+        if (list == NULL) {
+            list = newList;
+            sMenuDisplay->tail->next = newList;
+            newList->prev = sMenuDisplay->tail;
+            sMenuDisplay->tail = newList;
+            newList->next = NULL;
+        } else {
+            if (list->next != NULL) {
+                list->next->prev = newList;
+                newList->next = list->next;
+            } else {
+                newList->next = NULL;
+            }
+            list->next = newList;
+            newList->prev = list;
+            if (sMenuDisplay->tail == list) {
+                sMenuDisplay->tail = newList;
+            }
+        }
+    } else {
+        sMenuDisplay->list = newList;
+        sMenuDisplay->tail = newList;
+        newList->next = NULL;
+        newList->prev = NULL;
+    }
+    int textLen = strlen(text);
+    newList->text = malloc(textLen);
+    sprintf(newList->text, "%s", text);
+    newList->colour[0] = (colour >> 24) & 0xFF;
+    newList->colour[1] = (colour >> 16) & 0xFF;
+    newList->colour[2] = (colour >> 8) & 0xFF;
+    newList->colour[3] = colour & 0xFF;
+    newList->flags = flags;
+    sMenuDisplay->listCount++;
+}
+
+void edit_menu_text(char *text, int index, unsigned int colour, int flagsOn, int flagsOff) {
+    MenuListEntry *list = sMenuDisplay->list;
+    while (index > 0 && list) {
+        list = list->next;
+        index--;
+    }
+    free(list->text);
+    int textLen = strlen(text);
+    list->text = malloc(textLen);
+    strcpy(list->text, text);
+    list->colour[0] = (colour >> 24) & 0xFF;
+    list->colour[1] = (colour >> 16) & 0xFF;
+    list->colour[2] = (colour >> 8) & 0xFF;
+    list->colour[3] = colour & 0xFF;
+    list->flags |= flagsOn;
+    list->flags &= flagsOff;
+}
+
+void render_menu_list(void) {
+    if (sMenuDisplay == NULL) {
+        return;
+    }
+    int i = 0;
+    MenuListEntry *list = sMenuDisplay->list;
+
+    rdpq_font_begin(RGBA32(255, 255, 255, 255));
+    int x = sMenuDisplay->x;
+    int y = sMenuDisplay->y;
+    while (list != NULL) {
+        if (i == sMenuSelection[1]) {
+            int sineCol = 128 + (32 * sins(gGameTimer * 0x400));
+            rdpq_set_prim_color(RGBA32(255, sineCol, sineCol, 255));
+        } else {
+            rdpq_set_prim_color(RGBA32(list->colour[0], list->colour[1], list->colour[2], list->colour[3]));
+        }
+        rdpq_font_position(x, y);
+        rdpq_font_print(gFonts[FONT_MVBOLI], list->text);
+        y += 12;
+        i++;
+        list = list->next;
+    }
+    rdpq_font_end();
+}
 
 void menu_set_forward(int menuID) {
     sMenuSelectionPrev[sMenuStackPos][0] = sMenuSelection[0];
@@ -34,6 +155,7 @@ void menu_set_forward(int menuID) {
     sMenuSwapTimer = 30;
     gMenuStatus = menuID;
     sMenuStackPos++;
+    free_menu_display();
 }
 
 void menu_set_reset(int menuID) {
@@ -46,6 +168,7 @@ void menu_set_reset(int menuID) {
     sMenuSwapTimer = 30;
     gMenuStatus = menuID;
     sMenuStackPos = 0;
+    free_menu_display();
 }
 
 void menu_set_backward(int menuID) {
@@ -62,6 +185,7 @@ void menu_set_backward(int menuID) {
     } else {
         gMenuStatus = menuID;
     }
+    free_menu_display();
 }
 
 void menu_reset_display(void) {
@@ -151,80 +275,13 @@ void render_menu_config(int updateRate, float updateRateF) {
     rdpq_font_end();
 }
 
-void render_menu_title(int updateRate, float updateRateF) {
-
-    if (gCurrentController == -1) {
-        return;
-    }
-
-    rdpq_font_begin(RGBA32(255, 255, 255, 255));
-    rdpq_font_position(32, display_get_height() - 80);
-    
-        if (0 == sMenuSelection[1]) {
-            rdpq_set_prim_color(RGBA32(255, 0, 0, 255));
-        } else {
-            rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
-        }
-
-    rdpq_font_print(gFonts[FONT_MVBOLI], "Play");
-    rdpq_font_position(32, display_get_height() - 70);
-    
-        if (1 == sMenuSelection[1]) {
-            rdpq_set_prim_color(RGBA32(255, 0, 0, 255));
-        } else {
-            rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
-        }
-
-    rdpq_font_print(gFonts[FONT_MVBOLI], "Options");
-    rdpq_font_end();
-}
-
-
-void render_menu_options(int updateRate, float updateRateF) {
-
-    if (gCurrentController == -1) {
-        return;
-    }
-
-    rdpq_font_begin(RGBA32(255, 255, 255, 255));
-    rdpq_font_position(32, display_get_height() - 80);
-    
-        if (0 == sMenuSelection[1]) {
-            rdpq_set_prim_color(RGBA32(255, 0, 0, 255));
-        } else {
-            rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
-        }
-
-    rdpq_font_print(gFonts[FONT_MVBOLI], "Continue");
-    rdpq_font_position(32, display_get_height() - 70);
-    
-        if (1 == sMenuSelection[1]) {
-            rdpq_set_prim_color(RGBA32(255, 0, 0, 255));
-        } else {
-            rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
-        }
-
-    rdpq_font_print(gFonts[FONT_MVBOLI], "Options");
-    rdpq_font_end();
-    
-        if (2 == sMenuSelection[1]) {
-            rdpq_set_prim_color(RGBA32(255, 0, 0, 255));
-        } else {
-            rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
-        }
-
-    rdpq_font_position(32, display_get_height() - 60);
-    rdpq_font_print(gFonts[FONT_MVBOLI], "Quit");
-    rdpq_font_end();
-}
-
 void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short *selectionY,  int minX, int minY, int maxX, int maxY) {
     int stickMag;
 
     if (flags & MENUSTICK_STICKX) {
         stickMag = get_stick_x(STICK_LEFT);
         DECREASE_VAR(sMenuSelectionTimer[0], updateRate, 0);
-        if (fabs(stickMag) > 40 || get_input_held(INPUT_DLEFT) || get_input_held(INPUT_DRIGHT)) {
+        if (fabs(stickMag) > 25 || get_input_held(INPUT_DLEFT) || get_input_held(INPUT_DRIGHT)) {
             if (sMenuSelectionTimer[0] == 0) {
                 if (sMenuSelectionType[0] == 0) {
                     sMenuSelectionTimer[0] = 30;
@@ -258,7 +315,7 @@ void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short
     if (flags & MENUSTICK_STICKY) {
         stickMag = get_stick_y(STICK_LEFT);
         DECREASE_VAR(sMenuSelectionTimer[1], updateRate, 0);
-        if (fabs(stickMag) > 40 || get_input_held(INPUT_DUP) || get_input_held(INPUT_DDOWN)) {
+        if (fabs(stickMag) > 25 || get_input_held(INPUT_DUP) || get_input_held(INPUT_DDOWN)) {
             if (sMenuSelectionTimer[1] == 0) {
                 if (sMenuSelectionType[1] == 0) {
                     sMenuSelectionTimer[1] = 30;
@@ -326,6 +383,14 @@ void process_config_menu(int updateRate) {
 }
 
 void process_options_menu(int updateRate) {
+
+    if (sMenuDisplay == NULL) {
+        init_menu_display(32, display_get_height() - 80);
+        add_menu_text("Continue", 0, 0xFFFFFFFF, 0);
+        add_menu_text("Options", 1, 0xFFFFFFFF, 0);
+        add_menu_text("Quit", 2, 0xFFFFFFFF, 0);
+    }
+
     handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &sMenuSelection[1], 0, 0, 0, 3);
 
     if (get_input_pressed(INPUT_A, 5)) {
@@ -354,6 +419,12 @@ void process_options_menu(int updateRate) {
 void process_title_menu(int updateRate) {
     if (gCurrentController == -1) {
         return;
+    }
+
+    if (sMenuDisplay == NULL) {
+        init_menu_display(32, display_get_height() - 80);
+        add_menu_text("Play", 0, 0xFFFFFFFF, 0);
+        add_menu_text("Options", 1, 0xFFFFFFFF, 0);
     }
 
     handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &sMenuSelection[1], 0, 0, 0, 2);
@@ -403,14 +474,9 @@ void render_menus(int updateRate, float updateRateF) {
     switch (gMenuStatus) {
     case MENU_CLOSED:
         return;
-    case MENU_TITLE:
-        render_menu_title(updateRate, updateRateF);
-        return;
-    case MENU_OPTIONS:
-        render_menu_options(updateRate, updateRateF);
-        return;
     case MENU_CONFIG:
         render_menu_config(updateRate, updateRateF);
-        return;
+        break;
     }
+    render_menu_list();
 }

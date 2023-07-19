@@ -20,6 +20,23 @@ typedef struct MenuOption {
     char string;
 } MenuOption;
 
+typedef struct MenuListEntry {
+    char *text;
+    int colour[4];
+    int flags;
+    struct MenuListEntry *prev;
+    struct MenuListEntry *next;
+} MenuListEntry;
+
+typedef struct MenuListRoot {
+    short x;
+    short y;
+    char listCount;
+    char b;
+    MenuListEntry *list;
+    MenuListEntry *tail;
+} MenuListRoot;
+
 enum MenuStatus {
     MENU_PREV = -1,
     MENU_CLOSED,
