@@ -39,6 +39,13 @@ enum FileFormat {
     DFS_TOTAL
 };
 
+enum FontList {
+    FONT_ARIAL,
+    FONT_MVBOLI,
+
+    FONT_TOTAL
+};
+
 typedef struct RenderSettings {
     unsigned cutout : 1;
     unsigned xlu : 1;
@@ -76,6 +83,7 @@ typedef struct TextureInfo {
 
 extern short gNumTextures;
 extern short gNumTextureLoads;
+extern rdpq_font_t *gFonts[FONT_TOTAL];
 
 void setup_textures(GLuint textures[], sprite_t *sprites[], const char *texture_path[], int texture_number);
 void set_material(Material *material, int flags);
@@ -84,3 +92,5 @@ void init_materials(void);
 void set_particle_render_settings(void);
 void set_texture(Material *material);
 char *asset_dir(char *dir, int format);
+void load_font(int fontID);
+void free_font(int fontID);

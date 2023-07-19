@@ -19,14 +19,9 @@
 
 surface_t gZBuffer;
 surface_t *gFrameBuffers;
-rdpq_font_t *gCurrentFont;
 unsigned int gGlobalTimer;
 unsigned int gGameTimer;
 char gResetDisplay = false;
-
-const char *gFontAssetTable[] = {
-    "rom:/arial.font64"
-};
 
 static const resolution_t RESOLUTION_304x224 = {320, 240, false};
 static const resolution_t RESOLUTION_384x224 = {384, 240, false};
@@ -84,7 +79,8 @@ void memory_error_screen(void) {
 void init_memory(void) {
     dfs_init(DFS_DEFAULT_LOCATION);
     timer_init();
-    gCurrentFont = rdpq_font_load(gFontAssetTable[0]);
+    load_font(FONT_ARIAL);
+    load_font(FONT_MVBOLI);
     memory_error_screen();
 }
 
@@ -153,7 +149,6 @@ int main(void) {
     float updateRateF;
 
     init_game();    
-    gCurrentFont = rdpq_font_load(gFontAssetTable[0]);
     init_renderer();
     load_scene(0);
 

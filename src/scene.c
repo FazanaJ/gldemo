@@ -9,6 +9,7 @@
 #include "render.h"
 
 SceneBlock *sCurrentScene;
+Environment *gEnvironment;
 
 ObjectMap sTestAreaObjs[] = {
     {OBJ_PLAYER, MAP_OBJ, /*Yaw*/ 0, /*X*/ 0, /*Y*/ 0, /*Z*/ 0},
@@ -44,6 +45,45 @@ int sSceneMeshFlags[][4] = {
     MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL, 
     MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_XLU},
 };
+
+light_t sEnvironmentLight = {
+    color: { 0.51f, 0.81f, 0.665f, 0.5f},
+    diffuse: {1.0f, 1.0f, 1.0f, 1.0f},
+    direction: {0.0f, -60.0f, 0.0f},
+    position: {1.0f, 0.0f, 0.0f, 0.0f},
+    radius: 10.0f,
+};
+
+void setup_fog(light_t light) {
+    if (gEnvironment == NULL) {
+        gEnvironment = malloc(sizeof(Environment));
+    }
+
+    gEnvironment->fogColour[0] = light.color[0];
+    gEnvironment->fogColour[1] = light.color[1];
+    gEnvironment->fogColour[2] = light.color[2];
+    gEnvironment->skyColourBottom[0] = light.color[0] * 0.66f;
+    gEnvironment->skyColourBottom[1] = light.color[1] * 0.66f;
+    gEnvironment->skyColourBottom[2] = light.color[2] * 0.66f;
+    gEnvironment->skyColourTop[0] = light.color[0] * 1.33f;
+    if (gEnvironment->skyColourTop[0] > 1.0f) {
+        gEnvironment->skyColourTop[0] = 1.0f;
+    }
+    gEnvironment->skyColourTop[1] = light.color[1] * 1.33f;
+    if (gEnvironment->skyColourTop[1] > 1.0f) {
+        gEnvironment->skyColourTop[1] = 1.0f;
+    }
+    gEnvironment->skyColourTop[2] = light.color[2] * 1.33f;
+    if (gEnvironment->skyColourTop[2] > 1.0f) {
+        gEnvironment->skyColourTop[2] = 1.0f;
+    }
+    gEnvironment->flags = ENV_FOG;
+    gEnvironment->fogNear = 150.0f;
+    gEnvironment->fogFar = 400.0f;
+    glFogf(GL_FOG_START, gEnvironment->fogNear);
+    glFogf(GL_FOG_END, gEnvironment->fogFar);
+    glFogfv(GL_FOG_COLOR, gEnvironment->fogColour);
+}
 
 static void clear_scene(void) {
     SceneMesh *curMesh = sCurrentScene->meshList;
@@ -126,5 +166,6 @@ void load_scene(int sceneID) {
             }
         }
     }
+    setup_fog(sEnvironmentLight);
     camera_init();
 }

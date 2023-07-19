@@ -17,7 +17,6 @@
 #include "object.h"
 #include "scene.h"
 
-Environment *gEnvironment;
 float gAspectRatio = 1.0f;
 static rspq_block_t *sRenderEndBlock;
 static rspq_block_t *sRenderSkyBlock;
@@ -36,17 +35,7 @@ Material gTempMaterials[] = {
 
 static model64_t *gPlayerModel;
 
-light_t light = {
-    
-    color: { 0.51f, 0.81f, 0.665f, 0.5f},
-    diffuse: {1.0f, 1.0f, 1.0f, 1.0f},
-    direction: {0.0f, -60.0f, 0.0f},
-    position: {1.0f, 0.0f, 0.0f, 0.0f},
-    radius: 10.0f,
-};
-
 light_t lightNeutral = {
-    
     color: { 0.66f, 0.66f, 0.66f, 0.66f},
     diffuse: {1.0f, 1.0f, 1.0f, 1.0f},
     direction: {0.0f, -60.0f, 0.0f},
@@ -71,7 +60,6 @@ static void init_particles(void) {
 
 void init_renderer(void) {
     setup_light(lightNeutral);
-    setup_fog(light);
     init_materials();
     init_particles();
     gPlayerModel = model64_load(asset_dir("humanoid", DFS_MODEL64));
@@ -102,7 +90,6 @@ void init_renderer(void) {
     glDepthMask(GL_FALSE);
     glScissor(0, 0, display_get_width(), display_get_height());
     sRenderEndBlock = rspq_block_end();
-
 }
 
 void setup_light(light_t light) {
@@ -124,34 +111,6 @@ void set_light(light_t light) {
     glRotatef(light.direction[2], 0, 0, 1);
     glLightfv(GL_LIGHT0, GL_POSITION, light.position);
     glPopMatrix();
-}
-
-void setup_fog(light_t light) {
-    gEnvironment = malloc(sizeof(Environment));
-    gEnvironment->fogColour[0] = light.color[0];
-    gEnvironment->fogColour[1] = light.color[1];
-    gEnvironment->fogColour[2] = light.color[2];
-    gEnvironment->skyColourBottom[0] = light.color[0] * 0.66f;
-    gEnvironment->skyColourBottom[1] = light.color[1] * 0.66f;
-    gEnvironment->skyColourBottom[2] = light.color[2] * 0.66f;
-    gEnvironment->skyColourTop[0] = light.color[0] * 1.33f;
-    if (gEnvironment->skyColourTop[0] > 1.0f) {
-        gEnvironment->skyColourTop[0] = 1.0f;
-    }
-    gEnvironment->skyColourTop[1] = light.color[1] * 1.33f;
-    if (gEnvironment->skyColourTop[1] > 1.0f) {
-        gEnvironment->skyColourTop[1] = 1.0f;
-    }
-    gEnvironment->skyColourTop[2] = light.color[2] * 1.33f;
-    if (gEnvironment->skyColourTop[2] > 1.0f) {
-        gEnvironment->skyColourTop[2] = 1.0f;
-    }
-    gEnvironment->flags = ENV_FOG;
-    gEnvironment->fogNear = 150.0f;
-    gEnvironment->fogFar = 400.0f;
-    glFogf(GL_FOG_START, gEnvironment->fogNear);
-    glFogf(GL_FOG_END, gEnvironment->fogFar);
-    glFogfv(GL_FOG_COLOR, gEnvironment->fogColour);
 }
 
 void project_camera(void) {
@@ -313,14 +272,16 @@ void glTranslateRotateScalef(short angle, GLfloat x, GLfloat y, GLfloat z, GLflo
 
     glMultMatrixf(rotation.m[0]);
 
-    gl_matrix_t scale = (gl_matrix_t){ .m={
-        {scaleX, 0.0f, 0.0f, 0.0f},
-        {0.0f, scaleY, 0.0f, 0.0f},
-        {0.0f, 0.0f, scaleZ, 0.0f},
-        {0.0f, 0.0f, 0.0f, 1.0f},
-    }};
+    rotation.m[0][0] = scaleX;
+    rotation.m[0][1] = 0.0f;
+    rotation.m[1][0] = 0.0f;
+    rotation.m[1][1] = scaleY;
+    rotation.m[2][2] = scaleZ;
+    rotation.m[3][0] = 0.0f;
+    rotation.m[3][1] = 0.0f;
+    rotation.m[3][2] = 0.0f;
 
-    glMultMatrixf(scale.m[0]);
+    glMultMatrixf(rotation.m[0]);
 }
 
 void render_particles(void) {

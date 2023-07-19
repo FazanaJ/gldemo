@@ -51,7 +51,7 @@ void render_hud_subtitles(void) {
         if (sSubtitleStruct[i].colour[3] == 0) {
             continue;
         }
-        curTextWidth[i] = rdpq_font_width(gCurrentFont, sSubtitleStruct[i].text, strlen(sSubtitleStruct[i].text));
+        curTextWidth[i] = rdpq_font_width(gFonts[FONT_MVBOLI], sSubtitleStruct[i].text, strlen(sSubtitleStruct[i].text));
         textWidth = MAX(textWidth, curTextWidth[i]);
         textHeights[i] = 12;//get_text_height(&gfx, sSubtitleStruct[i].text);
         sSubtitlePrintYTarget[i] = screenHeight-36-printY-textHeights[i];
@@ -80,7 +80,7 @@ void render_hud_subtitles(void) {
         }
         rdpq_set_prim_color(RGBA32(sSubtitleStruct[i].colour[0], sSubtitleStruct[i].colour[1], sSubtitleStruct[i].colour[2], sSubtitleStruct[i].colour[3]));
         rdpq_font_position((screenWidth / 2) - (curTextWidth[i] / 2), sSubtitlePrintY[i] + 10);
-        rdpq_font_print(gCurrentFont, sSubtitleStruct[i].text);
+        rdpq_font_print(gFonts[FONT_MVBOLI], sSubtitleStruct[i].text);
     }
     rdpq_font_end();
     glDisable(GL_SCISSOR_TEST);*/
@@ -388,7 +388,7 @@ void render_hud(int updateRate, float updateRateF) {
     if (gCurrentController == -1) {
         rdpq_font_begin(RGBA32(255, 0, 0, 255));
         rdpq_font_position((gFrameBuffers->width / 2) - 40, (gFrameBuffers->height / 2) - 40);
-        rdpq_font_print(gCurrentFont, "Press Start");
+        rdpq_font_print(gFonts[FONT_MVBOLI], "Press Start");
         rdpq_font_end();
     }
     get_time_snapshot(PP_HUD, DEBUG_SNAPSHOT_1_END);

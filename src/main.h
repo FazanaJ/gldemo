@@ -52,7 +52,6 @@ typedef struct Config {
 
 extern surface_t gZBuffer;
 extern surface_t *gFrameBuffers;
-extern rdpq_font_t *gCurrentFont;
 extern Config gConfig;
 extern char gZTargetTimer;
 extern unsigned int gGlobalTimer;

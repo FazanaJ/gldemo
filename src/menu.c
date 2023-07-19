@@ -26,6 +26,10 @@ void menu_set_forward(int menuID) {
     sMenuSelectionPrev[sMenuStackPos][1] = sMenuSelection[1];
     sMenuSelection[0] = 0;
     sMenuSelection[1] = 0;
+    sMenuSelectionTimer[0] = 0;
+    sMenuSelectionTimer[1] = 0;
+    sMenuSelectionType[0] = 0;
+    sMenuSelectionType[1] = 0;
     gMenuPrev[sMenuStackPos] = gMenuStatus;
     sMenuSwapTimer = 30;
     gMenuStatus = menuID;
@@ -35,6 +39,10 @@ void menu_set_forward(int menuID) {
 void menu_set_reset(int menuID) {
     sMenuSelection[0] = 0;
     sMenuSelection[1] = 0;
+    sMenuSelectionTimer[0] = 0;
+    sMenuSelectionTimer[1] = 0;
+    sMenuSelectionType[0] = 0;
+    sMenuSelectionType[1] = 0;
     sMenuSwapTimer = 30;
     gMenuStatus = menuID;
     sMenuStackPos = 0;
@@ -44,6 +52,10 @@ void menu_set_backward(int menuID) {
     sMenuStackPos--;
     sMenuSelection[0] = sMenuSelectionPrev[sMenuStackPos][0];
     sMenuSelection[1] = sMenuSelectionPrev[sMenuStackPos][1];
+    sMenuSelectionTimer[0] = 0;
+    sMenuSelectionTimer[1] = 0;
+    sMenuSelectionType[0] = 0;
+    sMenuSelectionType[1] = 0;
     sMenuSwapTimer = 30;
     if (menuID == MENU_PREV) {
         gMenuStatus = gMenuPrev[sMenuStackPos];
@@ -128,11 +140,11 @@ void render_menu_config(int updateRate, float updateRateF) {
             if (gConfig.regionMode == PAL50 && m->flags & OPTION_PAL_OFFSET) {
                 stringOffset += (m->maxValue - m->minValue) + 1;
             }
-            rdpq_font_printf(gCurrentFont, "%s: %s", m->name, sMenuOptionStrings[stringOffset]);
+            rdpq_font_printf(gFonts[FONT_MVBOLI], "%s: %s", m->name, sMenuOptionStrings[stringOffset]);
         } else if (m->flags & OPTION_BAR) {
-            rdpq_font_printf(gCurrentFont, "%s: %d", m->name, *m->valuePtr);
+            rdpq_font_printf(gFonts[FONT_MVBOLI], "%s: %d", m->name, *m->valuePtr);
         } else {
-            rdpq_font_printf(gCurrentFont, "%s: %d", m->name, *m->valuePtr);
+            rdpq_font_printf(gFonts[FONT_MVBOLI], "%s: %d", m->name, *m->valuePtr);
         }
         posY += 12;
     }
@@ -154,7 +166,7 @@ void render_menu_title(int updateRate, float updateRateF) {
             rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
         }
 
-    rdpq_font_print(gCurrentFont, "Play");
+    rdpq_font_print(gFonts[FONT_MVBOLI], "Play");
     rdpq_font_position(32, display_get_height() - 70);
     
         if (1 == sMenuSelection[1]) {
@@ -163,7 +175,7 @@ void render_menu_title(int updateRate, float updateRateF) {
             rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
         }
 
-    rdpq_font_print(gCurrentFont, "Options");
+    rdpq_font_print(gFonts[FONT_MVBOLI], "Options");
     rdpq_font_end();
 }
 
@@ -183,7 +195,7 @@ void render_menu_options(int updateRate, float updateRateF) {
             rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
         }
 
-    rdpq_font_print(gCurrentFont, "Continue");
+    rdpq_font_print(gFonts[FONT_MVBOLI], "Continue");
     rdpq_font_position(32, display_get_height() - 70);
     
         if (1 == sMenuSelection[1]) {
@@ -192,7 +204,7 @@ void render_menu_options(int updateRate, float updateRateF) {
             rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
         }
 
-    rdpq_font_print(gCurrentFont, "Options");
+    rdpq_font_print(gFonts[FONT_MVBOLI], "Options");
     rdpq_font_end();
     
         if (2 == sMenuSelection[1]) {
@@ -202,7 +214,7 @@ void render_menu_options(int updateRate, float updateRateF) {
         }
 
     rdpq_font_position(32, display_get_height() - 60);
-    rdpq_font_print(gCurrentFont, "Quit");
+    rdpq_font_print(gFonts[FONT_MVBOLI], "Quit");
     rdpq_font_end();
 }
 
@@ -375,6 +387,7 @@ void process_menus(int updateRate, float updateRateF) {
         return;
     case MENU_OPTIONS:
         process_options_menu(updateRate);
+        return;
     case MENU_CONFIG:
         process_config_menu(updateRate);
         if ((get_input_pressed(INPUT_START, 3) || get_input_pressed(INPUT_B, 3)) && sMenuSwapTimer == 0) {

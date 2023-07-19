@@ -4,10 +4,6 @@
 #include <GL/gl_integration.h>
 #include "assets.h"
 
-enum EnvironmentFlags {
-    ENV_FOG = (1 << 0),
-};
-
 typedef struct{
 
     const GLfloat color[4];
@@ -24,16 +20,6 @@ typedef struct {
     GLfloat m[4][4];
 } gl_matrix_t;
 
-typedef struct Environment {
-    GLfloat fogColour[4];
-    GLfloat skyColourTop[4];
-    GLfloat skyColourBottom[4];
-    GLfloat fogNear;
-    GLfloat fogFar;
-    char flags;
-} Environment;
-
-extern Environment *gEnvironment;
 extern Material gTempMaterials[];
 
 void init_renderer(void);

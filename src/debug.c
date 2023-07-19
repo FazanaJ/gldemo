@@ -149,37 +149,37 @@ void render_profiler(void) {
     rdpq_mode_blender(0);
     rdpq_font_begin(RGBA32(255, 255, 255, 255));
     rdpq_font_position(8, 16);
-    rdpq_font_printf(gCurrentFont, "FPS: %2.2f", gFPS);
+    rdpq_font_printf(gFonts[FONT_ARIAL], "FPS: %2.2f", gFPS);
     rdpq_font_position(8, 26);
-    rdpq_font_printf(gCurrentFont, "CPU: %dus (%d%%)", gDebugData->cpuTime[TIME_TOTAL], gDebugData->cpuTime[TIME_TOTAL] / divisor);
+    rdpq_font_printf(gFonts[FONT_ARIAL], "CPU: %dus (%d%%)", gDebugData->cpuTime[TIME_TOTAL], gDebugData->cpuTime[TIME_TOTAL] / divisor);
     boxHeight = 0;
     if (gDebugData->rspTime[TIME_TOTAL] > 10) {
         boxHeight += 10;
         rdpq_font_position(8, 26 + boxHeight);
-        rdpq_font_printf(gCurrentFont, "RSP: %dus (%d%%)", gDebugData->rspTime[TIME_TOTAL], gDebugData->rspTime[TIME_TOTAL] / divisor);
+        rdpq_font_printf(gFonts[FONT_ARIAL], "RSP: %dus (%d%%)", gDebugData->rspTime[TIME_TOTAL], gDebugData->rspTime[TIME_TOTAL] / divisor);
     }
     if (gDebugData->rdpTime[TIME_TOTAL] > 10) {
         boxHeight += 10;
         rdpq_font_position(8, 26 + boxHeight);
-        rdpq_font_printf(gCurrentFont, "RDP: %dus (%d%%)", gDebugData->rdpTime[TIME_TOTAL], gDebugData->rdpTime[TIME_TOTAL] / divisor);
+        rdpq_font_printf(gFonts[FONT_ARIAL], "RDP: %dus (%d%%)", gDebugData->rdpTime[TIME_TOTAL], gDebugData->rdpTime[TIME_TOTAL] / divisor);
     }
     boxHeight = 0;
     for (int i = 0; i < PP_TOTAL; i++) {
         if (gDebugData->timer[i][TIME_TOTAL] > 1) {
             boxHeight += 10;
             rdpq_font_position(display_get_width() - 106, 8 + boxHeight);
-            rdpq_font_printf(gCurrentFont, "%s:", sDebugText[i]);
+            rdpq_font_printf(gFonts[FONT_ARIAL], "%s:", sDebugText[i]);
             rdpq_font_position(display_get_width() - 48, 8 + boxHeight);
-            rdpq_font_printf(gCurrentFont, "%dus", gDebugData->timer[i][TIME_TOTAL]);
+            rdpq_font_printf(gFonts[FONT_ARIAL], "%dus", gDebugData->timer[i][TIME_TOTAL]);
         }
     }
     int ramUsed = mem_info.uordblks - (size_t) (((display_get_width() * display_get_height()) * 2) - ((unsigned int) HEAP_START_ADDR - 0x80000000) - 0x10000);
     rdpq_font_position(8, gFrameBuffers->height - 8);
-    rdpq_font_printf(gCurrentFont, "RAM: %dKB/%dKB", (ramUsed / 1024), get_memory_size() / 1024);
+    rdpq_font_printf(gFonts[FONT_ARIAL], "RAM: %dKB/%dKB", (ramUsed / 1024), get_memory_size() / 1024);
     rdpq_font_position(8, gFrameBuffers->height - 18);
-    rdpq_font_printf(gCurrentFont, "Tex: %d | Loads: %d", gNumTextures, gNumTextureLoads);
+    rdpq_font_printf(gFonts[FONT_ARIAL], "Tex: %d | Loads: %d", gNumTextures, gNumTextureLoads);
     rdpq_font_position(8, gFrameBuffers->height - 28);
-    rdpq_font_printf(gCurrentFont, "Obj: %d | Clu: %d | Par: %d", gNumObjects, gNumClutter, gNumParticles);
+    rdpq_font_printf(gFonts[FONT_ARIAL], "Obj: %d | Clu: %d | Par: %d", gNumObjects, gNumClutter, gNumParticles);
     rdpq_font_end();
 }
 

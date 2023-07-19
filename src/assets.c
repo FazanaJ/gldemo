@@ -8,7 +8,7 @@
 #include "../include/global.h"
 
 #include "debug.h"
-#include "render.h"
+#include "scene.h"
 #include "main.h"
 
 const TextureInfo sTextureIDs[] = {
@@ -22,6 +22,11 @@ const TextureInfo sTextureIDs[] = {
     {"introsign.i4", TEX_NULL, 0},
 };
 
+char *gFontAssetTable[] = {
+    "arial",
+    "mvboli"
+};
+
 RenderSettings sRenderSettings;
 int sPrevRenderFlags;
 MaterialList *gMaterialListHead;
@@ -30,6 +35,7 @@ static Material *sCurrentMaterial;
 short gNumTextures;
 short gNumTextureLoads;
 static rspq_block_t *sParticleMaterialBlock;
+rdpq_font_t *gFonts[FONT_TOTAL];
 
 void init_materials(void) {
     bzero(&sRenderSettings, sizeof(RenderSettings));
@@ -99,6 +105,18 @@ static char sFileFormatName[40];
 char *asset_dir(char *dir, int format) {
     sprintf(sFileFormatName, "rom:/%s.%s", dir, sFileFormatString[format]);
     return sFileFormatName;
+}
+
+void load_font(int fontID) {
+    if (gFonts[fontID] == NULL) {
+        gFonts[fontID] = rdpq_font_load(asset_dir(gFontAssetTable[fontID], DFS_FONT64));
+    }
+}
+
+void free_font(int fontID) {
+    if (gFonts[fontID] != NULL) {
+        rdpq_font_free(gFonts[fontID]);
+    }
 }
 
 int load_texture(Material *material) {
