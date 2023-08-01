@@ -123,23 +123,20 @@ void render_menu_list(void) {
     int i = 0;
     MenuListEntry *list = sMenuDisplay->list;
 
-    rdpq_font_begin(RGBA32(255, 255, 255, 255));
     int x = sMenuDisplay->x;
     int y = sMenuDisplay->y;
     while (list != NULL) {
         if (i == sMenuSelection[1]) {
             int sineCol = 128 + (32 * sins(gGameTimer * 0x400));
-            rdpq_set_prim_color(RGBA32(255, sineCol, sineCol, 255));
+            rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, sineCol, sineCol, 255),});
         } else {
-            rdpq_set_prim_color(RGBA32(list->colour[0], list->colour[1], list->colour[2], list->colour[3]));
+            rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(list->colour[0], list->colour[1], list->colour[2], list->colour[3]),});
         }
-        rdpq_font_position(x, y);
-        rdpq_font_print(gFonts[FONT_MVBOLI], list->text);
+        rdpq_text_printf(NULL, FONT_MVBOLI, x, y, list->text);
         y += 12;
         i++;
         list = list->next;
     }
-    rdpq_font_end();
 }
 
 void menu_set_forward(int menuID) {
@@ -246,7 +243,6 @@ void render_menu_config(int updateRate, float updateRateF) {
     rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
     rdpq_set_prim_color(RGBA32(0, 0, 0, 96));
     rdpq_fill_rectangle(0, 0, 128, display_get_height());
-    rdpq_font_begin(RGBA32(255, 255, 255, 255));
     posY = 22;
     for (int i = 0; i < sizeof(sMenuOptions) / sizeof(MenuOption); i++) {
         MenuOption *m = &sMenuOptions[i];
@@ -254,25 +250,24 @@ void render_menu_config(int updateRate, float updateRateF) {
             continue;
         }
         if (i == sMenuSelection[1]) {
+            rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, 0, 0, 255),});
             rdpq_set_prim_color(RGBA32(255, 0, 0, 255));
         } else {
-            rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+            rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, 255, 255, 255),});
         }
-        rdpq_font_position(16, posY);
         if (m->flags & OPTION_STRING) {
             int stringOffset = m->string + (*m->valuePtr - m->minValue);
             if (gConfig.regionMode == PAL50 && m->flags & OPTION_PAL_OFFSET) {
                 stringOffset += (m->maxValue - m->minValue) + 1;
             }
-            rdpq_font_printf(gFonts[FONT_MVBOLI], "%s: %s", m->name, sMenuOptionStrings[stringOffset]);
+            rdpq_text_printf(NULL, FONT_MVBOLI, 16, posY, "%s: %s", m->name, sMenuOptionStrings[stringOffset]);
         } else if (m->flags & OPTION_BAR) {
-            rdpq_font_printf(gFonts[FONT_MVBOLI], "%s: %d", m->name, *m->valuePtr);
+            rdpq_text_printf(NULL, FONT_MVBOLI, 16, posY, "%s: %d", m->name, *m->valuePtr);
         } else {
-            rdpq_font_printf(gFonts[FONT_MVBOLI], "%s: %d", m->name, *m->valuePtr);
+            rdpq_text_printf(NULL, FONT_MVBOLI, 16, posY, "%s: %d", m->name, *m->valuePtr);
         }
         posY += 12;
     }
-    rdpq_font_end();
 }
 
 void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short *selectionY,  int minX, int minY, int maxX, int maxY) {

@@ -73,7 +73,6 @@ void render_hud_subtitles(void) {
     glEnable(GL_SCISSOR_TEST);
     rdpq_fill_rectangle(boxCoords[0], boxCoords[1], boxCoords[2], boxCoords[3]);
     //glScissor(boxCoords[0], display_get_height() - boxCoords[1], boxCoords[0] - boxCoords[2], boxCoords[1] - boxCoords[3]);
-    rdpq_font_begin(RGBA32(0, 0, 0, 0));
     for (int i = 0; i < sizeof(sSubtitleStruct) / sizeof(SubtitleData); i++) {
         if (sSubtitleStruct[i].colour[3] == 0) {
             continue;
@@ -82,7 +81,6 @@ void render_hud_subtitles(void) {
         rdpq_font_position((screenWidth / 2) - (curTextWidth[i] / 2), sSubtitlePrintY[i] + 10);
         rdpq_font_print(gFonts[FONT_MVBOLI], sSubtitleStruct[i].text);
     }
-    rdpq_font_end();
     glDisable(GL_SCISSOR_TEST);*/
 }
 
@@ -386,10 +384,7 @@ void render_hud(int updateRate, float updateRateF) {
     render_hud_subtitles();
 
     if (gCurrentController == -1) {
-        rdpq_font_begin(RGBA32(255, 0, 0, 255));
-        rdpq_font_position((gFrameBuffers->width / 2) - 40, (gFrameBuffers->height / 2) - 40);
-        rdpq_font_print(gFonts[FONT_MVBOLI], "Press Start");
-        rdpq_font_end();
+        rdpq_text_printf(NULL, FONT_MVBOLI, (gFrameBuffers->width / 2) - 40, (gFrameBuffers->height / 2) - 40, "Press Blart");
     }
     get_time_snapshot(PP_HUD, DEBUG_SNAPSHOT_1_END);
 }

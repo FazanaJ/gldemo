@@ -79,8 +79,6 @@ void memory_error_screen(void) {
 void init_memory(void) {
     dfs_init(DFS_DEFAULT_LOCATION);
     timer_init();
-    load_font(FONT_ARIAL);
-    load_font(FONT_MVBOLI);
     memory_error_screen();
 }
 
@@ -108,6 +106,8 @@ void init_game(void) {
     init_video();
     init_audio();
     init_debug();
+    load_font(FONT_ARIAL);
+    load_font(FONT_MVBOLI);
     gGlobalTimer = 0;
     gGameTimer = 0;
 }

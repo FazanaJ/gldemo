@@ -109,7 +109,9 @@ char *asset_dir(char *dir, int format) {
 
 void load_font(int fontID) {
     if (gFonts[fontID] == NULL) {
-        gFonts[fontID] = rdpq_font_load(asset_dir(gFontAssetTable[fontID], DFS_FONT64));
+        gFonts[fontID] = rdpq_font_load(asset_dir(gFontAssetTable[fontID - 1], DFS_FONT64));
+        rdpq_font_style(gFonts[fontID], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, 255, 255, 255),});
+        rdpq_text_register_font(fontID, gFonts[fontID]);
     }
 }
 

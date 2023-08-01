@@ -18,7 +18,8 @@
     "Camera", \
     "Materials", \
     "Profiler", \
-    "Particles"
+    "Particles", \
+    "Collision"
 
 
 enum ProfileTimers {
@@ -34,6 +35,7 @@ enum ProfileTimers {
     PP_MATERIALS,
     PP_PROFILER,
     PP_PARTICLES,
+    PP_COLLISION,
 
     PP_TOTAL
 };

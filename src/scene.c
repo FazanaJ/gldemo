@@ -119,27 +119,31 @@ void load_scene(int sceneID) {
     int numMeshes = model64_get_mesh_count(s->model);
     SceneMesh *tail = NULL;
     for (int i = 0; i < numMeshes; i++) {
-        SceneMesh *m = malloc(sizeof(SceneMesh));
-        m->mesh = model64_get_mesh(s->model, i);
-        m->material = malloc(sizeof(Material));
-        m->material->index = NULL;
-        m->material->textureID = sSceneTexIDs[sCurrentScene->sceneID][i];
-        m->material->flags = 0;
-        m->flags = sSceneMeshFlags[sCurrentScene->sceneID][i];
-        m->next = NULL;
-        rspq_block_begin();
-        glPushMatrix();
-        glScalef(5.0f, 5.0f, 5.0f);
-        model64_draw_mesh(m->mesh);
-        glPopMatrix();
-        m->renderBlock = rspq_block_end();
+        mesh_t *mesh = model64_get_mesh(s->model, i);
+        int primCount = model64_get_primitive_count(mesh);
+        for (int j = 0; j < primCount; j++) {
+            SceneMesh *m = malloc(sizeof(SceneMesh));
+            m->mesh = model64_get_primitive(mesh, j);
+            m->material = malloc(sizeof(Material));
+            m->material->index = NULL;
+            m->material->textureID = sSceneTexIDs[sCurrentScene->sceneID][i];
+            m->material->flags = 0;
+            m->flags = sSceneMeshFlags[sCurrentScene->sceneID][i];
+            m->next = NULL;
+            rspq_block_begin();
+            glPushMatrix();
+            glScalef(5.0f, 5.0f, 5.0f);
+            model64_draw_primitive(m->mesh);
+            glPopMatrix();
+            m->renderBlock = rspq_block_end();
 
-        if (s->meshList == NULL) {
-            s->meshList = m;
-            tail = m;
-        } else {
-            tail->next = m;
-            tail = m;
+            if (s->meshList == NULL) {
+                s->meshList = m;
+                tail = m;
+            } else {
+                tail->next = m;
+                tail = m;
+            }
         }
     }
     

@@ -21,7 +21,7 @@ void player_init(Object *obj) {
     data->healthMax = data->healthBase;
     data->health = data->healthBase;
     data->cameraAngle = 0;
-    obj->weight = 1.0f;
+    obj->weight = 2.5f;
 }
 
 void player_loop(Object *obj, int updateRate, float updateRateF) {

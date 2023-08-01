@@ -322,6 +322,7 @@ void render_game(int updateRate, float updateRateF) {
                 set_material(s->material, s->flags);
             }
             rspq_block_run(s->renderBlock);
+            //model64_draw_primitive(s->mesh);
             s = s->next;
         }
     }

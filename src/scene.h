@@ -17,7 +17,7 @@ typedef struct SceneIDs {
 
 typedef struct SceneMesh {
     struct SceneMesh *next;
-    mesh_t *mesh;
+    primitive_t *mesh;
     Material *material;
     rspq_block_t *renderBlock;
     int flags;

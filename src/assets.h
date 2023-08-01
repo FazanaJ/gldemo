@@ -40,6 +40,7 @@ enum FileFormat {
 };
 
 enum FontList {
+    FONT_INTERNAL,
     FONT_ARIAL,
     FONT_MVBOLI,
 
