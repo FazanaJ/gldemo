@@ -18,7 +18,7 @@ assets_conv = $(addprefix filesystem/,$(notdir $(assets_ttf:%.ttf=%.font64))) \
 
 MKSPRITE_FLAGS ?=
 MKFONT_FLAGS ?=
-AUDIOCONV_FLAGS ?=
+AUDIOCONV_FLAGS ?= --wav-compress 1
 
 all: gldemo.z64
 
@@ -40,7 +40,7 @@ filesystem/%.sprite: assets/icons/%.png
 filesystem/%.wav64: assets/sounds/%.wav
 	@mkdir -p $(dir $@)
 	@echo "    [AUDIO] $@"
-	@$(N64_AUDIOCONV) -o filesystem $<
+	@$(N64_AUDIOCONV) $(AUDIOCONV_FLAGS) -o filesystem $<
 
 filesystem/%.xm64: assets/xm/%.xm
 	@mkdir -p $(dir $@)
