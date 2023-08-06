@@ -10,6 +10,7 @@ enum ObjectFlags {
 	OBJ_FLAG_INVISIBLE = 	(1 << 1),
 	OBJ_FLAG_MOVE = 		(1 << 2),
 	OBJ_FLAG_GRAVITY = 		(1 << 3),
+	OBJ_FLAG_COLLISION = 	(1 << 4),
 };
 
 enum ObjectIDs {
@@ -28,6 +29,7 @@ typedef struct ObjectModel {
 	Material material;
 	gl_matrix_t matrix;
 	struct ObjectModel *next;
+	void (*func)(struct Object *obj, int updateRate, float updateRateF);
 	mesh_t *mesh;
 } ObjectModel;
 

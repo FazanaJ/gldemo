@@ -10,6 +10,7 @@
 #include "main.h"
 #include "camera.h"
 #include "menu.h"
+#include "collision.h"
 
 ObjectList *gObjectListHead = NULL;
 ObjectList *gObjectListTail = NULL;
@@ -173,7 +174,7 @@ static const unsigned short gObjectData[] = {
 
 static const int gObjectFlags[] = {
     0,
-    OBJ_FLAG_MOVE | OBJ_FLAG_GRAVITY,
+    OBJ_FLAG_MOVE | OBJ_FLAG_GRAVITY | OBJ_FLAG_COLLISION,
     OBJ_FLAG_MOVE,
 };
 
@@ -493,6 +494,9 @@ static void update_objects(int updateRate, float updateRateF) {
         }
         if (obj->flags & OBJ_FLAG_GRAVITY) {
             object_gravity(obj, updateRateF);
+        }
+        if (obj->flags & OBJ_FLAG_COLLISION) {
+            object_collide(obj);
         }
         objList = objList->next;
         if (obj->flags & OBJ_FLAG_DELETE) {

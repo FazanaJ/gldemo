@@ -174,8 +174,7 @@ int main(void) {
         }
         get_time_snapshot(PP_PROFILER, DEBUG_SNAPSHOT_1_END);
 
-        rdpq_detach_wait();
-        display_show(gFrameBuffers);
+        rdpq_detach_show();
 
         if (gResetDisplay) {
             reset_display();
