@@ -67,7 +67,6 @@ float vec3f_dot(float a[3], float b[3]) {
 
 int ray_surface_intersect(float orig[3], float dir[3], float dir_length, float *hit_pos, float *length, float v0[3], float v1[3], float v2[3]) {
     float e1[3];
-    vec3f_normalize(dir);
     vec3f_diff(e1, v1, v0);
     float e2[3];
     vec3f_diff(e2, v2, v0);
@@ -130,6 +129,13 @@ void object_collide(Object *obj) {
         int mulFactor = prim->vertex_precision - 1;
         obj->floorHeight = 0.0f;
         //float scale = (int) (1 << prim->vertex_precision));
+        float dir[3];
+        float tempP[3] = {obj->pos[0], obj->pos[1], (obj->pos[2] + 25.0f)};
+        dir[0] = tempP[0];// + ((obj->forwardVel * sins(obj->moveAngle[2])) / 20.0f);
+        dir[1] = tempP[1];// - ((obj->forwardVel * coss(obj->moveAngle[2])) / 20.0f);
+        dir[2] = tempP[2] - (50.0f);
+        vec3f_normalize(dir);
+        float dirLen = sqrtf(SQR(dir[0]) + SQR(dir[1]) + SQR(dir[2]));
 
         typedef int16_t u_int16_t __attribute__((aligned(1)));
         typedef int32_t u_int32_t __attribute__((aligned(1)));
@@ -143,12 +149,7 @@ void object_collide(Object *obj) {
             u_int32_t *c2 = (u_int32_t *) (col->pointer + col->stride * indices[i + 1]);
             u_int32_t *c3 = (u_int32_t *) (col->pointer + col->stride * indices[i + 2]);
             float hit[3] = {0, 0, 0};
-            float dir[3];
-            float tempP[3] = {obj->pos[0], obj->pos[1], (obj->pos[2] + 25.0f)};
             
-            dir[0] = tempP[0];// + ((obj->forwardVel * sins(obj->moveAngle[2])) / 20.0f);
-            dir[1] = tempP[1];// - ((obj->forwardVel * coss(obj->moveAngle[2])) / 20.0f);
-            dir[2] = tempP[2] - (50.0f);
             float length;
             float vert0[3] = {v1[0] >> mulFactor, v1[1] >> mulFactor, v1[2] >> mulFactor};
             float vert1[3] = {v2[0] >> mulFactor, v2[1] >> mulFactor, v2[2] >> mulFactor};
@@ -159,7 +160,7 @@ void object_collide(Object *obj) {
             *c3 = 0xFFFFFFFF;
                 //debugf("Obj: X: %2.2f, Y: %2.2f, Z: %2.2f\n", tempP[0], tempP[1], tempP[2]);
                 //debugf("Tri %d: (X1: %2.2f, Y1: %2.2f, Z1: %2.2f), (X2: %2.2f, Y2: %2.2f, Z2: %2.2f), (X3: %2.2f, Y3: %2.2f, Z3: %2.2f)\n", i / 3, vert0[0], vert0[1], vert0[2], vert1[0], vert1[1], vert1[2], vert2[0], vert2[1], vert2[2]);
-            int surf = ray_surface_intersect(tempP, dir, sqrtf(dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2]), hit, &length, vert0, vert1, vert2);
+            int surf = ray_surface_intersect(tempP, dir, dirLen, hit, &length, vert0, vert1, vert2);
             if (surf) {
                 debugf("Hit %d: %2.2f, %2.2f, %2.2f\n", i / 3, hit[0], hit[1], hit[2]);
                 *c1 = 0xFF0000FF;
