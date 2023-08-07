@@ -119,7 +119,6 @@ typedef struct ModelPrim {
 } ModelPrim;
 
 void object_collide(Object *obj) {
-    return;
     DEBUG_SNAPSHOT_1();
 
     SceneMesh *mesh = sCurrentScene->meshList;
@@ -129,6 +128,7 @@ void object_collide(Object *obj) {
         attribute_t *attr = &prim->position;
         attribute_t *col = &prim->color;
         int mulFactor = prim->vertex_precision - 1;
+        obj->floorHeight = 0.0f;
         //float scale = (int) (1 << prim->vertex_precision));
 
         typedef int16_t u_int16_t __attribute__((aligned(1)));
@@ -144,11 +144,11 @@ void object_collide(Object *obj) {
             u_int32_t *c3 = (u_int32_t *) (col->pointer + col->stride * indices[i + 2]);
             float hit[3] = {0, 0, 0};
             float dir[3];
-            float tempP[3] = {obj->pos[0] / 5, obj->pos[1] / 5, (obj->pos[2] + 25.0f) / 5};
+            float tempP[3] = {obj->pos[0], obj->pos[1], (obj->pos[2] + 25.0f)};
             
             dir[0] = tempP[0];// + ((obj->forwardVel * sins(obj->moveAngle[2])) / 20.0f);
             dir[1] = tempP[1];// - ((obj->forwardVel * coss(obj->moveAngle[2])) / 20.0f);
-            dir[2] = tempP[2] - (50.0f / 5);
+            dir[2] = tempP[2] - (50.0f);
             float length;
             float vert0[3] = {v1[0] >> mulFactor, v1[1] >> mulFactor, v1[2] >> mulFactor};
             float vert1[3] = {v2[0] >> mulFactor, v2[1] >> mulFactor, v2[2] >> mulFactor};
@@ -167,7 +167,9 @@ void object_collide(Object *obj) {
                 *c3 = 0xFF0000FF;
                 //obj->pos[0] = hit[0];
                 //obj->pos[1] = hit[1];
-                obj->pos[2] = (hit[2] / 2) * 5;
+                obj->pos[2] = (hit[2]) / 2;
+                obj->yVel = 0.0f;
+                //obj->floorHeight = (hit[2] * 5);
             }
         }
         mesh = mesh->next;

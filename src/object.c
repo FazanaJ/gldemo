@@ -136,6 +136,7 @@ void object_move(Object *obj, float updateRateF) {
 }
 
 void object_gravity(Object *obj, float updateRateF) {
+    return;
     float weightMax = -(obj->weight * 10.0f);
     if (obj->yVel > weightMax) {
         obj->yVel -= (obj->weight) * updateRateF;
