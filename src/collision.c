@@ -73,7 +73,7 @@ int ray_surface_intersect(float orig[3], float dir[3], float dir_length, float *
     float h[3];
     vec3f_cross(h, dir, e2);
     float det = vec3f_dot(e1, h);
-    if (det > -0.01f && det < 0.01f) return false;
+    if (det > -0.0001f && det < 0.0001f) return false;
     float f = 1.0f / det; // invDet
     float s[3];
     vec3f_diff(s, orig, v0);
@@ -118,6 +118,7 @@ typedef struct ModelPrim {
 } ModelPrim;
 
 void object_collide(Object *obj) {
+    return;
     DEBUG_SNAPSHOT_1();
 
     SceneMesh *mesh = sCurrentScene->meshList;
@@ -128,7 +129,7 @@ void object_collide(Object *obj) {
         attribute_t *col = &prim->color;
         int mulFactor = prim->vertex_precision - 1;
         obj->floorHeight = 0.0f;
-        //float scale = (int) (1 << prim->vertex_precision));
+        //float scale = (int) (1 << (prim->vertex_precision - 1)));
         float dir[3];
         float tempP[3] = {obj->pos[0], obj->pos[1], (obj->pos[2] + 25.0f)};
         dir[0] = tempP[0];// + ((obj->forwardVel * sins(obj->moveAngle[2])) / 20.0f);

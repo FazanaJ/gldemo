@@ -321,11 +321,11 @@ void render_game(int updateRate, float updateRateF) {
             if (s->material) {
                 set_material(s->material, s->flags);
             }
-            //rspq_block_run(s->renderBlock);
-            glPushMatrix();
-            //glScalef(5.0f, 5.0f, 5.0f);
+            rspq_block_run(s->renderBlock);
+            /*glPushMatrix();
+            glScalef(5.0f, 5.0f, 5.0f);
             model64_draw_primitive(s->mesh);
-            glPopMatrix();
+            glPopMatrix();*/
             s = s->next;
         }
     }
