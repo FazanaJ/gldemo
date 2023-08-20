@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../include/global.h"
+#include "rspq_profile.h"
 
 #define TIME_ITERATIONS 60
 #define TIME_AGGREGATE TIME_ITERATIONS
@@ -41,6 +42,7 @@ enum ProfileTimers {
 };
 
 typedef struct DebugData {
+    rspq_profile_data_t rspData;
     unsigned int timer[PP_TOTAL][TIME_TOTAL + 1];
     unsigned int cpuTime[TIME_TOTAL + 1];
     unsigned int rspTime[TIME_TOTAL + 1];

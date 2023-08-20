@@ -8,6 +8,7 @@
 #include "object.h"
 #include "input.h"
 #include "assets.h"
+#include "rspq_profile.h"
 
 #ifdef PUPPYPRINT_DEBUG
 
@@ -20,6 +21,7 @@ char *sDebugText[] = {
 void init_debug(void) {
     debug_init_isviewer();
     debug_init_usblog();
+    rspq_profile_start();
     //console_init();
     //console_set_render_mode(RENDER_MANUAL);
     //rdpq_debug_start();
@@ -71,7 +73,7 @@ void get_cpu_time(int diff) {
 }
 extern Input sInputData;;
 void get_rsp_time(int diff) {
-    int time = TIMER_MICROS(diff);
+    int time = (diff * 10) / 625;
     if (time > 99999) {
         time = 99999;
     }
@@ -80,7 +82,7 @@ void get_rsp_time(int diff) {
 }
 
 void get_rdp_time(int diff) {
-    int time = TIMER_MICROS(diff);
+    int time = diff / RCP_FREQUENCY;
     if (time > 99999) {
         time = 99999;
     }
@@ -92,7 +94,7 @@ static void calculate_framerate(void) {
     static unsigned int curFrameTimeIndex = 0;
     static unsigned int frameTimes[30];
     unsigned int newTime = timer_ticks();
-    unsigned int  oldTime = frameTimes[curFrameTimeIndex];
+    unsigned int oldTime = frameTimes[curFrameTimeIndex];
     frameTimes[curFrameTimeIndex] = newTime;
 
     curFrameTimeIndex++;
@@ -104,6 +106,13 @@ static void calculate_framerate(void) {
 
 void process_profiler(void) {
     calculate_framerate();
+
+    if ((gGlobalTimer % 8) == 0) {
+        rspq_profile_get_data(&gDebugData->rspData);
+        rspq_profile_reset();
+    }
+    get_rsp_time(gDebugData->rspData.total_ticks / 8);
+    rspq_profile_next_frame();
 
     for (int i = 0; i < PP_TOTAL; i++) {
         gDebugData->timer[i][TIME_TOTAL] = gDebugData->timer[i][TIME_AGGREGATE] / TIME_TOTAL;
@@ -125,9 +134,8 @@ void process_profiler(void) {
 
 void render_profiler(void) {
     int boxHeight = 0;
-    int divisor = (get_tv_type() == TV_PAL) ? 400 : 333;
     struct mallinfo mem_info = mallinfo();
-    rdpq_set_prim_color(RGBA32(0, 0, 0, 96));
+    rdpq_set_prim_color(RGBA32(0, 0, 0, 127));
     rdpq_set_mode_standard();
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
     rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
@@ -148,15 +156,15 @@ void render_profiler(void) {
     rdpq_fill_rectangle(display_get_width() - 110, 0, display_get_width(), boxHeight);
     rdpq_mode_blender(0);
     rdpq_text_printf(NULL, FONT_ARIAL, 8, 16, "FPS: %2.2f", gFPS);
-    rdpq_text_printf(NULL, FONT_ARIAL, 8, 26, "CPU: %dus (%d%%)", gDebugData->cpuTime[TIME_TOTAL], gDebugData->cpuTime[TIME_TOTAL] / divisor);
+    rdpq_text_printf(NULL, FONT_ARIAL, 8, 26, "CPU: %dus (%d%%)", gDebugData->cpuTime[TIME_TOTAL], gDebugData->cpuTime[TIME_TOTAL] / 333);
     boxHeight = 0;
     if (gDebugData->rspTime[TIME_TOTAL] > 10) {
         boxHeight += 10;
-        rdpq_text_printf(NULL, FONT_ARIAL, 8, 26 + boxHeight, "RSP: %dus (%d%%)", gDebugData->rspTime[TIME_TOTAL], gDebugData->rspTime[TIME_TOTAL] / divisor);
+        rdpq_text_printf(NULL, FONT_ARIAL, 8, 26 + boxHeight, "RSP: %dus (%d%%)", gDebugData->rspTime[TIME_TOTAL], gDebugData->rspTime[TIME_TOTAL] / 333);
     }
     if (gDebugData->rdpTime[TIME_TOTAL] > 10) {
         boxHeight += 10;
-        rdpq_text_printf(NULL, FONT_ARIAL, 8, 26 + boxHeight, "RDP: %dus (%d%%)", gDebugData->rdpTime[TIME_TOTAL], gDebugData->rdpTime[TIME_TOTAL] / divisor);
+        rdpq_text_printf(NULL, FONT_ARIAL, 8, 26 + boxHeight, "RDP: %dus (%d%%)", gDebugData->rdpTime[TIME_TOTAL], gDebugData->rdpTime[TIME_TOTAL] / 333);
     }
     boxHeight = 0;
     for (int i = 0; i < PP_TOTAL; i++) {

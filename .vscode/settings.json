@@ -19,6 +19,7 @@
         "assets.h": "c",
         "main.h": "c",
         "global.h": "c",
-        "audio.h": "c"
+        "audio.h": "c",
+        "rspq_profile.h": "c"
     }
 }
