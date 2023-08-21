@@ -307,9 +307,6 @@ static void free_object(Object *obj) {
         if (gObjectListHead->next) {
             gObjectListHead = gObjectListHead->next;
             gObjectListHead->prev = NULL;
-            if (gObjectListTail == gObjectListHead) {
-                gObjectListTail = gObjectListHead;
-            }
         } else {
             gObjectListHead = NULL;
         }
@@ -338,9 +335,6 @@ static void free_clutter(Clutter *obj) {
         if (gClutterListHead->next) {
             gClutterListHead = gClutterListHead->next;
             gClutterListHead->prev = NULL;
-            if (gClutterListTail == gClutterListHead) {
-                gClutterListTail = gClutterListHead;
-            }
         } else {
             gClutterListHead = NULL;
         }
@@ -366,9 +360,6 @@ static void free_particle(Particle *obj) {
         if (gParticleListHead->next) {
             gParticleListHead = gParticleListHead->next;
             gParticleListHead->prev = NULL;
-            if (gParticleListTail == gParticleListHead) {
-                gParticleListTail = gParticleListHead;
-            }
         } else {
             gParticleListHead = NULL;
         }

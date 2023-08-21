@@ -6,8 +6,8 @@ extern float gSineTable[];
 #define sins(x) gSineTable[(unsigned short) (x) >> 4]
 #define coss(x) gCosineTable[(unsigned short) (x) >> 4]
 #define SHORT_TO_DEGREES(x) (x / 182)
-#define INCREASE_VAR(x, amt, max) {x += amt; if (x > max) x = max;}
-#define DECREASE_VAR(x, amt, min) {x -= amt; if (x < min) x = min;}
+#define INCREASE_VAR(x, amt, max) {if (x + amt < max) x += amt; else x = max;}
+#define DECREASE_VAR(x, amt, min) {if (x - amt > min) x -= amt; else x = min;}
 #define SQR(x) (x * x)
 #define DIST2(x, y) (SQR(x[0] - y[0]) + SQR(x[1] - y[1]))
 #define DIST3(x, y) (SQR(fabs(x[0] - y[0])) + SQR(fabs(x[1] - y[1])) + SQR(fabs(x[2] - y[2])))

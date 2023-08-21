@@ -2,6 +2,7 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/gl_integration.h>
+#include <malloc.h>
 
 #include "hud.h"
 #include "../include/global.h"
@@ -19,127 +20,6 @@ static unsigned short sPrevHealth;
 static unsigned short sPrevHealthMax;
 static short sHealthPosX;
 static short sHealthPosY;
-
-typedef struct SubtitleData {
-    char text[128];
-    int timer;
-    unsigned char colour[4];
-} SubtitleData;
-
-int rdpq_font_width(rdpq_font_t *fnt, const char *text, int nch);
-
-static SubtitleData sSubtitleStruct[4];
-char gNumSubtitles = 0;
-short sSubtitlePrintY[sizeof(sSubtitleStruct) / sizeof(SubtitleData)] = {
-    194, 188, 176, 164
-};
-short sSubtitlePrintYTarget[sizeof(sSubtitleStruct) / sizeof(SubtitleData)];
-
-// I know this works (mostly) It's stubbed so that it doesn't error for others.
-void render_hud_subtitles(void) {
-    /*int boxCoords[4];
-    int textWidth = 0;
-    int textHeights[sizeof(sSubtitleStruct) / sizeof(SubtitleData)];
-    int printY = 0;
-    int topY = 0;
-    int opacity = 0;
-    int curTextWidth[4];
-    int screenWidth = display_get_width();
-    int screenHeight = display_get_height();
-
-    for (int i = 0; i < sizeof(sSubtitleStruct) / sizeof(SubtitleData); i++) {
-        if (sSubtitleStruct[i].colour[3] == 0) {
-            continue;
-        }
-        curTextWidth[i] = rdpq_font_width(gFonts[FONT_MVBOLI], sSubtitleStruct[i].text, strlen(sSubtitleStruct[i].text));
-        textWidth = MAX(textWidth, curTextWidth[i]);
-        textHeights[i] = 12;//get_text_height(&gfx, sSubtitleStruct[i].text);
-        sSubtitlePrintYTarget[i] = screenHeight-36-printY-textHeights[i];
-        topY = sSubtitlePrintY[i];
-        opacity = MAX(sSubtitleStruct[i].colour[3] * 0.75f, opacity);
-        printY += textHeights[i];
-    }
-    if (printY == 0) {
-        return;
-    }
-    boxCoords[1] = topY - 4;
-    boxCoords[0] = (screenWidth / 2) - (textWidth/2) - 4;
-    boxCoords[2] = (screenWidth / 2) + (textWidth/2) + 4;
-    boxCoords[3] = screenHeight - 32;
-    rdpq_set_prim_color(RGBA32(0, 0, 0, opacity));
-    rdpq_set_mode_standard();
-    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-    rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-    glEnable(GL_SCISSOR_TEST);
-    rdpq_fill_rectangle(boxCoords[0], boxCoords[1], boxCoords[2], boxCoords[3]);
-    //glScissor(boxCoords[0], display_get_height() - boxCoords[1], boxCoords[0] - boxCoords[2], boxCoords[1] - boxCoords[3]);
-    for (int i = 0; i < sizeof(sSubtitleStruct) / sizeof(SubtitleData); i++) {
-        if (sSubtitleStruct[i].colour[3] == 0) {
-            continue;
-        }
-        rdpq_set_prim_color(RGBA32(sSubtitleStruct[i].colour[0], sSubtitleStruct[i].colour[1], sSubtitleStruct[i].colour[2], sSubtitleStruct[i].colour[3]));
-        rdpq_font_position((screenWidth / 2) - (curTextWidth[i] / 2), sSubtitlePrintY[i] + 10);
-        rdpq_font_print(gFonts[FONT_MVBOLI], sSubtitleStruct[i].text);
-    }
-    glDisable(GL_SCISSOR_TEST);*/
-}
-
-void process_subtitle_timers(int updateRate, float updateRateF) {
-    if (gNumSubtitles == 0) {
-        return;
-    }
-    for (int i = 0; i < sizeof(sSubtitleStruct) / sizeof(SubtitleData); i++) {
-        if (sSubtitleStruct[i].colour[3] == 0) {
-            continue;
-        }
-        sSubtitlePrintY[i] = approach(sSubtitlePrintY[i], sSubtitlePrintYTarget[i], 8.0f * updateRateF);
-        if (sSubtitleStruct[i].timer > 0) {
-            sSubtitleStruct[i].colour[3] = approach(sSubtitleStruct[i].colour[3], 0xFF, 50 * updateRateF);
-            sSubtitleStruct[i].timer -= updateRate;
-        } else {
-            if ((sSubtitleStruct[i].colour[3] = approach(sSubtitleStruct[i].colour[3], 0, 25 * updateRateF)) == 0) {
-                sSubtitleStruct[i].colour[3] = 0;
-                sSubtitlePrintY[i] = display_get_height() - 36;
-                sSubtitlePrintYTarget[i] = display_get_height() - 36;
-                gNumSubtitles--;
-            }
-        }
-    }
-}
-
-void add_subtitle(char *text, int timer, int colour) {
-    int i;
-    if (gNumSubtitles == sizeof(sSubtitleStruct) / sizeof(SubtitleData)) {
-        for (i = 0; i < sizeof(sSubtitleStruct) / sizeof(SubtitleData) - 1; i++) {
-            memcpy(&sSubtitleStruct[i], &sSubtitleStruct[i+1], sizeof(SubtitleData));
-        }
-        bzero(&sSubtitleStruct[3], sizeof(SubtitleData));
-        gNumSubtitles--;
-    }
-    int selected = gNumSubtitles;
-    while (sSubtitleStruct[i].colour[3] != 0 && selected < 3) {
-        selected++;
-    }
-    bzero(&sSubtitleStruct[selected], sizeof(SubtitleData));
-    memcpy(&sSubtitleStruct[selected].text, text, strlen(text));
-    sSubtitleStruct[selected].timer = timer_int(timer);
-    sSubtitleStruct[selected].colour[0] = (colour >> 24) & 0xFF;
-    sSubtitleStruct[selected].colour[1] = (colour >> 16) & 0xFF;
-    sSubtitleStruct[selected].colour[2] = (colour >> 8) & 0xFF;
-    sSubtitleStruct[selected].colour[3] = 1;
-    sSubtitlePrintY[selected] = MAX(display_get_height() - 24, sSubtitlePrintY[0] - 24);
-    sSubtitlePrintY[selected] = MAX(sSubtitlePrintY[0], sSubtitlePrintY[1] - 24);
-    sSubtitlePrintY[selected] = MAX(sSubtitlePrintY[1] - 24, sSubtitlePrintY[2] - 24);
-    gNumSubtitles++;
-}
-
-void clear_subtitles(void) {
-    bzero(&sSubtitleStruct, sizeof(sSubtitleStruct));
-    for (int i = 0; i < sizeof(sSubtitleStruct) / sizeof(SubtitleData); i++) {
-        sSubtitlePrintY[i] = display_get_height() - 24;
-        sSubtitlePrintYTarget[i] = display_get_height() - 24;
-    }
-}
 
 void generate_health_block(int hpMin, int hpMax, int hpBase) {
     int x = 0;
@@ -369,6 +249,157 @@ void render_ztarget(void) {
     }
 }
 
+int get_text_height(char *text) {
+    int textLen = strlen(text);
+    int textHeight = 12;
+
+    for (int i = 0; i < textLen; i++) {
+        if (text[i] == '\n') {
+            textHeight += 12;
+        }
+    }
+    return textHeight;
+}
+
+typedef struct SubtitleData {
+    char *text;
+    short timer;
+    unsigned char y;
+    unsigned char opacity;
+    short width;
+    short height;
+    struct SubtitleData *prev;
+    struct SubtitleData *next;
+} SubtitleData;
+
+SubtitleData *sSubtitleHead;
+SubtitleData *sSubtitleTail;
+short sBoxWidth = 0;
+short sBoxHeight = 0;
+
+void add_subtitle(char *text, int timer) {
+    int textLen = strlen(text);
+    int textHeight = 12;
+
+    SubtitleData *s = malloc(sizeof(SubtitleData));
+    s->text = malloc(textLen);
+    memcpy(s->text, text, textLen);
+
+    if (sSubtitleHead == NULL) {
+        sSubtitleHead = s;
+        sSubtitleTail = s;
+        s->y = 0;
+        s->prev = NULL;
+    } else {
+        sSubtitleTail->next = s;
+        s->prev = sSubtitleTail;
+        s->y = sSubtitleTail->y;
+        sSubtitleTail = s;
+    }
+    s->next = NULL;
+    s->timer = timer;
+    s->opacity = 0;
+    for (int i = 0; i < textLen; i++) {
+        if (text[i] == '\n') {
+            textHeight += 12;
+        }
+    }
+    s->height = textHeight;
+    rdpq_textparms_t parms = {
+        .width = display_get_width(),
+        .height = 0,
+        .align = ALIGN_CENTER,
+        .valign = VALIGN_BOTTOM,
+        .line_spacing = -8,
+    };
+    rdpq_paragraph_t *layout = rdpq_paragraph_build(&parms, FONT_MVBOLI, s->text, &textLen);
+    s->width = (((layout->bbox[2] - layout->bbox[0])) / 2) + 8;
+    rdpq_paragraph_free(layout);
+}
+
+void clear_subtitle(SubtitleData *subtitle) {
+    if (subtitle == sSubtitleHead) {
+        if (sSubtitleHead->next) {
+            sSubtitleHead = sSubtitleHead->next;
+            sSubtitleHead->prev = NULL;
+        } else {
+            sSubtitleHead = NULL;
+        }
+    } else {
+        if (subtitle == sSubtitleTail) {
+            sSubtitleTail = sSubtitleTail->prev;
+        }
+        subtitle->prev->next = subtitle->next;
+        if (subtitle->next) {
+            subtitle->next->prev = subtitle->prev;
+        }
+    }
+    if (subtitle->text) {
+        free(subtitle->text);
+    }
+    free(subtitle);
+}
+
+void process_subtitle_timers(int updateRate, float updateRateF) {
+    if (sSubtitleHead == NULL) {
+        return;
+    }
+    SubtitleData *s = sSubtitleHead;
+
+    int i = 0;
+    sBoxWidth = 0;
+    sBoxHeight = 0;
+    while (s != NULL) {
+        i += s->height;
+        s->timer -= updateRate;
+        s->y = approach(s->y, i, updateRate * 2);
+        if (s->y > sBoxHeight) {
+            sBoxHeight = s->y;
+        }
+        if (s->width > sBoxWidth) {
+            sBoxWidth = s->width;
+        }
+        if (s->timer <= 0) {
+            DECREASE_VAR(s->opacity, updateRate * 8, 0);
+            if (s->opacity == 0) {
+                SubtitleData *old = s;
+                s = s->next;
+                clear_subtitle(old);
+            }
+        } else {
+            INCREASE_VAR(s->opacity, updateRate * 8, 255);
+            s = s->next;
+        }
+    }
+}
+
+void render_hud_subtitles(void) {
+    if (sSubtitleHead == NULL) {
+        return;
+    }
+    SubtitleData *s = sSubtitleHead;
+    int screenMid = display_get_width() / 2;
+    int screenBottom = display_get_height();
+    rdpq_textparms_t parms = {
+        .width = display_get_width(),
+        .height = 0,
+        .align = ALIGN_CENTER,
+        .valign = VALIGN_BOTTOM,
+        .line_spacing = -8,
+    };
+
+    rdpq_set_mode_standard();
+    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+    rdpq_set_prim_color(RGBA32(0, 0, 0, 96));
+    rdpq_fill_rectangle(screenMid - sBoxWidth, screenBottom - 38 - sBoxHeight - (s->height / 2), screenMid + sBoxWidth, screenBottom - 24 - (s->height / 2));
+    while (s) {        
+        rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, 255, 255, s->opacity),});
+        rdpq_text_printf(&parms, FONT_MVBOLI, -8, screenBottom - 32 - s->y, s->text);
+        s = s->next;
+    }
+}
+
 void render_hud(int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
     if (gPlayer) {
@@ -382,6 +413,13 @@ void render_hud(int updateRate, float updateRateF) {
     }
     process_subtitle_timers(updateRate, updateRateF);
     render_hud_subtitles();
+
+    if (get_input_pressed(INPUT_CDOWN, 0)) {
+        add_subtitle("You have pressed C down!", 120);
+    }
+    if (get_input_pressed(INPUT_CLEFT, 0)) {
+        add_subtitle("You have pressed C left!\n That's quite an acomplishment right there.", 200);
+    }
 
     if (gCurrentController == -1) {
         rdpq_text_printf(NULL, FONT_MVBOLI, (gFrameBuffers->width / 2) - 40, (gFrameBuffers->height / 2) - 40, "Press Blart");
