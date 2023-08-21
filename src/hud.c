@@ -279,7 +279,6 @@ short sBoxHeight = 0;
 
 void add_subtitle(char *text, int timer) {
     int textLen = strlen(text);
-    int textHeight = 12;
 
     SubtitleData *s = malloc(sizeof(SubtitleData));
     s->text = malloc(textLen);
@@ -299,12 +298,6 @@ void add_subtitle(char *text, int timer) {
     s->next = NULL;
     s->timer = timer;
     s->opacity = 0;
-    for (int i = 0; i < textLen; i++) {
-        if (text[i] == '\n') {
-            textHeight += 12;
-        }
-    }
-    s->height = textHeight;
     rdpq_textparms_t parms = {
         .width = display_get_width(),
         .height = 0,
@@ -314,6 +307,7 @@ void add_subtitle(char *text, int timer) {
     };
     rdpq_paragraph_t *layout = rdpq_paragraph_build(&parms, FONT_MVBOLI, s->text, &textLen);
     s->width = (((layout->bbox[2] - layout->bbox[0])) / 2) + 8;
+    s->height = ((layout->bbox[3] - layout->bbox[1]) / 2);
     rdpq_paragraph_free(layout);
 }
 
@@ -350,11 +344,11 @@ void process_subtitle_timers(int updateRate, float updateRateF) {
     sBoxWidth = 0;
     sBoxHeight = 0;
     while (s != NULL) {
-        i += s->height;
+        i += get_text_height(s->text);
         s->timer -= updateRate;
         s->y = approach(s->y, i, updateRate * 2);
-        if (s->y > sBoxHeight) {
-            sBoxHeight = s->y;
+        if (s->y + s->height > sBoxHeight) {
+            sBoxHeight = s->y + s->height;
         }
         if (s->width > sBoxWidth) {
             sBoxWidth = s->width;
@@ -392,10 +386,11 @@ void render_hud_subtitles(void) {
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
     rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
     rdpq_set_prim_color(RGBA32(0, 0, 0, 96));
-    rdpq_fill_rectangle(screenMid - sBoxWidth, screenBottom - 38 - sBoxHeight - (s->height / 2), screenMid + sBoxWidth, screenBottom - 24 - (s->height / 2));
+
+    rdpq_fill_rectangle(screenMid - sBoxWidth, screenBottom - 32 - sBoxHeight, screenMid + sBoxWidth, screenBottom - 32 - s->y + s->height);
     while (s) {        
         rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, 255, 255, s->opacity),});
-        rdpq_text_printf(&parms, FONT_MVBOLI, -8, screenBottom - 32 - s->y, s->text);
+        rdpq_text_printf(&parms, FONT_MVBOLI, 0, screenBottom - 32 - s->y, s->text);
         s = s->next;
     }
 }
@@ -418,7 +413,7 @@ void render_hud(int updateRate, float updateRateF) {
         add_subtitle("You have pressed C down!", 120);
     }
     if (get_input_pressed(INPUT_CLEFT, 0)) {
-        add_subtitle("You have pressed C left!\n That's quite an acomplishment right there.", 200);
+        add_subtitle("You have pressed C left!\nThat's quite an acomplishment right there.", 200);
     }
 
     if (gCurrentController == -1) {
