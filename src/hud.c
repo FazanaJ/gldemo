@@ -21,6 +21,9 @@ static unsigned short sPrevHealthMax;
 static short sHealthPosX;
 static short sHealthPosY;
 
+sprite_t *gPanelSprite[4];
+rspq_block_t *gPanelBlock;
+
 void generate_health_block(int hpMin, int hpMax, int hpBase) {
     int x = 0;
     int y = 0;
@@ -395,6 +398,40 @@ void render_hud_subtitles(void) {
     }
 }
 
+void init_hud(void) {
+    gPanelSprite[0] = sprite_load(asset_dir("message1.rgba16", DFS_SPRITE));
+    gPanelSprite[1] = sprite_load(asset_dir("message2.rgba16", DFS_SPRITE));
+    gPanelSprite[2] = sprite_load(asset_dir("message3.rgba16", DFS_SPRITE));
+    gPanelSprite[3] = sprite_load(asset_dir("message4.rgba16", DFS_SPRITE));
+}
+
+void render_panel(int x1, int y1, int x2, int y2, int style, unsigned int colour) {
+    rdpq_set_mode_standard();
+    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    rdpq_set_prim_color(RGBA32((colour >> 24) & 0xFF, (colour >> 16) & 0xFF, (colour >> 8) & 0xFF, colour & 0xFF));
+    rdpq_mode_combiner(RDPQ_COMBINER_TEX_FLAT);
+
+    // Corners
+    surface_t surf = sprite_get_pixels(gPanelSprite[0]);
+    rdpq_tex_blit(&surf, x1, y1, NULL);
+    rdpq_tex_blit(&surf, x2 - 8, y1, &(rdpq_blitparms_t){.flip_x = true});
+    rdpq_tex_blit(&surf, x1, y2 - 8, &(rdpq_blitparms_t){.flip_y = true});
+    rdpq_tex_blit(&surf, x2 - 8, y2 - 8, &(rdpq_blitparms_t){.flip_x = true, .flip_y = true});
+    // Borders
+    float xScale = (float) ((x2 - 8) - (x1 + 8)) / 8.0f;
+    float yScale = (float) ((y2 - 8) - (y1 + 8)) / 8.0f;
+    surf = sprite_get_pixels(gPanelSprite[1]);
+    rdpq_tex_blit(&surf, x1 + 8, y1, &(rdpq_blitparms_t){.scale_x = xScale});
+    rdpq_tex_blit(&surf, x1 + 8, y2 - 9, &(rdpq_blitparms_t){.scale_x = xScale, .flip_y = true});
+    surf = sprite_get_pixels(gPanelSprite[2]);
+    rdpq_tex_blit(&surf, x1, y1 + 8, &(rdpq_blitparms_t){.scale_y = yScale});
+    rdpq_tex_blit(&surf, x2 - 9, y1 + 8, &(rdpq_blitparms_t){.scale_y = yScale, .flip_x = true});
+    surf = sprite_get_pixels(gPanelSprite[3]);
+    xScale = (float) ((x2 - 9) - (x1 + 9)) / 8.0f;
+    yScale = (float) ((y2 - 9) - (y1 + 9)) / 8.0f;
+    rdpq_tex_blit(&surf, x1 + 8, y1 + 8, &(rdpq_blitparms_t){.scale_x = xScale, .scale_y = yScale});
+}
+
 void render_hud(int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
     if (gPlayer) {
@@ -415,6 +452,8 @@ void render_hud(int updateRate, float updateRateF) {
     if (get_input_pressed(INPUT_CLEFT, 0)) {
         add_subtitle("You have pressed C left!\nThat's quite an acomplishment right there.", 200);
     }
+
+        render_panel((gFrameBuffers->width / 2) - 64, (gFrameBuffers->height / 2) - 64, (gFrameBuffers->width / 2) + 64, (gFrameBuffers->height / 2) - 32, 0, 0x808080FF);
 
     if (gCurrentController == -1) {
         rdpq_text_printf(NULL, FONT_MVBOLI, (gFrameBuffers->width / 2) - 40, (gFrameBuffers->height / 2) - 40, "Press Blart");

@@ -64,6 +64,7 @@ void set_region_type(int region) {
 }
 
 void init_video(void) {
+    init_hud();
     set_region_type(gConfig.regionMode);
 }
 
