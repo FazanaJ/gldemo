@@ -453,9 +453,9 @@ void render_hud(int updateRate, float updateRateF) {
         add_subtitle("You have pressed C left!\nThat's quite an acomplishment right there.", 200);
     }
 
-        render_panel((gFrameBuffers->width / 2) - 64, (gFrameBuffers->height / 2) - 64, (gFrameBuffers->width / 2) + 64, (gFrameBuffers->height / 2) - 32, 0, 0x808080FF);
 
     if (gCurrentController == -1) {
+        render_panel((gFrameBuffers->width / 2) - 64, (gFrameBuffers->height / 2) - 64, (gFrameBuffers->width / 2) + 64, (gFrameBuffers->height / 2) - 32, 0, 0xFFFFFFFF);
         rdpq_text_printf(NULL, FONT_MVBOLI, (gFrameBuffers->width / 2) - 40, (gFrameBuffers->height / 2) - 40, "Press Blart");
     }
     get_time_snapshot(PP_HUD, DEBUG_SNAPSHOT_1_END);
