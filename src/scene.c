@@ -14,15 +14,15 @@ Environment *gEnvironment;
 ObjectMap sTestAreaObjs[] = {
     {OBJ_PLAYER, MAP_OBJ, /*Yaw*/ 0, /*X*/ 0, /*Y*/ 0, /*Z*/ 0},
     {OBJ_NPC, MAP_OBJ, /*Yaw*/ 0, /*X*/ 50, /*Y*/ 0, /*Z*/ 0},
-    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 20, /*Y*/ 40, /*Z*/ 0},
-    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 10, /*Y*/ 45, /*Z*/ 0},
-    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 35, /*Y*/ -100, /*Z*/ 0},
-    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 75, /*Y*/ -25, /*Z*/ 0},
-    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 60, /*Y*/ 40, /*Z*/ 0},
-    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ -25, /*Y*/ 45, /*Z*/ 0},
-    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ -95, /*Y*/ 40, /*Z*/ 0},
+    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 20, /*Y*/ 0, /*Z*/ 40},
+    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 10, /*Y*/ 0, /*Z*/ 45},
+    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 35, /*Y*/ 0, /*Z*/ -100},
+    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 75, /*Y*/ 0, /*Z*/ -25},
+    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 60, /*Y*/ 0, /*Z*/ 40},
+    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ -25, /*Y*/ 0, /*Z*/ 45},
+    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ -95, /*Y*/ 0, /*Z*/ 40},
     {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 45, /*Y*/ 0, /*Z*/ 0},
-    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 75, /*Y*/ -75, /*Z*/ 0},
+    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 75, /*Y*/ 0, /*Z*/ -75},
 
     {-1, MAP_CLU, /*Yaw*/ 0, /*X*/ 75, /*Y*/ -75, /*Z*/ 0},
 };
@@ -154,7 +154,7 @@ void load_scene(int sceneID) {
         while (1) {
             if (o->type == MAP_OBJ) {
                 Object *obj = spawn_object_pos(o->objectID, o->x, o->y, o->z);
-                obj->faceAngle[2] = o->yaw;
+                obj->faceAngle[1] = o->yaw;
                 if (o->objectID == OBJ_PLAYER) {
                     gPlayer = obj;
                 }

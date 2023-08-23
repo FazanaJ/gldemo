@@ -53,7 +53,7 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
         data->healthMax++;
     }
 
-    Object *targetObj = find_nearest_object_facing(obj, OBJ_NPC, 30.0f, 0x3000, obj->faceAngle[2]);
+    Object *targetObj = find_nearest_object_facing(obj, OBJ_NPC, 30.0f, 0x3000, obj->faceAngle[1]);
     if (targetObj) {
         gCamera->target = targetObj;
     } else {
@@ -71,7 +71,7 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
         play_sound_spatial(SOUND_LASER, obj->pos);
         Object *bullet = spawn_object_pos(OBJ_PROJECTILE, obj->pos[0], obj->pos[1], obj->pos[2]);
         bullet->forwardVel = 20.0f;
-        bullet->moveAngle[2] = obj->faceAngle[2];
+        bullet->moveAngle[1] = obj->faceAngle[1];
         rumble_set(3);
     }
 
@@ -85,8 +85,8 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
             play_sound_spatial_pitch(SOUND_CANNON, obj->pos, 1.0f);
             for (int i = 0; i < 7; i++) {
                 part = spawn_particle(OBJ_NULL, obj->pos[0], obj->pos[1], obj->pos[2] + 5.0f);
-                part->zVel = 0.0f;
-                part->zVelIncrease = 0.01f;
+                part->yVel = 0.0f;
+                part->yVelIncrease = 0.01f;
                 part->moveAngle = random_float() * 0x10000;
                 part->forwardVel = 0.5f;
                 part->forwardVelIncrease = -0.025f;
@@ -115,15 +115,15 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
         float moveLerp;
         INCREASE_VAR(c->moveTimer, updateRate, moveTicks);
         moveLerp = 1.0f - (((float) (moveTicks - c->moveTimer)) / (float) moveTicks);
-        obj->moveAngle[2] = lerp_short(obj->moveAngle[2], intendedYaw + c->yawTarget, 0.25f * updateRateF);
+        obj->moveAngle[1] = lerp_short(obj->moveAngle[1], intendedYaw + c->yawTarget, 0.25f * updateRateF);
         if (gZTargetTimer == 0) {
             c->yawTarget -= (float) (stickX * ((2.0f * updateRateF) * moveLerp));
-            obj->faceAngle[2] = lerp_short(obj->faceAngle[2], obj->moveAngle[2], 0.1f * updateRateF);
-            data->cameraAngle = obj->faceAngle[2];
+            obj->faceAngle[1] = lerp_short(obj->faceAngle[1], obj->moveAngle[1], 0.1f * updateRateF);
+            data->cameraAngle = obj->faceAngle[1];
         } else {
             if (data->zTarget) {
-                short intendedYaw = atan2s(obj->pos[0] - data->zTarget->pos[0], obj->pos[1] - data->zTarget->pos[1]) - 0x4000;
-                obj->faceAngle[2] = lerp_short(obj->faceAngle[2], intendedYaw, 0.1f * updateRateF);
+                short intendedYaw = atan2s(obj->pos[2] - data->zTarget->pos[2], obj->pos[0] - data->zTarget->pos[0]);
+                obj->faceAngle[1] = lerp_short(obj->faceAngle[1], intendedYaw, 0.1f * updateRateF);
             }
         }
     } else {

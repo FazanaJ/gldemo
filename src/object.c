@@ -130,8 +130,8 @@ void projectile_loop(Object *obj, int updateRate, float updateRateF) {
 
 void object_move(Object *obj, float updateRateF) {
     if (obj->forwardVel != 0.0f) {
-        obj->pos[0] += ((obj->forwardVel * sins(obj->moveAngle[2])) / 20.0f) * updateRateF;
-        obj->pos[1] -= ((obj->forwardVel * coss(obj->moveAngle[2])) / 20.0f) * updateRateF;
+        obj->pos[0] += ((obj->forwardVel * sins(obj->moveAngle[1])) / 20.0f) * updateRateF;
+        obj->pos[2] += ((obj->forwardVel * coss(obj->moveAngle[1])) / 20.0f) * updateRateF;
     }
 }
 
@@ -145,9 +145,9 @@ void object_gravity(Object *obj, float updateRateF) {
         }
     }
     if (obj->yVel != 0.0f) {
-        obj->pos[2] += (obj->yVel / 10.0f) * updateRateF;
-        if (obj->yVel < 0.0f && obj->pos[2] - obj->floorHeight < 0.0f) {
-            obj->pos[2] = obj->floorHeight;
+        obj->pos[1] += (obj->yVel / 10.0f) * updateRateF;
+        if (obj->yVel < 0.0f && obj->pos[1] - obj->floorHeight < 0.0f) {
+            obj->pos[1] = obj->floorHeight;
             obj->yVel = 0.0f;
         }
     }
@@ -544,18 +544,18 @@ static void update_particles(int updateRate, float updateRateF) {
             if (particle->forwardVel < 0.0f) {
                 particle->forwardVel = 0.0f;
             }
-            particle->zVel += particle->zVelIncrease * updateRateF;
+            particle->yVel += particle->yVelIncrease * updateRateF;
             particle->moveAngleVel += particle->moveAngleVelIncrease * updateRateF;
             particle->moveAngle += particle->moveAngleVel * updateRateF;
             for (int i = 0; i < 3; i++) {
                 particle->scale[i] += particle->scaleIncrease[i] * updateRateF;
             }
             float velX = particle->forwardVel * coss(particle->moveAngle);
-            float velY = particle->forwardVel * sins(particle->moveAngle);
+            float velZ = particle->forwardVel * sins(particle->moveAngle);
 
             particle->pos[0] += velX * updateRateF;
-            particle->pos[1] += velY * updateRateF;
-            particle->pos[2] += particle->zVel * updateRateF;
+            particle->pos[2] += velZ * updateRateF;
+            particle->pos[1] += particle->yVel * updateRateF;
         }
 
         particleList = particleList->next;

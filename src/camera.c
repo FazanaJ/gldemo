@@ -29,12 +29,12 @@ void camera_init(void) {
         gCamera->mode = CAMERA_CUTSCENE;
     }
     gCamera->focus[0] = 0;
-    gCamera->focus[1] = 0;
-    gCamera->focus[2] = 1;
+    gCamera->focus[2] = 0;
+    gCamera->focus[1] = 1;
 
     gCamera->pos[0] = 5.0f;
-    gCamera->pos[1] = 0.0f;
-    gCamera->pos[2] = 1.0f;
+    gCamera->pos[2] = 0.0f;
+    gCamera->pos[1] = 1.0f;
 }
 
 void camera_update_target(Camera *c, int updateRate, float updateRateF) {
@@ -87,8 +87,8 @@ void camera_update_target(Camera *c, int updateRate, float updateRateF) {
     float intendedFocus[3];
 
     intendedFocus[0] = c->parent->pos[0] + (pan * sins(c->yaw - 0x4000));
-    intendedFocus[1] = c->parent->pos[1] - (pan * coss(c->yaw - 0x4000));
-    intendedFocus[2] = c->parent->pos[2];
+    intendedFocus[2] = c->parent->pos[2] + (pan * coss(c->yaw - 0x4000));
+    intendedFocus[1] = c->parent->pos[1];
 
     if (c->target || data->zTarget) {
         Object *tar;
@@ -122,12 +122,12 @@ void camera_update_target(Camera *c, int updateRate, float updateRateF) {
     }
 
     c->focus[0] = intendedFocus[0] + c->lookFocus[0];
-    c->focus[1] = intendedFocus[1] + c->lookFocus[1];
-    c->focus[2] = intendedFocus[2] + c->lookFocus[2] + 10.0f;
+    c->focus[2] = intendedFocus[2] + c->lookFocus[2];
+    c->focus[1] = intendedFocus[1] + c->lookFocus[1] + 10.0f;
 
     c->pos[0] = intendedFocus[0] + ((zoom) * coss(c->yaw - 0x4000));
-    c->pos[1] = intendedFocus[1] + ((zoom) * sins(c->yaw - 0x4000));
-    c->pos[2] = intendedFocus[2] + 10.0f + (17.5f * sins(c->viewPitch + 0x4000));
+    c->pos[2] = intendedFocus[2] - ((zoom) * sins(c->yaw - 0x4000));
+    c->pos[1] = intendedFocus[1] + 10.0f + (17.5f * sins(c->viewPitch + 0x4000));
 }
 
 void camera_loop(int updateRate, float updateRateF) {

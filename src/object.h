@@ -116,8 +116,8 @@ typedef struct Particle {
 	short timer;
 	float forwardVel;
 	float forwardVelIncrease;
-	float zVel;
-	float zVelIncrease;
+	float yVel;
+	float yVelIncrease;
 	short moveAngle;
 	short moveAngleVel;
 	short moveAngleVelIncrease;

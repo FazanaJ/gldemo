@@ -38,7 +38,7 @@ static model64_t *gPlayerModel;
 light_t lightNeutral = {
     color: { 0.66f, 0.66f, 0.66f, 0.66f},
     diffuse: {1.0f, 1.0f, 1.0f, 1.0f},
-    direction: {0.0f, -60.0f, 0.0f},
+    direction: {0.0f, 0.0f, 60.0f},
     position: {1.0f, 0.0f, 0.0f, 0.0f},
     radius: 10.0f,
 };
@@ -47,13 +47,13 @@ static void init_particles(void) {
     rspq_block_begin();
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
-    glVertex3i(-5, 0, 5);
+    glVertex3i(-5, 5, 0);
     glTexCoord2f(0, 1.024f);
-    glVertex3i(-5, 0, -5);
+    glVertex3i(-5, -5, 0);
     glTexCoord2f(1.024f, 1.024f);
-    glVertex3i(5, 0, -5);
+    glVertex3i(5, -5, 0);
     glTexCoord2f(1.024f, 0);
-    glVertex3i(5, 0, 5);
+    glVertex3i(5, 5, 0);
     glEnd();
     sParticleBlock = rspq_block_end();
 }
@@ -124,7 +124,7 @@ void project_camera(void) {
     glFrustum(-nearClip * gAspectRatio, nearClip * gAspectRatio, -nearClip, nearClip, nearClip, farClip);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    gluLookAt(c->pos[0], c->pos[1], c->pos[2], c->focus[0], c->focus[1], c->focus[2], 0.0f, 0.0f, 1.0f);
+    gluLookAt(c->pos[0], c->pos[1], c->pos[2], c->focus[0], c->focus[1], c->focus[2], 0.0f, 1.0f, 0.0f);
 }
 
 void render_sky(void) {
@@ -159,7 +159,7 @@ void render_bush(void) {
     glBegin(GL_QUADS);
     glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
     glTexCoord2f(0, 0);
-    glVertex3i(-5, 0, 10);
+    glVertex3i(-5, 10, 0);
     glColor3f(e->skyColourBottom[0], e->skyColourBottom[1], e->skyColourBottom[2]);
     glTexCoord2f(0, 1.024f);
     glVertex3i(-5, 0, 0);
@@ -167,7 +167,7 @@ void render_bush(void) {
     glVertex3i(5, 0, 0);
     glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
     glTexCoord2f(1.024f, 0);
-    glVertex3i(5, 0, 10);
+    glVertex3i(5, 10, 0);
     glEnd();
 }
 
@@ -192,13 +192,13 @@ void render_shadow(float pos[3]) {
         glBegin(GL_QUADS);
         glColor3f(0, 0, 0);
         glTexCoord2f(0, 0);
-        glVertex3i(-5.0f, 5.0f, 0);
+        glVertex3i(-5.0f, 0.0f, 5.0f);
         glTexCoord2f(0, 2.048f);
-        glVertex3i(-5.0f, -5.0f, 0);
+        glVertex3i(-5.0f, 0.0f, -5.0f);
         glTexCoord2f(2.048f, 2.048f);
-        glVertex3i(5.0f, -5.0f, 0);
+        glVertex3i(5.0f, 0.0f, -5.0f);
         glTexCoord2f(2.048f, 0);
-        glVertex3i(5.0f, 5.0f, 0);
+        glVertex3i(5.0f, 0.0f, 5.0f);
         glEnd();
         sShadowBlock = rspq_block_end();
     }
@@ -245,28 +245,40 @@ void apply_render_settings(void) {
     }
 }
 
-void glTranslateRotatef(short angle, GLfloat x, GLfloat y, GLfloat z) {
-    float c = coss(angle);
-    float s = sins(angle);
+void glTranslateRotatef(short angleX, short angleY, short angleZ, GLfloat x, GLfloat y, GLfloat z) {
+    float sx = sins(angleX);
+    float cx = coss(angleX);
+
+    float sy = sins(angleY);
+    float cy = coss(angleY);
+
+    float sz = sins(angleZ);
+    float cz = coss(angleZ);
 
     gl_matrix_t rotation = (gl_matrix_t){ .m={
-        {c, s, 0.0f, 0.0f},
-        {-s, c, 0.0f, 0.0f},
-        {0.0f, 0.0f, 1.0f, 0.0f},
+        {cy * cz, cy * sz, -sy, 0.0f},
+        {sx * sy * cz - cx * sz, sx * sy * sz + cx * cz, sx * cy, 0.0f},
+        {cx * sy * cz + sx * sz, cx * sy * sz - sx * cz, cx * cy, 0.0f},
         {x, y, z, 1.0f},
     }};
 
     glMultMatrixf(rotation.m[0]);
 }
 
-void glTranslateRotateScalef(short angle, GLfloat x, GLfloat y, GLfloat z, GLfloat scaleX, GLfloat scaleY, GLfloat scaleZ) {
-    float c = coss(angle);
-    float s = sins(angle);
+void glTranslateRotateScalef(short angleX, short angleY, short angleZ, GLfloat x, GLfloat y, GLfloat z, GLfloat scaleX, GLfloat scaleY, GLfloat scaleZ) {
+    float sx = sins(angleX);
+    float cx = coss(angleX);
+
+    float sy = sins(angleY);
+    float cy = coss(angleY);
+
+    float sz = sins(angleZ);
+    float cz = coss(angleZ);
 
     gl_matrix_t rotation = (gl_matrix_t){ .m={
-        {c, s, 0.0f, 0.0f},
-        {-s, c, 0.0f, 0.0f},
-        {0.0f, 0.0f, 1.0f, 0.0f},
+        {cy * cz, cy * sz, -sy, 0.0f},
+        {sx * sy * cz - cx * sz, sx * sy * sz + cx * cz, sx * cy, 0.0f},
+        {cx * sy * cz + sx * sz, cx * sy * sz - sx * cz, cx * cy, 0.0f},
         {x, y, z, 1.0f},
     }};
 
@@ -294,7 +306,7 @@ void render_particles(void) {
         if (particle->material) {
             set_texture(particle->material);
         }
-        glTranslateRotateScalef(gCamera->yaw, 
+        glTranslateRotateScalef(0, gCamera->yaw, 0, 
         particle->pos[0], particle->pos[1], particle->pos[2], 
         particle->scale[0], particle->scale[1], particle->scale[2]);
         rspq_block_run(sParticleBlock);
@@ -342,7 +354,7 @@ void render_game(int updateRate, float updateRateF) {
             glPushMatrix();
             
             set_material(&gTempMaterials[3], MATERIAL_NULL);
-            glTranslateRotatef(gCamera->yaw, obj->pos[0], obj->pos[1], obj->pos[2]);            
+            glTranslateRotatef(0, gCamera->yaw, 0, obj->pos[0], obj->pos[1], obj->pos[2]);            
             if (sBushBlock == NULL) {
                 rspq_block_begin();
                 render_bush(); 
@@ -358,7 +370,7 @@ void render_game(int updateRate, float updateRateF) {
 
     if (gPlayer) {
         glPushMatrix();
-        glTranslateRotateScalef(gPlayer->faceAngle[2], gPlayer->pos[0], gPlayer->pos[1], gPlayer->pos[2], 0.9f, 1.25f, 1.25f);
+        glTranslateRotateScalef(0, gPlayer->faceAngle[1], 0, gPlayer->pos[0], gPlayer->pos[1], gPlayer->pos[2], 9.0f, 8.0f, 9.0f);
         set_material(&gTempMaterials[1], MATERIAL_NULL);
         if (sPlayerBlock == NULL) {
             rspq_block_begin();
@@ -377,13 +389,13 @@ void render_game(int updateRate, float updateRateF) {
         if (obj2->objectID == OBJ_PROJECTILE) {
             glPushMatrix();
             set_material(&gTempMaterials[2], MATERIAL_NULL);
-            glTranslateRotatef(gCamera->yaw, obj2->pos[0], obj2->pos[1], obj2->pos[2]);
+            glTranslateRotatef(0, gCamera->yaw, 0, obj2->pos[0], obj2->pos[1], obj2->pos[2]);
             render_bush(); 
             glPopMatrix();
         } else if (obj2->objectID == OBJ_NPC) {
             glPushMatrix();
             set_material(&gTempMaterials[1], MATERIAL_NULL);
-            glTranslateRotateScalef(obj2->faceAngle[2], obj2->pos[0], obj2->pos[1], obj2->pos[2], 0.9f, 1.25f, 1.25f);
+            glTranslateRotateScalef(0, obj2->faceAngle[1], 0, obj2->pos[0], obj2->pos[1], obj2->pos[2], 9.0f, 8.0f, 9.0f);
             rspq_block_run(sPlayerBlock);
             glPopMatrix();
         }
@@ -393,17 +405,17 @@ void render_game(int updateRate, float updateRateF) {
     if (sDecal1Block == NULL) {
         rspq_block_begin();
         glPushMatrix();
-        glTranslatef(25, 25, 0);
+        glTranslatef(25, 0, 25);
         glBegin(GL_QUADS);
         glColor3f(1.0f, 0, 1.0f);
         glTexCoord2f(0, 0);
-        glVertex3i(-5, 5, 0);
+        glVertex3i(-5, 0, 5);
         glTexCoord2f(0, 1.024f);
-        glVertex3i(-5, -5, 0);
+        glVertex3i(-5, 0, -5);
         glTexCoord2f(1.024f, 1.024f);
-        glVertex3i(5, -5, 0);
+        glVertex3i(5, 0, -5);
         glTexCoord2f(1.024f, 0);
-        glVertex3i(5, 5, 0);
+        glVertex3i(5, 0, 5);
         glEnd();
         glPopMatrix();
         sDecal1Block = rspq_block_end();
@@ -411,17 +423,17 @@ void render_game(int updateRate, float updateRateF) {
     if (sDecal2Block == NULL) {
         rspq_block_begin();
         glPushMatrix();
-        glTranslatef(25, 35, 0);
+        glTranslatef(25, 0, 35);
         glBegin(GL_QUADS);
         glColor3f(1.0f, 0, 1.0f);
         glTexCoord2f(0, 0);
-        glVertex3i(-5, 5, 0);
+        glVertex3i(-5, 0, 5);
         glTexCoord2f(0, 1.024f);
-        glVertex3i(-5, -5, 0);
+        glVertex3i(-5, 0, -5);
         glTexCoord2f(1.024f, 1.024f);
-        glVertex3i(5, -5, 0);
+        glVertex3i(5, 0, -5);
         glTexCoord2f(1.024f, 0);
-        glVertex3i(5, 5, 0);
+        glVertex3i(5, 0, 5);
         glEnd();
         glPopMatrix();
         sDecal2Block = rspq_block_end();

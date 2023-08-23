@@ -125,29 +125,29 @@ void object_collide(Object *obj) {
         ModelPrim *prim = (ModelPrim *) mesh->mesh;
         int numTris = prim->num_indices;
         attribute_t *attr = &prim->position;
-        attribute_t *col = &prim->color;
+        //attribute_t *col = &prim->color;
         int mulFactor = prim->vertex_precision - 1;
         obj->floorHeight = 0.0f;
         //float scale = (int) (1 << (prim->vertex_precision - 1)));
         float dir[3];
-        float tempP[3] = {obj->pos[0] / 5, obj->pos[1] / 5, ((obj->pos[2] / 5) + 25.0f)};
+        float tempP[3] = {obj->pos[0] / 5, (obj->pos[1] / 5) + 25.0f, obj->pos[2] / 5};
         dir[0] = tempP[0];// + ((obj->forwardVel * sins(obj->moveAngle[2])) / 20.0f);
-        dir[1] = tempP[1];// - ((obj->forwardVel * coss(obj->moveAngle[2])) / 20.0f);
-        dir[2] = tempP[2] - (50.0f);
+        dir[1] = tempP[1] - (50.0f);// - ((obj->forwardVel * coss(obj->moveAngle[2])) / 20.0f);
+        dir[2] = tempP[2];
         vec3f_normalize(dir);
         float dirLen = sqrtf(SQR(dir[0]) + SQR(dir[1]) + SQR(dir[2]));
 
         typedef int16_t u_int16_t __attribute__((aligned(1)));
-        typedef int32_t u_int32_t __attribute__((aligned(1)));
+        //typedef int32_t u_int32_t __attribute__((aligned(1)));
 
         for (int i = 0; i < numTris; i += 3) {
             uint16_t *indices = (uint16_t *) prim->indices;
             u_int16_t *v1 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 0]);
             u_int16_t *v2 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 1]);
             u_int16_t *v3 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 2]);
-            u_int32_t *c1 = (u_int32_t *) (col->pointer + col->stride * indices[i + 0]);
-            u_int32_t *c2 = (u_int32_t *) (col->pointer + col->stride * indices[i + 1]);
-            u_int32_t *c3 = (u_int32_t *) (col->pointer + col->stride * indices[i + 2]);
+            //u_int32_t *c1 = (u_int32_t *) (col->pointer + col->stride * indices[i + 0]);
+            //u_int32_t *c2 = (u_int32_t *) (col->pointer + col->stride * indices[i + 1]);
+            //u_int32_t *c3 = (u_int32_t *) (col->pointer + col->stride * indices[i + 2]);
             float hit[3] = {0, 0, 0};
             
             float length;
@@ -155,20 +155,20 @@ void object_collide(Object *obj) {
             float vert1[3] = {v2[0] >> mulFactor, v2[1] >> mulFactor, v2[2] >> mulFactor};
             float vert2[3] = {v3[0] >> mulFactor, v3[1] >> mulFactor, v3[2] >> mulFactor};
             
-            *c1 = 0xFFFFFFFF;
-            *c2 = 0xFFFFFFFF;
-            *c3 = 0xFFFFFFFF;
+            //*c1 = 0xFFFFFFFF;
+            //*c2 = 0xFFFFFFFF;
+            //*c3 = 0xFFFFFFFF;
                 //debugf("Obj: X: %2.2f, Y: %2.2f, Z: %2.2f\n", tempP[0], tempP[1], tempP[2]);
                 //debugf("Tri %d: (X1: %2.2f, Y1: %2.2f, Z1: %2.2f), (X2: %2.2f, Y2: %2.2f, Z2: %2.2f), (X3: %2.2f, Y3: %2.2f, Z3: %2.2f)\n", i / 3, vert0[0], vert0[1], vert0[2], vert1[0], vert1[1], vert1[2], vert2[0], vert2[1], vert2[2]);
             int surf = ray_surface_intersect(tempP, dir, dirLen, hit, &length, vert0, vert1, vert2);
             if (surf) {
                 //debugf("Hit %d: %2.2f, %2.2f, %2.2f\n", i / 3, hit[0], hit[1], hit[2]);
-                *c1 = 0xFF0000FF;
-                *c2 = 0xFF0000FF;
-                *c3 = 0xFF0000FF;
+                //*c1 = 0xFF0000FF;
+                //*c2 = 0xFF0000FF;
+                //*c3 = 0xFF0000FF;
                 //obj->pos[0] = hit[0];
                 //obj->pos[1] = hit[1];
-                obj->pos[2] = (hit[2] * 5) / 2;
+                obj->pos[1] = (hit[1] / 2) * 5;
                 obj->yVel = 0.0f;
                 //obj->floorHeight = (hit[2] * 5);
             }
