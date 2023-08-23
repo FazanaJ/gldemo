@@ -128,8 +128,9 @@ void process_profiler(void) {
         gDebugData->iteration = 0;
     }
 
-    if (get_input_pressed(INPUT_L, 0) && get_input_held(INPUT_DUP)) {
+    if (get_input_pressed(INPUT_L, 5) && get_input_held(INPUT_DUP)) {
         gDebugData->enabled ^= 1;
+        clear_input(INPUT_L);
     }
 
     if ((gGlobalTimer % 60) == 0) {
