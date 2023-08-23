@@ -400,6 +400,7 @@ void process_options_menu(int updateRate) {
         case 2:
             menu_set_reset(MENU_TITLE);
             load_scene(0);
+            set_background_music(1, 30);
             break;
         }
     }
@@ -430,6 +431,7 @@ void process_title_menu(int updateRate) {
         case 0:
             menu_set_reset(MENU_CLOSED);
             load_scene(1);
+            set_background_music(0, 30);
             break;
         case 1:
             menu_set_forward(MENU_CONFIG);

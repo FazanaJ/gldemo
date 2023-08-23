@@ -30,6 +30,7 @@ static SoundData sSoundTable[] = {
 
 static SequenceData sSequenceTable[] = {
     {"ToysXM-8bit", 8},
+    {"racer", 8},
 };
 
 void set_sound_channel_count(int channelCount) {
@@ -47,8 +48,8 @@ void init_audio(void) {
     for (int i = 0; i < sizeof(sSoundTable) / sizeof(SoundData); i++) {
         wav64_open(&sSoundTable[i].sound, asset_dir(sSoundTable[i].path, DFS_WAV64));
     }
-
-    set_background_music(0, 0);
+    sMusicVolume = 1.0f;
+    set_background_music(1, 0);
 }
 
 void set_music_volume(float volume) {
@@ -61,8 +62,8 @@ void update_sequence(int updateRate) {
         if (sSequenceFadeTimer < 0) {
             SequenceData *s = &sSequenceTable[sNextSequenceID];
             sSequenceFadeTimer = 0;
-            for (int i = 0; i < s->channelCount; i++) {
-                mixer_ch_set_vol((sSoundChannelNum - s->channelCount) + i, sMusicVolume, sMusicVolume);
+            if (sXMPlayer.fh) {
+                xm64player_close(&sXMPlayer);
             }
             xm64player_open(&sXMPlayer, asset_dir(s->seqPath, DFS_XM64));
             xm64player_set_vol(&sXMPlayer, sMusicVolume);
@@ -72,6 +73,9 @@ void update_sequence(int updateRate) {
         } else {
             float fade;
             fade = ((float) sSequenceFadeTimer / (float) sSequenceFadeTimerSet) * sMusicVolume;
+            if (fade > 0.0001f) {
+                fade = 0.0001f;
+            }
             set_music_volume(fade);
         }
     }
@@ -136,12 +140,12 @@ int get_sound_pan(int channel, float pos[3]) {
             absX = dist;
         }
 
-        absZ = (pos[1] < 0 ? -pos[1] : pos[1]);
+        absZ = (pos[2] < 0 ? -pos[2] : pos[2]);
         if (absZ > dist) {
             absZ = dist;
         }
 
-        if (pos[0] == 0.0f && pos[1] == 0.0f) {
+        if (pos[0] == 0.0f && pos[2] == 0.0f) {
             pan = 0.5f;
         } else if (pos[0] >= 0.0f && absX >= absZ) {
             pan = 1.0f - (2 * dist - absX) / (3.0f * (2 * dist - absZ));
