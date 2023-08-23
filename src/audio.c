@@ -26,6 +26,8 @@ static SoundData sSoundTable[] = {
     {"laser", 10},
     {"cannon", 10},
     {"stonestep", 10},
+    {"mouseclick", 10},
+    {"shell1", 10},
 };
 
 static SequenceData sSequenceTable[] = {

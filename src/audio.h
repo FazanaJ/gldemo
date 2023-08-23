@@ -16,6 +16,8 @@ enum SoundIDs {
     SOUND_LASER,
     SOUND_CANNON,
     SOUND_STEP_STONE,
+    SOUND_MENU_CLICK,
+    SOUND_SHELL1,
 
     SOUND_TOTAL
 };
