@@ -16,6 +16,7 @@
 char gMenuStatus = MENU_TITLE;
 char gMenuPrev[NUM_MENU_PREVS];
 char gIsPal = false;
+char sNumOptions = 0;
 static char sMenuSwapTimer = 0;
 static short sMenuSelection[2];
 static short sMenuSelectionPrev[NUM_MENU_PREVS][2];
@@ -98,7 +99,7 @@ void add_menu_text(char *text, int index, unsigned int colour, int flags) {
     sMenuDisplay->listCount++;
 }
 
-void edit_menu_text(char *text, int index, unsigned int colour, int flagsOn, int flagsOff) {
+void edit_menu_text(char *text, int index) {
     MenuListEntry *list = sMenuDisplay->list;
     while (index > 0 && list) {
         list = list->next;
@@ -108,6 +109,14 @@ void edit_menu_text(char *text, int index, unsigned int colour, int flagsOn, int
     int textLen = strlen(text);
     list->text = malloc(textLen);
     strcpy(list->text, text);
+}
+
+void edit_menu_style(int index, unsigned int colour, int flagsOn, int flagsOff) {
+    MenuListEntry *list = sMenuDisplay->list;
+    while (index > 0 && list) {
+        list = list->next;
+        index--;
+    }
     list->colour[0] = (colour >> 24) & 0xFF;
     list->colour[1] = (colour >> 16) & 0xFF;
     list->colour[2] = (colour >> 8) & 0xFF;
@@ -236,40 +245,6 @@ static char *sMenuOptionStrings[] = {
     "25"
 };
 
-void render_menu_config(int updateRate, float updateRateF) {
-    int posY;
-    rdpq_set_mode_standard();
-    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-    rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-    rdpq_set_prim_color(RGBA32(0, 0, 0, 96));
-    rdpq_fill_rectangle(0, 0, 128, display_get_height());
-    posY = 22;
-    for (int i = 0; i < sizeof(sMenuOptions) / sizeof(MenuOption); i++) {
-        MenuOption *m = &sMenuOptions[i];
-        if (m->flags & OPTION_STUB || (m->flags & OPTION_PAL_ONLY && gIsPal == false)) {
-            continue;
-        }
-        if (i == sMenuSelection[1]) {
-            rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, 0, 0, 255),});
-            rdpq_set_prim_color(RGBA32(255, 0, 0, 255));
-        } else {
-            rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, 255, 255, 255),});
-        }
-        if (m->flags & OPTION_STRING) {
-            int stringOffset = m->string + (*m->valuePtr - m->minValue);
-            if (gConfig.regionMode == PAL50 && m->flags & OPTION_PAL_OFFSET) {
-                stringOffset += (m->maxValue - m->minValue) + 1;
-            }
-            rdpq_text_printf(NULL, FONT_MVBOLI, 16, posY, "%s: %s", m->name, sMenuOptionStrings[stringOffset]);
-        } else if (m->flags & OPTION_BAR) {
-            rdpq_text_printf(NULL, FONT_MVBOLI, 16, posY, "%s: %d", m->name, *m->valuePtr);
-        } else {
-            rdpq_text_printf(NULL, FONT_MVBOLI, 16, posY, "%s: %d", m->name, *m->valuePtr);
-        }
-        posY += 12;
-    }
-}
-
 void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short *selectionY,  int minX, int minY, int maxX, int maxY) {
     int stickMag;
     int playSound = false;
@@ -355,17 +330,52 @@ void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short
     }
 }
 
+char sMenuTextStack[40];
+
+char *set_option_text(int optID) {
+    if (sMenuOptions[optID].flags & OPTION_STRING) {
+        int stringOffset = sMenuOptions[optID].string + (*sMenuOptions[optID].valuePtr - sMenuOptions[optID].minValue);
+        if (gConfig.regionMode == PAL50 && sMenuOptions[optID].flags & OPTION_PAL_OFFSET) {
+            stringOffset += (sMenuOptions[optID].maxValue - sMenuOptions[optID].minValue) + 1;
+        }
+        sprintf(sMenuTextStack, "%s: %s", sMenuOptions[optID].name, sMenuOptionStrings[stringOffset]);
+    } else if (sMenuOptions[optID].flags & OPTION_BAR) {
+        sprintf(sMenuTextStack, "%s: %d", sMenuOptions[optID].name, *sMenuOptions[optID].valuePtr);
+    } else {
+        sprintf(sMenuTextStack, "%s: %d", sMenuOptions[optID].name, *sMenuOptions[optID].valuePtr);
+    }
+    return sMenuTextStack;
+}
+
 void process_config_menu(int updateRate) {
     int xWrap = 0;
     MenuOption *m = &sMenuOptions[sMenuSelection[1]];
     if (m->flags & OPTION_WRAP) {
         xWrap = MENUSTICK_WRAPX;
     }
-    int prevMenuSelection = sMenuSelection[1];
+
+    if (sMenuDisplay == NULL) {
+        sNumOptions = 0;
+        init_menu_display(16, 22);
+        for (int i = 0; i < sizeof(sMenuOptions) / sizeof(MenuOption); i++) {
+            int colour;
+            if (sMenuOptions[i].flags & OPTION_STUB || (sMenuOptions[i].flags & OPTION_PAL_ONLY && gIsPal == false)) {
+                colour = 0x80808080;
+            } else {
+                colour = 0xFFFFFFFF;
+            }
+            
+            add_menu_text(set_option_text(i), sNumOptions, colour, 0);
+            sNumOptions++;
+        }
+    }
+
     short tempVar = *m->valuePtr;
-    handle_menu_stick_input(updateRate, MENUSTICK_STICKX | MENUSTICK_STICKY | MENUSTICK_WRAPY | xWrap, &tempVar, &sMenuSelection[1], m->minValue, 0, m->maxValue, sizeof(sMenuOptions) / sizeof(MenuOption));
+    int prevMenuSelection = sMenuSelection[1];
+    handle_menu_stick_input(updateRate, MENUSTICK_STICKX | MENUSTICK_STICKY | MENUSTICK_WRAPY | xWrap, &tempVar, &sMenuSelection[1], m->minValue, -1, m->maxValue, sizeof(sMenuOptions) / sizeof(MenuOption));
     if (tempVar != *m->valuePtr) {
         *m->valuePtr = tempVar;
+        edit_menu_text(set_option_text(sMenuSelection[1]), sMenuSelection[1]);
         if (m->func) {
             (m->func)();
         }
@@ -375,22 +385,22 @@ void process_config_menu(int updateRate) {
             while (sMenuSelection[1] <= (sizeof(sMenuOptions) / sizeof(MenuOption) -1) && (sMenuOptions[sMenuSelection[1]].flags & OPTION_STUB || (sMenuOptions[sMenuSelection[1]].flags & OPTION_PAL_ONLY && gIsPal == false))) {
                 sMenuSelection[1]++;
             }
-            if (sMenuSelection[1] == -1) {
-                sMenuSelection[1] = (sizeof(sMenuOptions) / sizeof(MenuOption)) -1;
-            }
-        } else {
-            while (sMenuSelection[1] > 0 && (sMenuOptions[sMenuSelection[1]].flags & OPTION_STUB || (sMenuOptions[sMenuSelection[1]].flags & OPTION_PAL_ONLY && gIsPal == false))) {
-                sMenuSelection[1]--;
-            }
             if (sMenuSelection[1] >= sizeof(sMenuOptions) / sizeof(MenuOption)) {
                 sMenuSelection[1] = 0;
             }
+        } else {
+            while (sMenuSelection[1] > -1 && (sMenuOptions[sMenuSelection[1]].flags & OPTION_STUB || (sMenuOptions[sMenuSelection[1]].flags & OPTION_PAL_ONLY && gIsPal == false))) {
+                sMenuSelection[1]--;
+            }
+            if (sMenuSelection[1] < 0) {
+                sMenuSelection[1] = (sizeof(sMenuOptions) / sizeof(MenuOption)) -1;
+            }
         }
+        debugf("%d\n", sMenuSelection[1]);
     }
 }
 
 void process_options_menu(int updateRate) {
-
     if (sMenuDisplay == NULL) {
         init_menu_display(32, display_get_height() - 80);
         add_menu_text("Continue", 0, 0xFFFFFFFF, 0);
@@ -488,9 +498,6 @@ void render_menus(int updateRate, float updateRateF) {
     switch (gMenuStatus) {
     case MENU_CLOSED:
         return;
-    case MENU_CONFIG:
-        render_menu_config(updateRate, updateRateF);
-        break;
     }
     render_menu_list();
 }
