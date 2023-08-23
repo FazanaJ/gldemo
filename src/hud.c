@@ -321,6 +321,9 @@ void clear_subtitle(SubtitleData *subtitle) {
             sSubtitleHead->prev = NULL;
         } else {
             sSubtitleHead = NULL;
+            if (subtitle == sSubtitleTail) {
+                sSubtitleTail = NULL;
+            }
         }
     } else {
         if (subtitle == sSubtitleTail) {

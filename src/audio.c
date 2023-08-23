@@ -43,8 +43,6 @@ void init_audio(void) {
     mixer_init(24);
     sSoundChannelNum = 24;
     bzero(&sSoundPrioTable, sizeof(sSoundPrioTable));
-    sMusicVolume = 1.0f;
-    sSoundVolume = 1.0f;
 
     for (int i = 0; i < sizeof(sSoundTable) / sizeof(SoundData); i++) {
         wav64_open(&sSoundTable[i].sound, asset_dir(sSoundTable[i].path, DFS_WAV64));

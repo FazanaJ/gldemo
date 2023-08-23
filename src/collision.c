@@ -118,7 +118,6 @@ typedef struct ModelPrim {
 } ModelPrim;
 
 void object_collide(Object *obj) {
-    return;
     DEBUG_SNAPSHOT_1();
 
     SceneMesh *mesh = sCurrentScene->meshList;
@@ -131,7 +130,7 @@ void object_collide(Object *obj) {
         obj->floorHeight = 0.0f;
         //float scale = (int) (1 << (prim->vertex_precision - 1)));
         float dir[3];
-        float tempP[3] = {obj->pos[0], obj->pos[1], (obj->pos[2] + 25.0f)};
+        float tempP[3] = {obj->pos[0] / 5, obj->pos[1] / 5, ((obj->pos[2] / 5) + 25.0f)};
         dir[0] = tempP[0];// + ((obj->forwardVel * sins(obj->moveAngle[2])) / 20.0f);
         dir[1] = tempP[1];// - ((obj->forwardVel * coss(obj->moveAngle[2])) / 20.0f);
         dir[2] = tempP[2] - (50.0f);
@@ -163,13 +162,13 @@ void object_collide(Object *obj) {
                 //debugf("Tri %d: (X1: %2.2f, Y1: %2.2f, Z1: %2.2f), (X2: %2.2f, Y2: %2.2f, Z2: %2.2f), (X3: %2.2f, Y3: %2.2f, Z3: %2.2f)\n", i / 3, vert0[0], vert0[1], vert0[2], vert1[0], vert1[1], vert1[2], vert2[0], vert2[1], vert2[2]);
             int surf = ray_surface_intersect(tempP, dir, dirLen, hit, &length, vert0, vert1, vert2);
             if (surf) {
-                debugf("Hit %d: %2.2f, %2.2f, %2.2f\n", i / 3, hit[0], hit[1], hit[2]);
+                //debugf("Hit %d: %2.2f, %2.2f, %2.2f\n", i / 3, hit[0], hit[1], hit[2]);
                 *c1 = 0xFF0000FF;
                 *c2 = 0xFF0000FF;
                 *c3 = 0xFF0000FF;
                 //obj->pos[0] = hit[0];
                 //obj->pos[1] = hit[1];
-                obj->pos[2] = (hit[2]) / 2;
+                obj->pos[2] = (hit[2] * 5) / 2;
                 obj->yVel = 0.0f;
                 //obj->floorHeight = (hit[2] * 5);
             }

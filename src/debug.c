@@ -82,7 +82,7 @@ void get_rsp_time(int diff) {
 }
 
 void get_rdp_time(int diff) {
-    int time = diff / RCP_FREQUENCY;
+    int time = (diff * 10) / 625;
     if (time > 99999) {
         time = 99999;
     }
@@ -111,6 +111,7 @@ void process_profiler(void) {
         rspq_profile_get_data(&gDebugData->rspData);
         rspq_profile_reset();
     }
+
     get_rsp_time(gDebugData->rspData.total_ticks / 8);
     rspq_profile_next_frame();
 
@@ -129,6 +130,12 @@ void process_profiler(void) {
 
     if (get_input_pressed(INPUT_L, 0) && get_input_held(INPUT_DUP)) {
         gDebugData->enabled ^= 1;
+    }
+
+    if ((gGlobalTimer % 60) == 0) {
+        debugf("FPS: %2.2f | CPU: %dus (%d%%) | RSP: %dus (%d%%) | RDP: %dus (%d%%)\n", 
+        gFPS, gDebugData->cpuTime[TIME_TOTAL], gDebugData->cpuTime[TIME_TOTAL] / 333,
+        gDebugData->rspTime[TIME_TOTAL], gDebugData->rspTime[TIME_TOTAL] / 333, gDebugData->rdpTime[TIME_TOTAL], gDebugData->rdpTime[TIME_TOTAL] / 333);
     }
 }
 

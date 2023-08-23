@@ -12,7 +12,7 @@ enum EnvironmentFlags {
 typedef struct SceneIDs {
     char *model;
     struct ObjectMap *objectMap;
-    char *header;
+    struct SceneHeader *header;
 } SceneIDs;
 
 typedef struct SceneMesh {
@@ -30,7 +30,18 @@ typedef struct ObjectMap {
     short x;
     short y;
     short z;
+    char pad[2];
 } ObjectMap;
+
+typedef struct SceneHeader {
+    short fogNear;
+    short fogFar;
+    char fogColour[4];
+    char lightColour[4];
+    char lightAmbient[4];
+    char skyTop[4];
+    char skyBottom[4];
+} SceneHeader;
 
 typedef struct SceneBlock {
     model64_t *model;
