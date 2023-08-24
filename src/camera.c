@@ -20,8 +20,10 @@ void camera_init(void) {
     bzero(gCamera, sizeof(Camera));
     
     gCamera->pitch = 0x3400;
-    gCamera->zoom = 800;
+    gCamera->zoom = 400;
     gCamera->intendedZoom = 400;
+    gCamera->yawTarget = 0x8000;
+    gCamera->yaw = 0x8000;
     if (gPlayer) {
         gCamera->parent = gPlayer;
         gCamera->mode = CAMERA_TARGET;

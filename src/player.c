@@ -122,7 +122,7 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
             data->cameraAngle = obj->faceAngle[1];
         } else {
             if (data->zTarget) {
-                short intendedYaw = atan2s(obj->pos[2] - data->zTarget->pos[2], obj->pos[0] - data->zTarget->pos[0]);
+                short intendedYaw = atan2s(obj->pos[2] - data->zTarget->pos[2], obj->pos[0] - data->zTarget->pos[0]) + 0x8000;
                 obj->faceAngle[1] = lerp_short(obj->faceAngle[1], intendedYaw, 0.1f * updateRateF);
             }
         }

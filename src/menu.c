@@ -396,7 +396,6 @@ void process_config_menu(int updateRate) {
                 sMenuSelection[1] = (sizeof(sMenuOptions) / sizeof(MenuOption)) -1;
             }
         }
-        debugf("%d\n", sMenuSelection[1]);
     }
 }
 
