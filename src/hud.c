@@ -309,8 +309,8 @@ void add_subtitle(char *text, int timer) {
         .line_spacing = -8,
     };
     rdpq_paragraph_t *layout = rdpq_paragraph_build(&parms, FONT_MVBOLI, s->text, &textLen);
-    s->width = (((layout->bbox[2] - layout->bbox[0])) / 2) + 8;
-    s->height = ((layout->bbox[3] - layout->bbox[1]) / 2);
+    s->width = (((layout->bbox.x1 - layout->bbox.x0)) / 2) + 8;
+    s->height = ((layout->bbox.y1 - layout->bbox.y0) / 2);
     rdpq_paragraph_free(layout);
 }
 

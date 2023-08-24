@@ -18,7 +18,7 @@ typedef struct{
 
 typedef struct {
     GLfloat m[4][4];
-} gl_matrix_t;
+} Matrix;
 
 extern Material gTempMaterials[];
 

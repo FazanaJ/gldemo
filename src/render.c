@@ -113,6 +113,99 @@ void set_light(light_t light) {
     glPopMatrix();
 }
 
+Matrix gBillboardMatrix;
+
+void set_frustrum(float l, float r, float b, float t, float n, float f) {
+    Matrix frustum = (Matrix) { .m={
+        {(2*n)/(r-l), 0.f, 0.f, 0.f},
+        {0.f, (2.f*n)/(t-b), 0.f, 0.f},
+        {(r+l)/(r-l), (t+b)/(t-b), -(f+n)/(f-n), -1.f},
+        {0.f, 0.f, -(2*f*n)/(f-n), 0.f},
+    }};
+    glMultMatrixf(frustum.m[0]);
+}
+
+void lookat_normalise(GLfloat *d, const GLfloat *v) {
+    float inv_mag = 1.0f / sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+    d[0] = v[0] * inv_mag;
+    d[1] = v[1] * inv_mag;
+    d[2] = v[2] * inv_mag;
+}
+
+void lookat_cross(GLfloat* p, const GLfloat* a, const GLfloat* b) {
+    p[0] = (a[1] * b[2] - a[2] * b[1]);
+    p[1] = (a[2] * b[0] - a[0] * b[2]);
+    p[2] = (a[0] * b[1] - a[1] * b[0]);
+};
+
+float lookat_dot(const float *a, const float *b) {
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+void mtx_lookat(float eyex, float eyey, float eyez, float centerx, float centery, float centerz, float upx, float upy, float upz) {
+    GLfloat eye[3] = {eyex, eyey, eyez};
+    GLfloat f[3] = {centerx - eyex, centery - eyey, centerz - eyez};
+    GLfloat u[3] = {upx, upy, upz};
+    GLfloat s[3];
+
+    lookat_normalise(f, f);
+
+    lookat_cross(s, f, u);
+    lookat_normalise(s, s);
+
+    lookat_cross(u, s, f);
+
+    GLfloat m[4][4];
+    
+    m[0][0] = s[0];
+    m[0][1] = u[0];
+    m[0][2] = -f[0];
+    m[0][3] = 0;
+
+    m[1][0] = s[1];
+    m[1][1] = u[1];
+    m[1][2] = -f[1];
+    m[1][3] = 0;
+
+    m[2][0] = s[2];
+    m[2][1] = u[2];
+    m[2][2] = -f[2];
+    m[2][3] = 0;
+
+    m[3][0] = -lookat_dot(s, eye);
+    m[3][1] = -lookat_dot(u, eye);
+    m[3][2] = lookat_dot(f, eye);
+    m[3][3] = 1;
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            gBillboardMatrix.m[i][j] = m[j][i];
+        }
+    }
+    gBillboardMatrix.m[3][3] = 1.0f;
+
+    glMultMatrixf(&m[0][0]);
+};
+
+void mtx_billboard(float x, float y, float z) {
+    gBillboardMatrix.m[3][0] = x;
+    gBillboardMatrix.m[3][1] = y;
+    gBillboardMatrix.m[3][2] = z;
+
+    glMultMatrixf(gBillboardMatrix.m[0]);
+}
+
+void mtx_scale(float scaleX, float scaleY, float scaleZ) {
+    Matrix rotation = (Matrix){ .m={
+        {scaleX, 0.0f, 0.0f, 0.0f},
+        {0.0f, scaleY, 0.0f, 0.0f},
+        {0.0f, 0.0f, scaleZ, 0.0f},
+        {0.0f, 0.0f, 0.0f, 1.0f},
+    }};
+
+    glMultMatrixf(rotation.m[0]);
+}
+
 void project_camera(void) {
     Camera *c = gCamera;
     float nearClip = 5.0f;
@@ -121,10 +214,10 @@ void project_camera(void) {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gAspectRatio = (float) display_get_width() / (float) (display_get_height());
-    glFrustum(-nearClip * gAspectRatio, nearClip * gAspectRatio, -nearClip, nearClip, nearClip, farClip);
+    set_frustrum(-nearClip * gAspectRatio, nearClip * gAspectRatio, -nearClip, nearClip, nearClip, farClip);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    gluLookAt(c->pos[0], c->pos[1], c->pos[2], c->focus[0], c->focus[1], c->focus[2], 0.0f, 1.0f, 0.0f);
+    mtx_lookat(c->pos[0], c->pos[1], c->pos[2], c->focus[0], c->focus[1], c->focus[2], 0.0f, 1.0f, 0.0f);
 }
 
 void render_sky(void) {
@@ -241,7 +334,7 @@ void apply_render_settings(void) {
     }
 }
 
-void glTranslateRotatef(short angleX, short angleY, short angleZ, GLfloat x, GLfloat y, GLfloat z) {
+void mtx_translate_rotate(short angleX, short angleY, short angleZ, GLfloat x, GLfloat y, GLfloat z) {
     float sx = sins(angleX);
     float cx = coss(angleX);
 
@@ -251,7 +344,7 @@ void glTranslateRotatef(short angleX, short angleY, short angleZ, GLfloat x, GLf
     float sz = sins(angleZ);
     float cz = coss(angleZ);
 
-    gl_matrix_t rotation = (gl_matrix_t){ .m={
+    Matrix rotation = (Matrix){ .m={
         {cy * cz, cy * sz, -sy, 0.0f},
         {sx * sy * cz - cx * sz, sx * sy * sz + cx * cz, sx * cy, 0.0f},
         {cx * sy * cz + sx * sz, cx * sy * sz - sx * cz, cx * cy, 0.0f},
@@ -261,7 +354,7 @@ void glTranslateRotatef(short angleX, short angleY, short angleZ, GLfloat x, GLf
     glMultMatrixf(rotation.m[0]);
 }
 
-void glTranslateRotateScalef(short angleX, short angleY, short angleZ, GLfloat x, GLfloat y, GLfloat z, GLfloat scaleX, GLfloat scaleY, GLfloat scaleZ) {
+void mtx_translate_rotate_scale(short angleX, short angleY, short angleZ, GLfloat x, GLfloat y, GLfloat z, GLfloat scaleX, GLfloat scaleY, GLfloat scaleZ) {
     float sx = sins(angleX);
     float cx = coss(angleX);
 
@@ -271,7 +364,7 @@ void glTranslateRotateScalef(short angleX, short angleY, short angleZ, GLfloat x
     float sz = sins(angleZ);
     float cz = coss(angleZ);
 
-    gl_matrix_t rotation = (gl_matrix_t){ .m={
+    Matrix rotation = (Matrix){ .m={
         {cy * cz, cy * sz, -sy, 0.0f},
         {sx * sy * cz - cx * sz, sx * sy * sz + cx * cz, sx * cy, 0.0f},
         {cx * sy * cz + sx * sz, cx * sy * sz - sx * cz, cx * cy, 0.0f},
@@ -302,9 +395,8 @@ void render_particles(void) {
         if (particle->material) {
             set_texture(particle->material);
         }
-        glTranslateRotateScalef(0, gCamera->yaw, 0, 
-        particle->pos[0], particle->pos[1], particle->pos[2], 
-        particle->scale[0], particle->scale[1], particle->scale[2]);
+        mtx_billboard(particle->pos[0], particle->pos[1], particle->pos[2]);
+        mtx_scale(particle->scale[0], particle->scale[1], particle->scale[2]);
         rspq_block_run(sParticleBlock);
         glPopMatrix();
         list = list->next;
@@ -350,7 +442,7 @@ void render_game(int updateRate, float updateRateF) {
             glPushMatrix();
             
             set_material(&gTempMaterials[3], MATERIAL_NULL);
-            glTranslateRotatef(0, gCamera->yaw, 0, obj->pos[0], obj->pos[1], obj->pos[2]);            
+            mtx_billboard(obj->pos[0], obj->pos[1], obj->pos[2]);        
             if (sBushBlock == NULL) {
                 rspq_block_begin();
                 render_bush(); 
@@ -366,7 +458,7 @@ void render_game(int updateRate, float updateRateF) {
 
     if (gPlayer) {
         glPushMatrix();
-        glTranslateRotateScalef(0, gPlayer->faceAngle[1], 0, gPlayer->pos[0], gPlayer->pos[1], gPlayer->pos[2], 9.0f, 8.0f, 9.0f);
+        mtx_translate_rotate_scale(0, gPlayer->faceAngle[1], 0, gPlayer->pos[0], gPlayer->pos[1], gPlayer->pos[2], 9.0f, 8.0f, 9.0f);
         set_material(&gTempMaterials[1], MATERIAL_NULL);
         if (sPlayerBlock == NULL) {
             rspq_block_begin();
@@ -385,13 +477,13 @@ void render_game(int updateRate, float updateRateF) {
         if (obj2->objectID == OBJ_PROJECTILE) {
             glPushMatrix();
             set_material(&gTempMaterials[2], MATERIAL_NULL);
-            glTranslateRotatef(0, gCamera->yaw, 0, obj2->pos[0], obj2->pos[1], obj2->pos[2]);
+            mtx_billboard(obj2->pos[0], obj2->pos[1], obj2->pos[2]);
             render_bush(); 
             glPopMatrix();
         } else if (obj2->objectID == OBJ_NPC) {
             glPushMatrix();
             set_material(&gTempMaterials[1], MATERIAL_NULL);
-            glTranslateRotateScalef(0, obj2->faceAngle[1], 0, obj2->pos[0], obj2->pos[1], obj2->pos[2], 9.0f, 8.0f, 9.0f);
+            mtx_translate_rotate_scale(0, obj2->faceAngle[1], 0, obj2->pos[0], obj2->pos[1], obj2->pos[2], 9.0f, 8.0f, 9.0f);
             rspq_block_run(sPlayerBlock);
             glPopMatrix();
         }

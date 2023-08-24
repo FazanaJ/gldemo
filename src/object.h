@@ -27,7 +27,7 @@ enum ClutterIDs {
 
 typedef struct ObjectModel {
 	Material material;
-	gl_matrix_t matrix;
+	Matrix matrix;
 	struct ObjectModel *next;
 	void (*func)(struct Object *obj, int updateRate, float updateRateF);
 	mesh_t *mesh;
