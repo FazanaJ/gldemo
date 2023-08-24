@@ -50,6 +50,20 @@ typedef struct Config {
     char frameCap;
 } Config;
 
+typedef struct ConfigBits {
+    signed antiAliasing : 2;
+    unsigned dedither : 1;
+    unsigned regionMode : 2;
+    unsigned screenMode : 2;
+    signed soundMode : 2;
+    signed screenPosX : 5;
+    signed screenPosY : 5;
+    unsigned soundVolume : 4;
+    unsigned musicVolume : 4;
+    unsigned frameCap : 1;
+    unsigned magic : 6;
+} ConfigBits;
+
 extern surface_t gZBuffer;
 extern surface_t *gFrameBuffers;
 extern Config gConfig;

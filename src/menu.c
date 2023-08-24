@@ -10,6 +10,7 @@
 #include "audio.h"
 #include "math_util.h"
 #include "scene.h"
+#include "save.h"
 
 #define NUM_MENU_PREVS 4
 
@@ -488,6 +489,7 @@ void process_menus(int updateRate, float updateRateF) {
             clear_input(INPUT_START);
             clear_input(INPUT_B);
             menu_set_backward(MENU_PREV);
+            write_config();
         }
         return;
     }

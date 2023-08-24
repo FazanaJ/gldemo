@@ -57,6 +57,7 @@ $(BUILD_DIR)/gldemo.elf: $(src:%.c=$(BUILD_DIR)/%.o)
 
 
 gldemo.z64: N64_ROM_TITLE="Smile Emote"
+gldemo.z64: N64_ROM_SAVETYPE = eeprom16k
 gldemo.z64: $(BUILD_DIR)/gldemo.dfs
 
 clean:

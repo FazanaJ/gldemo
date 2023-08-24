@@ -16,6 +16,7 @@
 #include "audio.h"
 #include "menu.h"
 #include "scene.h"
+#include "save.h"
 
 surface_t gZBuffer;
 surface_t *gFrameBuffers;
@@ -83,30 +84,13 @@ void init_memory(void) {
     memory_error_screen();
 }
 
-void init_save(void) {
-    gConfig.antiAliasing = AA_FAST;
-    gConfig.dedither = false;
-    gConfig.regionMode = get_tv_type();
-    if (gConfig.regionMode == PAL50) {
-        gIsPal = true;
-    }
-    //gConfig.regionMode = PAL60;
-    gConfig.screenMode = SCREEN_4_3;
-    gConfig.frameCap = 0;
-    gConfig.soundMode = SOUND_STEREO;
-    gConfig.musicVolume = 9;
-    gConfig.soundVolume = 9;
-    sMusicVolume = (float) gConfig.musicVolume / (float) 9.0f;
-    sSoundVolume = (float) gConfig.soundVolume / (float) 9.0f;
-}
-
 void init_game(void) {
     init_memory();
     init_controller();
-    init_save();
     init_video();
     init_audio();
     init_debug();
+    init_save_data();
     load_font(FONT_ARIAL);
     load_font(FONT_MVBOLI);
     gGlobalTimer = 0;
