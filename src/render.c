@@ -114,6 +114,7 @@ void set_light(light_t light) {
 }
 
 Matrix gBillboardMatrix;
+Matrix gScaleMatrix;
 
 void set_frustrum(float l, float r, float b, float t, float n, float f) {
     Matrix frustum = (Matrix) { .m={
@@ -196,14 +197,11 @@ void mtx_billboard(float x, float y, float z) {
 }
 
 void mtx_scale(float scaleX, float scaleY, float scaleZ) {
-    Matrix rotation = (Matrix){ .m={
-        {scaleX, 0.0f, 0.0f, 0.0f},
-        {0.0f, scaleY, 0.0f, 0.0f},
-        {0.0f, 0.0f, scaleZ, 0.0f},
-        {0.0f, 0.0f, 0.0f, 1.0f},
-    }};
+    gScaleMatrix.m[3][0] = scaleX;
+    gScaleMatrix.m[3][1] = scaleY;
+    gScaleMatrix.m[3][2] = scaleZ;
 
-    glMultMatrixf(rotation.m[0]);
+    glMultMatrixf(gScaleMatrix.m[0]);
 }
 
 void project_camera(void) {
@@ -223,12 +221,14 @@ void project_camera(void) {
 void render_sky(void) {
     Environment *e = gEnvironment;
     if (sRenderSkyBlock == NULL) {
+        int width = display_get_width();
+        int height = display_get_height();
         rspq_block_begin();
         glDisable(GL_DEPTH_TEST);
         glMatrixMode(GL_PROJECTION);
         glDisable(GL_MULTISAMPLE_ARB);
         glLoadIdentity();
-        glOrtho(0.0f, display_get_width(), display_get_height(), 0.0f, -1.0f, 1.0f);
+        glOrtho(0.0f, width, height, 0.0f, -1.0f, 1.0f);
 
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
@@ -236,10 +236,10 @@ void render_sky(void) {
         glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
         glVertex2i(0, 0);
         glColor3f(e->skyColourBottom[0], e->skyColourBottom[1], e->skyColourBottom[2]);
-        glVertex2i(0, display_get_height());
-        glVertex2i(display_get_width(), display_get_height());
+        glVertex2i(0, height);
+        glVertex2i(width, height);
         glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
-        glVertex2i(display_get_width(), 0);
+        glVertex2i(width, 0);
         glColor3f(1, 1, 1);
         glEnd();
         sRenderSkyBlock = rspq_block_end();
@@ -403,17 +403,7 @@ void render_particles(void) {
     }
 }
 
-void render_game(int updateRate, float updateRateF) {
-    DEBUG_SNAPSHOT_1();
-    rdpq_attach(gFrameBuffers, &gZBuffer);
-    gl_context_begin();
-    glClear(GL_DEPTH_BUFFER_BIT);
-    render_sky();
-    apply_anti_aliasing(AA_GEO);
-    project_camera();
-    apply_render_settings();
-    set_light(lightNeutral);
-
+void render_world(void) {
     if (sCurrentScene && sCurrentScene->model) {
         SceneMesh *s = sCurrentScene->meshList;
 
@@ -429,11 +419,15 @@ void render_game(int updateRate, float updateRateF) {
             s = s->next;
         }
     }
+}
 
+void render_object_shadows(void) {
     if (gPlayer) {
         render_shadow(gPlayer->pos);
     }
+}
 
+void render_clutter(void) {
     ClutterList *list = gClutterListHead;
     Clutter *obj;
     while (list) {
@@ -453,9 +447,9 @@ void render_game(int updateRate, float updateRateF) {
         }
         list = list->next;
     }
-    
-    apply_anti_aliasing(AA_ACTOR);
+}
 
+void render_objects(void) {
     if (gPlayer) {
         glPushMatrix();
         mtx_translate_rotate_scale(0, gPlayer->faceAngle[1], 0, gPlayer->pos[0], gPlayer->pos[1], gPlayer->pos[2], 9.0f, 8.0f, 9.0f);
@@ -522,14 +516,27 @@ void render_game(int updateRate, float updateRateF) {
     rspq_block_run(sDecal1Block);
     set_material(&gTempMaterials[4], MATERIAL_DECAL);
     rspq_block_run(sDecal2Block);
+}
 
-    
+void render_game(int updateRate, float updateRateF) {
+    DEBUG_SNAPSHOT_1();
+    rdpq_attach(gFrameBuffers, &gZBuffer);
+    gl_context_begin();
+    glClear(GL_DEPTH_BUFFER_BIT);
+    render_sky();
+    apply_anti_aliasing(AA_GEO);
+    project_camera();
+    apply_render_settings();
+    set_light(lightNeutral);
+    render_world();
+    render_object_shadows();
+    render_clutter();
+    apply_anti_aliasing(AA_ACTOR);
+    render_objects();
     apply_anti_aliasing(AA_GEO);
     set_particle_render_settings();
     render_particles();
-
     get_time_snapshot(PP_RENDER, DEBUG_SNAPSHOT_1_END);
-    
     render_end();
     gl_context_end();
     render_hud(updateRate, updateRateF);

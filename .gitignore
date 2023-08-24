@@ -2,3 +2,4 @@ filesystem/
 build/
 
 gldemo.z64
+*.ini

@@ -7,6 +7,7 @@
 #include "object.h"
 #include "camera.h"
 #include "render.h"
+#include "debug.h"
 
 SceneBlock *sCurrentScene;
 Environment *gEnvironment;
@@ -89,12 +90,14 @@ static void clear_scene(void) {
     SceneMesh *curMesh = sCurrentScene->meshList;
     clear_objects();
     gPlayer = NULL;
-    while (curMesh) {
-        SceneMesh *m = curMesh;
-        curMesh = curMesh->next;
-        free(m->material);
-        rspq_block_free(m->renderBlock);
-        free(m);
+    if (sCurrentScene->model) {
+        while (curMesh) {
+            SceneMesh *m = curMesh;
+            curMesh = curMesh->next;
+            free(m->material);
+            rspq_block_free(m->renderBlock);
+            free(m);
+        }
     }
     if (gCamera) {
         free(gCamera);
@@ -102,47 +105,53 @@ static void clear_scene(void) {
     if (gEnvironment) {
         //free(gEnvironment);
     }
-    free(sCurrentScene->model);
+    if (sCurrentScene->model) {
+        free(sCurrentScene->model);
+    }
     free(sCurrentScene);
 }
 
 void load_scene(int sceneID) {
+    DEBUG_SNAPSHOT_1();
     if (sCurrentScene) {
         clear_scene();
     }
     SceneIDs *t = &sSceneTable[sceneID];
     sCurrentScene = malloc(sizeof(SceneBlock));
     SceneBlock *s = sCurrentScene;
-    s->model = model64_load(asset_dir(t->model, DFS_MODEL64));
-    s->meshList = NULL;
-    s->sceneID = sceneID;
-    int numMeshes = model64_get_mesh_count(s->model);
-    SceneMesh *tail = NULL;
-    for (int i = 0; i < numMeshes; i++) {
-        mesh_t *mesh = model64_get_mesh(s->model, i);
-        int primCount = model64_get_primitive_count(mesh);
-        for (int j = 0; j < primCount; j++) {
-            SceneMesh *m = malloc(sizeof(SceneMesh));
-            m->mesh = model64_get_primitive(mesh, j);
-            m->material = malloc(sizeof(Material));
-            m->material->index = NULL;
-            m->material->textureID = sSceneTexIDs[sCurrentScene->sceneID][i];
-            m->material->flags = 0;
-            m->flags = sSceneMeshFlags[sCurrentScene->sceneID][i];
-            m->next = NULL;
-            rspq_block_begin();
-            glPushMatrix();
-            glScalef(5.0f, 5.0f, 5.0f);
-            model64_draw_primitive(m->mesh);
-            glPopMatrix();
-            m->renderBlock = rspq_block_end();
+    s->model = NULL;
+    if (t->model) {
+        s->model = model64_load(asset_dir(t->model, DFS_MODEL64));
+        s->meshList = NULL;
+        s->sceneID = sceneID;
+        int numMeshes = model64_get_mesh_count(s->model);
+        SceneMesh *tail = NULL;
+        for (int i = 0; i < numMeshes; i++) {
+            mesh_t *mesh = model64_get_mesh(s->model, i);
+            int primCount = model64_get_primitive_count(mesh);
+            for (int j = 0; j < primCount; j++) {
+                SceneMesh *m = malloc(sizeof(SceneMesh));
+                m->mesh = model64_get_primitive(mesh, j);
+                m->material = malloc(sizeof(Material));
+                m->material->index = NULL;
+                m->material->textureID = sSceneTexIDs[sCurrentScene->sceneID][i];
+                m->material->flags = 0;
+                m->flags = sSceneMeshFlags[sCurrentScene->sceneID][i];
+                m->next = NULL;
+                rspq_block_begin();
+                glPushMatrix();
+                glScalef(5.0f, 5.0f, 5.0f);
+                model64_draw_primitive(m->mesh);
+                glPopMatrix();
+                m->renderBlock = rspq_block_end();
 
-            if (s->meshList == NULL) {
-                s->meshList = m;
-                tail = m;
-            } else {
-                tail->next = m;
-                tail = m;
+                if (s->meshList == NULL) {
+                    s->meshList = m;
+                    tail = m;
+                } else {
+                    tail->next = m;
+                    tail = m;
+                }
             }
         }
     }
@@ -172,4 +181,5 @@ void load_scene(int sceneID) {
     }
     setup_fog(sEnvironmentLight);
     camera_init();
+    debugf("Scene %d loaded in %2.3fs.\n", sceneID, ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
 }

@@ -50,7 +50,6 @@ void init_audio(void) {
     for (int i = 0; i < sizeof(sSoundTable) / sizeof(SoundData); i++) {
         wav64_open(&sSoundTable[i].sound, asset_dir(sSoundTable[i].path, DFS_WAV64));
     }
-    sMusicVolume = 1.0f;
     set_background_music(1, 0);
 }
 
@@ -78,7 +77,7 @@ void update_sequence(int updateRate) {
             if (fade > 0.0001f) {
                 fade = 0.0001f;
             }
-            set_music_volume(fade);
+            xm64player_set_vol(&sXMPlayer, fade);
         }
     }
 }
