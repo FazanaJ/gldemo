@@ -66,7 +66,6 @@ void set_region_type(int region) {
 
 void init_video(void) {
     init_hud();
-    set_region_type(gConfig.regionMode);
 }
 
 void memory_error_screen(void) {
@@ -91,6 +90,7 @@ void init_game(void) {
     init_audio();
     init_debug();
     init_save_data();
+    set_region_type(gConfig.regionMode);
     load_font(FONT_ARIAL);
     load_font(FONT_MVBOLI);
     gGlobalTimer = 0;

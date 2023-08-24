@@ -14,7 +14,7 @@
 const TextureInfo sTextureIDs[] = {
     {"grass0.ci4", TEX_NULL, 0},
     {"health.i8", TEX_CLAMP_H | TEX_CLAMP_V, 0},
-    {"plant1.ia8", TEX_CLAMP_H | TEX_CLAMP_V, 0},
+    {"plant1.ia8", TEX_MIRROR_H | TEX_CLAMP_V, 0},
     {"shadow.i4", TEX_MIRROR_H | TEX_MIRROR_V, 0},
     {"stone.ci4", TEX_NULL, 0},
     {"water.ci8", TEX_NULL, 0},

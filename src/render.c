@@ -256,10 +256,10 @@ void render_bush(void) {
     glColor3f(e->skyColourBottom[0], e->skyColourBottom[1], e->skyColourBottom[2]);
     glTexCoord2f(0, 1.024f);
     glVertex3i(-5, 0, 0);
-    glTexCoord2f(1.024f, 1.024f);
+    glTexCoord2f(2.048f, 1.024f);
     glVertex3i(5, 0, 0);
     glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
-    glTexCoord2f(1.024f, 0);
+    glTexCoord2f(2.048f, 0);
     glVertex3i(5, 10, 0);
     glEnd();
 }

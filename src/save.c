@@ -14,48 +14,48 @@ const eepfs_entry_t eeprom_16k_files[] = {
     {"config.dat", sizeof(ConfigBits)},
 };
 
-ConfigBits sSaveConfig;
-
 void read_config(void) {
     int region = get_tv_type();
     if (region == PAL50) {
         gIsPal = true;
     }
-    eepfs_read("config.dat", &sSaveConfig, sizeof(ConfigBits));
-    if (sSaveConfig.magic != SAVE_MAGIC_NUMBER) {
-        bzero(&sSaveConfig, sizeof(ConfigBits));
+    ConfigBits config;
+    eepfs_read("config.dat", &config, sizeof(ConfigBits));
+    if (config.magic != SAVE_MAGIC_NUMBER) {
+        bzero(&config, sizeof(ConfigBits));
         gConfig.regionMode = region;
         gConfig.musicVolume = 9;
         gConfig.soundVolume = 9;
         gConfig.soundMode = SOUND_STEREO;
-        sSaveConfig.magic = SAVE_MAGIC_NUMBER;
+        config.magic = SAVE_MAGIC_NUMBER;
         debugf("Config failed to load: Generating new.\n");
     } else {
-        gConfig.regionMode = sSaveConfig.regionMode;
-        gConfig.musicVolume = sSaveConfig.musicVolume;
-        gConfig.soundVolume = sSaveConfig.soundVolume;
-        gConfig.soundMode = sSaveConfig.soundMode;
+        gConfig.regionMode = config.regionMode;
+        gConfig.musicVolume = config.musicVolume;
+        gConfig.soundVolume = config.soundVolume;
+        gConfig.soundMode = config.soundMode;
         debugf("Config loaded.\n");
     }
-    gConfig.antiAliasing = sSaveConfig.antiAliasing;
-    gConfig.dedither = sSaveConfig.dedither;
-    gConfig.screenMode = sSaveConfig.screenMode;
-    gConfig.frameCap = sSaveConfig.frameCap;
+    gConfig.antiAliasing = config.antiAliasing;
+    gConfig.dedither = config.dedither;
+    gConfig.screenMode = config.screenMode;
+    gConfig.frameCap = config.frameCap;
     sMusicVolume = (float) gConfig.musicVolume / (float) 9.0f;
     sSoundVolume = (float) gConfig.soundVolume / (float) 9.0f;
 }
 
 void write_config(void) {
-    sSaveConfig.antiAliasing = gConfig.antiAliasing;
-    sSaveConfig.dedither = gConfig.dedither;
-    sSaveConfig.regionMode = gConfig.regionMode;
-    sSaveConfig.screenMode = gConfig.screenMode;
-    sSaveConfig.frameCap = gConfig.frameCap;
-    sSaveConfig.soundMode = gConfig.soundMode;
-    sSaveConfig.musicVolume = gConfig.musicVolume;
-    sSaveConfig.soundVolume = gConfig.soundVolume;
-    sSaveConfig.magic = SAVE_MAGIC_NUMBER;
-    eepfs_write("config.dat", &sSaveConfig, sizeof(ConfigBits));
+    ConfigBits config;
+    config.antiAliasing = gConfig.antiAliasing;
+    config.dedither = gConfig.dedither;
+    config.regionMode = gConfig.regionMode;
+    config.screenMode = gConfig.screenMode;
+    config.frameCap = gConfig.frameCap;
+    config.soundMode = gConfig.soundMode;
+    config.musicVolume = gConfig.musicVolume;
+    config.soundVolume = gConfig.soundVolume;
+    config.magic = SAVE_MAGIC_NUMBER;
+    eepfs_write("config.dat", &config, sizeof(ConfigBits));
     debugf("Config saved.\n");
 }
 
@@ -76,6 +76,13 @@ void init_save_data(void) {
         debugf("Wiping EEPROM...\n" );
         eepfs_wipe();
     }
+
+    int fileSize = 0;
+    for (int i = 0; i < sizeof(eeprom_16k_files) / sizeof(eepfs_entry_t); i++) {
+        fileSize += eeprom_16k_files[i].size;
+    }
+
+    debugf("Eeprom initialised. Size: %X bytes.\n", fileSize);
 
     read_config();
 }
