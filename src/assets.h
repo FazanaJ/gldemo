@@ -35,6 +35,7 @@ enum FileFormat {
     DFS_MODEL64,
     DFS_XM64,
     DFS_FONT64,
+    DFS_OVERLAY,
 
     DFS_TOTAL
 };

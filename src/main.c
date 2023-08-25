@@ -129,11 +129,19 @@ void update_game_time(int *updateRate, float *updateRateF) {
     }
 }
 
+void boot_game(void) {
+    /*void *bootOvl = dlopen(asset_dir("boot", DFS_OVERLAY), RTLD_LOCAL);
+    void (*func)() = dlsym(bootOvl, "init_game");
+    (*func)();
+    dlclose(bootOvl);*/
+    init_game();
+}
+
 int main(void) {
     int updateRate;
     float updateRateF;
 
-    init_game();    
+    boot_game();
     init_renderer();
     load_scene(0);
 

@@ -97,7 +97,8 @@ static char *sFileFormatString[] = {
     "wav64",
     "model64",
     "xm64",
-    "font64"
+    "font64",
+    "dso"
 };
 
 static char sFileFormatName[40];
