@@ -410,15 +410,11 @@ void apply_render_settings(void) {
 }
 
 void find_material_list(RenderNode *node) {
+    RenderList *matList;
     if (gRenderNodeHead == NULL) {
         gRenderNodeHead = node;
-        gRenderNodeTail = node;
-        node->next = NULL;
-        RenderList *matList = malloc(sizeof(RenderList));
+        matList = malloc(sizeof(RenderList));
         gMateriallistHead = matList;
-        gMateriallistTail = matList;
-        matList->entryHead = node;
-        matList->next = NULL;
     } else {
         RenderList *list = gMateriallistHead;
         while (list) {
@@ -430,15 +426,15 @@ void find_material_list(RenderNode *node) {
             }
             list = list->next;
         }
-        RenderList *matList = malloc(sizeof(RenderList));
+        matList = malloc(sizeof(RenderList));
         gMateriallistTail->next = matList;
-        gMateriallistTail = matList;
         gRenderNodeTail->next = node;
-        gRenderNodeTail = node;
-        node->next = NULL;
-        matList->entryHead = node;
-        matList->next = NULL;
     }
+    node->next = NULL;
+    matList->entryHead = node;
+    matList->next = NULL;
+    gMateriallistTail = matList;
+    gRenderNodeTail = node;
 }
 
 void add_render_node(RenderNode *entry, rspq_block_t *block, Material *material, int flags) {
