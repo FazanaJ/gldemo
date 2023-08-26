@@ -4,7 +4,7 @@
 #include <GL/gl_integration.h>
 #include "assets.h"
 
-typedef struct{
+typedef struct {
 
     const GLfloat color[4];
     const GLfloat diffuse[4];
@@ -20,7 +20,18 @@ typedef struct {
     GLfloat m[4][4];
 } Matrix;
 
-extern Material gTempMaterials[];
+typedef struct RenderNode {
+    rspq_block_t *block;
+    Matrix *matrix;
+    Material *material;
+    int flags;
+    struct RenderNode *next;
+} RenderNode;
+
+typedef struct RenderList {
+    RenderNode *entryHead;
+    struct RenderList *next;
+} RenderList;
 
 void init_renderer(void);
 void setup_light(light_t light);

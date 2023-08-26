@@ -20,7 +20,8 @@
     "Materials", \
     "Profiler", \
     "Particles", \
-    "Collision"
+    "Collision", \
+    "Batch"
 
 
 enum ProfileTimers {
@@ -37,6 +38,7 @@ enum ProfileTimers {
     PP_PROFILER,
     PP_PARTICLES,
     PP_COLLISION,
+    PP_BATCH,
 
     PP_TOTAL
 };

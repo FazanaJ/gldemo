@@ -18,11 +18,15 @@
 #include "scene.h"
 
 float gAspectRatio = 1.0f;
+RenderNode *gRenderNodeHead = NULL;
+RenderNode *gRenderNodeTail = NULL;
+RenderList *gMateriallistHead = NULL;
+RenderList *gMateriallistTail = NULL;
+char gZTargetTimer = 0;
 static rspq_block_t *sRenderEndBlock;
 static rspq_block_t *sRenderSkyBlock;
 static rspq_block_t *sBeginModeBlock;
 static rspq_block_t *sParticleBlock;
-char gZTargetTimer = 0;
 
 Material gTempMaterials[] = {
     {NULL, 0, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL},
@@ -250,12 +254,14 @@ void mtx_lookat(float eyex, float eyey, float eyez, float centerx, float centery
     glMultMatrixf(&m[0][0]);
 };
 
-void mtx_billboard(float x, float y, float z) {
+void mtx_billboard(Matrix *dst, float x, float y, float z) {
     gBillboardMatrix.m[3][0] = x;
     gBillboardMatrix.m[3][1] = y;
     gBillboardMatrix.m[3][2] = z;
 
-    glMultMatrixf(gBillboardMatrix.m[0]);
+    memcpy(dst, &gBillboardMatrix, sizeof(Matrix));
+
+    //glMultMatrixf(gBillboardMatrix.m[0]);
 }
 
 void mtx_scale(float scaleX, float scaleY, float scaleZ) {
@@ -403,6 +409,47 @@ void apply_render_settings(void) {
     }
 }
 
+void find_material_list(RenderNode *node) {
+    if (gRenderNodeHead == NULL) {
+        gRenderNodeHead = node;
+        gRenderNodeTail = node;
+        node->next = NULL;
+        RenderList *matList = malloc(sizeof(RenderList));
+        gMateriallistHead = matList;
+        gMateriallistTail = matList;
+        matList->entryHead = node;
+        matList->next = NULL;
+    } else {
+        RenderList *list = gMateriallistHead;
+        while (list) {
+            if (list->entryHead->material == node->material) {
+                node->next = list->entryHead->next;
+                list->entryHead->next = node;
+                list->entryHead = node;
+                return;
+            }
+            list = list->next;
+        }
+        RenderList *matList = malloc(sizeof(RenderList));
+        gMateriallistTail->next = matList;
+        gMateriallistTail = matList;
+        gRenderNodeTail->next = node;
+        gRenderNodeTail = node;
+        node->next = NULL;
+        matList->entryHead = node;
+        matList->next = NULL;
+    }
+}
+
+void add_render_node(RenderNode *entry, rspq_block_t *block, Material *material, int flags) {
+    DEBUG_SNAPSHOT_1();
+    entry->block = block;
+    entry->material = material;
+    entry->flags = flags;
+    find_material_list(entry);
+    get_time_snapshot(PP_BATCH, DEBUG_SNAPSHOT_1_END);
+}
+
 void render_particles(void) {
     ParticleList *list = gParticleListHead;
     Particle *particle;
@@ -413,7 +460,7 @@ void render_particles(void) {
         if (particle->material) {
             set_texture(particle->material);
         }
-        mtx_billboard(particle->pos[0], particle->pos[1], particle->pos[2]);
+        //mtx_billboard(particle->pos[0], particle->pos[1], particle->pos[2]);
         mtx_scale(particle->scale[0], particle->scale[1], particle->scale[2]);
         rspq_block_run(sParticleBlock);
         glPopMatrix();
@@ -421,22 +468,47 @@ void render_particles(void) {
     }
 }
 
+void pop_render_list(void) {
+    RenderNode *renderList = gRenderNodeHead;
+    while (renderList) {
+        RenderNode *oldList = renderList;
+        glPushMatrix();
+        if (renderList->matrix) {
+            glMultMatrixf((GLfloat *) renderList->matrix->m);
+            free(renderList->matrix);
+        }
+        if (renderList->material) {
+            set_material(renderList->material, renderList->flags);
+        }
+        rspq_block_run(renderList->block);
+        glPopMatrix();
+        renderList = renderList->next;
+        free(oldList);
+    }
+    RenderList *matList = gMateriallistHead;
+    while (matList) {
+        RenderList *oldList = matList;
+        matList = matList->next;
+        free(oldList);
+    }
+    gRenderNodeHead = NULL;
+    gRenderNodeTail = NULL;
+    gMateriallistHead = NULL;
+    gMateriallistTail = NULL;
+}
+
 void render_world(void) {
     if (sCurrentScene && sCurrentScene->model) {
         SceneMesh *s = sCurrentScene->meshList;
 
         while (s != NULL) {
-            if (s->material) {
-                set_material(s->material, s->flags);
-            }
-            rspq_block_run(s->renderBlock);
-            /*glPushMatrix();
-            glScalef(5.0f, 5.0f, 5.0f);
-            model64_draw_primitive(s->mesh);
-            glPopMatrix();*/
+            RenderNode *entry = malloc(sizeof(RenderNode));
+            entry->matrix = NULL;
+            add_render_node(entry, s->renderBlock, s->material, s->flags);
             s = s->next;
         }
     }
+    pop_render_list();
 }
 
 void render_object_shadows(void) {
@@ -447,24 +519,28 @@ void render_object_shadows(void) {
 
 void render_clutter(void) {
     ClutterList *list = gClutterListHead;
-    Clutter *obj;
+    Clutter *obj; 
+    if (sBushBlock == NULL) {
+        rspq_block_begin();
+        render_bush(); 
+        sBushBlock = rspq_block_end();
+    }
     while (list) {
         obj = list->clutter;
         if (obj->objectID == CLUTTER_BUSH && !(obj->flags & OBJ_FLAG_INVISIBLE)) {
-            glPushMatrix();
-            
-            set_material(&gTempMaterials[3], MATERIAL_NULL);
-            mtx_billboard(obj->pos[0], obj->pos[1], obj->pos[2]);        
-            if (sBushBlock == NULL) {
-                rspq_block_begin();
-                render_bush(); 
-                sBushBlock = rspq_block_end();
-            }
-            rspq_block_run(sBushBlock);
-            glPopMatrix();
+            RenderNode *entry = malloc(sizeof(RenderNode));
+            entry->matrix = malloc(sizeof(Matrix));
+            mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
+            add_render_node(entry, sBushBlock, &gTempMaterials[3], MATERIAL_NULL);
+        } else if (obj->objectID == CLUTTER_ROCK && !(obj->flags & OBJ_FLAG_INVISIBLE)) {
+            RenderNode *entry = malloc(sizeof(RenderNode));
+            entry->matrix = malloc(sizeof(Matrix));
+            mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
+            add_render_node(entry, sBushBlock, &gTempMaterials[0], MATERIAL_NULL);
         }
         list = list->next;
     }
+    pop_render_list();
 }
 
 void render_objects(void) {
@@ -489,8 +565,8 @@ void render_objects(void) {
         if (obj2->objectID == OBJ_PROJECTILE) {
             glPushMatrix();
             set_material(&gTempMaterials[2], MATERIAL_NULL);
-            mtx_billboard(obj2->pos[0], obj2->pos[1], obj2->pos[2]);
-            render_bush(); 
+            //mtx_billboard(obj2->pos[0], obj2->pos[1], obj2->pos[2]);
+            rspq_block_run(sBushBlock);
             glPopMatrix();
         } else if (obj2->objectID == OBJ_NPC) {
             glPushMatrix();

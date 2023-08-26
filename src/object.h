@@ -25,6 +25,7 @@ enum ObjectIDs {
 enum ClutterIDs {
 	CLUTTER_NULL,
 	CLUTTER_BUSH,
+	CLUTTER_ROCK,
 };
 
 typedef struct ObjectModel {
