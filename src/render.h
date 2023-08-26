@@ -10,7 +10,7 @@ typedef struct{
     const GLfloat diffuse[4];
 
     const GLfloat position[4];
-    const GLfloat direction[3];
+    const short direction[3];
 
     const float radius;
 

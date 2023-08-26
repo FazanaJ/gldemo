@@ -4,6 +4,8 @@
 #include "assets.h"
 #include "render.h"
 
+#define OBJ_DIST(x) (x >> 4)
+
 enum ObjectFlags {
 	OBJ_FLAG_NONE,
 	OBJ_FLAG_DELETE = 		(1 << 0),
@@ -42,6 +44,7 @@ typedef struct ObjectGraphics {
 
 typedef struct Object {
 	ObjectGraphics *gfx;
+	struct VoidList *overlay;
 	void (*loopFunc)(struct Object *obj, int updateRate, float updateRateF);
 	struct ObjectList *entry;
 	struct Object *parent;
@@ -131,6 +134,25 @@ typedef struct ParticleList {
 	struct ParticleList *next;
 	struct ParticleList *prev;
 } ParticleList;
+
+typedef struct VoidList {
+	void *addr;
+	struct VoidList *next;
+	struct VoidList *prev;
+	short id;
+	short timer;
+} VoidList;
+
+typedef struct ObjectEntry {
+    void (*initFunc)(Object *obj);
+    void (*loopFunc)(Object *obj, int updateRate, float updateRateF);
+    unsigned short data;
+    unsigned short flags;
+	unsigned char viewDist;
+	unsigned char viewWidth;
+	unsigned char viewHeight;
+	unsigned char pad;
+} ObjectEntry;
 
 extern Object *gPlayer;
 extern ObjectList *gObjectListHead;

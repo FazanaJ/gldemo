@@ -435,6 +435,10 @@ void render_panel(int x1, int y1, int x2, int y2, int style, unsigned int colour
     rdpq_tex_blit(&surf, x1 + 8, y1 + 8, &(rdpq_blitparms_t){.scale_x = xScale, .scale_y = yScale});
 }
 
+void process_hud(int updateRate, float updateRateF) {
+    process_subtitle_timers(updateRate, updateRateF);
+}
+
 void render_hud(int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
     if (gPlayer) {
@@ -446,7 +450,6 @@ void render_hud(int updateRate, float updateRateF) {
         render_ztarget();
         render_health(updateRateF);
     }
-    process_subtitle_timers(updateRate, updateRateF);
     render_hud_subtitles();
 
     if (get_input_pressed(INPUT_CDOWN, 0)) {

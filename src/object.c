@@ -18,10 +18,92 @@ ClutterList *gClutterListHead = NULL;
 ClutterList *gClutterListTail = NULL;
 ParticleList *gParticleListHead = NULL;
 ParticleList *gParticleListTail = NULL;
+VoidList *gOverlayListHead = NULL;
+VoidList *gOverlayListTail = NULL;
 short gNumObjects = 0;
 short gNumClutter = 0;
 short gNumParticles = 0;
 char gGamePaused = false;
+
+char *sObjectOverlays[] = {
+    "player",
+    "projectile",
+    "npc",
+};
+
+void init_object_behaviour(Object *obj, int objectID) {
+    VoidList *list = gOverlayListHead;
+    void *addr = NULL;
+    while (list) {
+        if (list->id == objectID) {
+            addr = list->addr;
+            break;
+        }
+        list = list->next;
+    }
+    if (addr == NULL) {
+        list = malloc(sizeof(VoidList));
+        if (gOverlayListHead == NULL) {
+            gOverlayListHead = list;
+        }
+        if (gOverlayListTail) {
+            gOverlayListTail->next = list;
+        }
+        gOverlayListTail = list;
+        addr = dlopen(asset_dir(sObjectOverlays[objectID - 1], DFS_OVERLAY), RTLD_LOCAL);
+        list->addr = addr;
+        list->id = objectID;
+        list->next = NULL;
+        list->timer = 10;
+    }
+    ObjectEntry *entry = dlsym(addr, "entry");
+    obj->loopFunc = entry->loopFunc;
+    obj->flags = entry->flags;
+    obj->overlay = list;
+    if (entry->viewDist) {
+        obj->viewDist = entry->viewDist << 4;
+    } else {
+        obj->viewDist = 500.0f;
+    }
+    if (obj->data) {
+        obj->data = malloc(entry->data);
+    }
+    if (entry->initFunc) {
+        (*entry->initFunc)(obj);
+    }
+}
+
+void check_unused_overlay(Object *obj, VoidList *overlay) {
+    ObjectList *objList = gObjectListHead;
+    Object *listObj;
+
+    while (objList) {
+        listObj = objList->obj;
+        if (listObj->overlay == overlay && listObj != obj) {
+            return;
+        }
+        objList = objList->next;
+    }
+
+    dlclose(overlay->addr);
+    if (overlay == gOverlayListHead) {
+        if (gOverlayListHead->next) {
+            gOverlayListHead = gOverlayListHead->next;
+            gOverlayListHead->prev = NULL;
+        } else {
+            gOverlayListHead = NULL;
+        }
+    } else {
+        if (overlay == gOverlayListTail) {
+            gOverlayListTail = gOverlayListTail->prev;
+        }
+        overlay->prev->next = overlay->next;
+        if (overlay->next) {
+            overlay->next->prev = overlay->prev;
+        }
+    }
+    free(overlay);
+}
 
 /**
  * Check if gObjectListHead is null first.
@@ -50,6 +132,7 @@ Object *allocate_object(void) {
     newObj->data = NULL;
     newObj->flags = OBJ_FLAG_NONE;
     newObj->viewDist = SQR(300.0f);
+    newObj->overlay = NULL;
 
     gNumObjects++;
 
@@ -171,12 +254,14 @@ static const unsigned short gObjectData[] = {
     0,
     sizeof(PlayerData),
     sizeof(ProjectileData),
+    0,
 };
 
 static const int gObjectFlags[] = {
     0,
     OBJ_FLAG_MOVE | OBJ_FLAG_GRAVITY | OBJ_FLAG_COLLISION,
     OBJ_FLAG_MOVE,
+    0,
 };
 
 static void set_object_functions(Object *obj, int objectID) {
@@ -318,6 +403,9 @@ static void free_object(Object *obj) {
         if (obj->entry->next) {
             obj->entry->next->prev = obj->entry->prev;
         }
+    }
+    if (obj->overlay) {
+        check_unused_overlay(obj, obj->overlay);
     }
     free(obj->entry);
     if (obj->data) {

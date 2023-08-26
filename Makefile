@@ -12,7 +12,7 @@ assets_xm1 = $(wildcard assets/xm/*.xm)
 
 
 MAIN_ELF_EXTERNS := $(BUILD_DIR)/gldemo.externs
-DSO_MODULES = boot.dso
+DSO_MODULES = boot.dso projectile.dso
 DSO_LIST = $(addprefix filesystem/, $(DSO_MODULES))
 
 assets_conv = $(addprefix filesystem/,$(notdir $(assets_ttf:%.ttf=%.font64))) \
@@ -62,7 +62,10 @@ $(BUILD_DIR)/gldemo.dfs: $(assets_conv) $(DSO_LIST)
 $(BUILD_DIR)/gldemo.elf: $(src:%.c=$(BUILD_DIR)/%.o) $(MAIN_ELF_EXTERNS)
 $(MAIN_ELF_EXTERNS): $(DSO_LIST)
 
-filesystem/boot.dso: $(overlay:%.c=$(BUILD_DIR)/%.o)
+n64brew_SRC = src/overlays/boot.c
+filesystem/boot.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
+n64brew_SRC = src/overlays/projectile.c
+filesystem/projectile.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 
 gldemo.z64: N64_ROM_TITLE="Smile Emote"
 gldemo.z64: N64_ROM_SAVETYPE = eeprom16k

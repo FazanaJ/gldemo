@@ -38,7 +38,7 @@ static model64_t *gPlayerModel;
 light_t lightNeutral = {
     color: { 0.66f, 0.66f, 0.66f, 0.66f},
     diffuse: {1.0f, 1.0f, 1.0f, 1.0f},
-    direction: {0.0f, 0.0f, 60.0f},
+    direction: {0, 0, 0x6000},
     position: {1.0f, 0.0f, 0.0f, 0.0f},
     radius: 10.0f,
 };
@@ -104,15 +104,6 @@ void setup_light(light_t light) {
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, light.diffuse);
 }
 
-void set_light(light_t light) {
-    glPushMatrix();
-    glRotatef(light.direction[0], 1, 0, 0);
-    glRotatef(light.direction[1], 0, 1, 0);
-    glRotatef(light.direction[2], 0, 0, 1);
-    glLightfv(GL_LIGHT0, GL_POSITION, light.position);
-    glPopMatrix();
-}
-
 Matrix gBillboardMatrix;
 Matrix gScaleMatrix;
 
@@ -141,6 +132,77 @@ void lookat_cross(GLfloat* p, const GLfloat* a, const GLfloat* b) {
 
 float lookat_dot(const float *a, const float *b) {
     return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+void mtx_translate_rotate(short angleX, short angleY, short angleZ, GLfloat x, GLfloat y, GLfloat z) {
+    float sx = sins(angleX);
+    float cx = coss(angleX);
+
+    float sy = sins(angleY);
+    float cy = coss(angleY);
+
+    float sz = sins(angleZ);
+    float cz = coss(angleZ);
+
+    Matrix rotation = (Matrix){ .m={
+        {cy * cz, cy * sz, -sy, 0.0f},
+        {sx * sy * cz - cx * sz, sx * sy * sz + cx * cz, sx * cy, 0.0f},
+        {cx * sy * cz + sx * sz, cx * sy * sz - sx * cz, cx * cy, 0.0f},
+        {x, y, z, 1.0f},
+    }};
+
+    glMultMatrixf(rotation.m[0]);
+}
+
+void mtx_rotate(short angleX, short angleY, short angleZ) {
+    float sx = sins(angleX);
+    float cx = coss(angleX);
+
+    float sy = sins(angleY);
+    float cy = coss(angleY);
+
+    float sz = sins(angleZ);
+    float cz = coss(angleZ);
+
+    Matrix rotation = (Matrix){ .m={
+        {cy * cz, cy * sz, -sy, 0.0f},
+        {sx * sy * cz - cx * sz, sx * sy * sz + cx * cz, sx * cy, 0.0f},
+        {cx * sy * cz + sx * sz, cx * sy * sz - sx * cz, cx * cy, 0.0f},
+        {0.0f, 0.0f, 0.0f, 1.0f},
+    }};
+
+    glMultMatrixf(rotation.m[0]);
+}
+
+void mtx_translate_rotate_scale(short angleX, short angleY, short angleZ, GLfloat x, GLfloat y, GLfloat z, GLfloat scaleX, GLfloat scaleY, GLfloat scaleZ) {
+    float sx = sins(angleX);
+    float cx = coss(angleX);
+
+    float sy = sins(angleY);
+    float cy = coss(angleY);
+
+    float sz = sins(angleZ);
+    float cz = coss(angleZ);
+
+    Matrix rotation = (Matrix){ .m={
+        {cy * cz, cy * sz, -sy, 0.0f},
+        {sx * sy * cz - cx * sz, sx * sy * sz + cx * cz, sx * cy, 0.0f},
+        {cx * sy * cz + sx * sz, cx * sy * sz - sx * cz, cx * cy, 0.0f},
+        {x, y, z, 1.0f},
+    }};
+
+    glMultMatrixf(rotation.m[0]);
+
+    rotation.m[0][0] = scaleX;
+    rotation.m[0][1] = 0.0f;
+    rotation.m[1][0] = 0.0f;
+    rotation.m[1][1] = scaleY;
+    rotation.m[2][2] = scaleZ;
+    rotation.m[3][0] = 0.0f;
+    rotation.m[3][1] = 0.0f;
+    rotation.m[3][2] = 0.0f;
+
+    glMultMatrixf(rotation.m[0]);
 }
 
 void mtx_lookat(float eyex, float eyey, float eyez, float centerx, float centery, float centerz, float upx, float upy, float upz) {
@@ -202,6 +264,13 @@ void mtx_scale(float scaleX, float scaleY, float scaleZ) {
     gScaleMatrix.m[3][2] = scaleZ;
 
     glMultMatrixf(gScaleMatrix.m[0]);
+}
+
+void set_light(light_t light) {
+    glPushMatrix();
+    mtx_rotate(light.direction[0], light.direction[1], light.direction[2]);
+    glLightfv(GL_LIGHT0, GL_POSITION, light.position);
+    glPopMatrix();
 }
 
 void project_camera(void) {
@@ -332,57 +401,6 @@ void apply_render_settings(void) {
     } else {
         *(volatile uint32_t*)0xA4400000 &= ~0x10000;
     }
-}
-
-void mtx_translate_rotate(short angleX, short angleY, short angleZ, GLfloat x, GLfloat y, GLfloat z) {
-    float sx = sins(angleX);
-    float cx = coss(angleX);
-
-    float sy = sins(angleY);
-    float cy = coss(angleY);
-
-    float sz = sins(angleZ);
-    float cz = coss(angleZ);
-
-    Matrix rotation = (Matrix){ .m={
-        {cy * cz, cy * sz, -sy, 0.0f},
-        {sx * sy * cz - cx * sz, sx * sy * sz + cx * cz, sx * cy, 0.0f},
-        {cx * sy * cz + sx * sz, cx * sy * sz - sx * cz, cx * cy, 0.0f},
-        {x, y, z, 1.0f},
-    }};
-
-    glMultMatrixf(rotation.m[0]);
-}
-
-void mtx_translate_rotate_scale(short angleX, short angleY, short angleZ, GLfloat x, GLfloat y, GLfloat z, GLfloat scaleX, GLfloat scaleY, GLfloat scaleZ) {
-    float sx = sins(angleX);
-    float cx = coss(angleX);
-
-    float sy = sins(angleY);
-    float cy = coss(angleY);
-
-    float sz = sins(angleZ);
-    float cz = coss(angleZ);
-
-    Matrix rotation = (Matrix){ .m={
-        {cy * cz, cy * sz, -sy, 0.0f},
-        {sx * sy * cz - cx * sz, sx * sy * sz + cx * cz, sx * cy, 0.0f},
-        {cx * sy * cz + sx * sz, cx * sy * sz - sx * cz, cx * cy, 0.0f},
-        {x, y, z, 1.0f},
-    }};
-
-    glMultMatrixf(rotation.m[0]);
-
-    rotation.m[0][0] = scaleX;
-    rotation.m[0][1] = 0.0f;
-    rotation.m[1][0] = 0.0f;
-    rotation.m[1][1] = scaleY;
-    rotation.m[2][2] = scaleZ;
-    rotation.m[3][0] = 0.0f;
-    rotation.m[3][1] = 0.0f;
-    rotation.m[3][2] = 0.0f;
-
-    glMultMatrixf(rotation.m[0]);
 }
 
 void render_particles(void) {

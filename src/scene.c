@@ -48,9 +48,9 @@ int sSceneMeshFlags[][4] = {
 };
 
 light_t sEnvironmentLight = {
-    color: { 0.51f, 0.81f, 0.665f, 0.5f},
+    color: {0.51f, 0.81f, 0.665f, 0.5f},
     diffuse: {1.0f, 1.0f, 1.0f, 1.0f},
-    direction: {0.0f, -60.0f, 0.0f},
+    direction: {0, 0, 0x6000},
     position: {1.0f, 0.0f, 0.0f, 0.0f},
     radius: 10.0f,
 };

@@ -142,6 +142,8 @@ void process_profiler(void) {
 
 void render_profiler(void) {
     int boxHeight = 0;
+    int width = display_get_width();
+    int height = display_get_height();
     struct mallinfo mem_info = mallinfo();
     rdpq_set_prim_color(RGBA32(0, 0, 0, 127));
     rdpq_set_mode_standard();
@@ -161,7 +163,7 @@ void render_profiler(void) {
             boxHeight += 10;
         }
     }
-    rdpq_fill_rectangle(display_get_width() - 110, 0, display_get_width(), boxHeight);
+    rdpq_fill_rectangle(width - 110, 0, width, boxHeight);
     rdpq_mode_blender(0);
     rdpq_text_printf(NULL, FONT_ARIAL, 8, 16, "FPS: %2.2f", gFPS);
     rdpq_text_printf(NULL, FONT_ARIAL, 8, 26, "CPU: %dus (%d%%)", gDebugData->cpuTime[TIME_TOTAL], gDebugData->cpuTime[TIME_TOTAL] / 333);
@@ -178,11 +180,11 @@ void render_profiler(void) {
     for (int i = 0; i < PP_TOTAL; i++) {
         if (gDebugData->timer[i][TIME_TOTAL] > 1) {
             boxHeight += 10;
-            rdpq_text_printf(NULL, FONT_ARIAL, display_get_width() - 106, 8 + boxHeight, "%s:", sDebugText[i]);
-            rdpq_text_printf(NULL, FONT_ARIAL, display_get_width() - 48, 8 + boxHeight, "%dus", gDebugData->timer[i][TIME_TOTAL]);
+            rdpq_text_printf(NULL, FONT_ARIAL, width - 106, 8 + boxHeight, "%s:", sDebugText[i]);
+            rdpq_text_printf(NULL, FONT_ARIAL, width - 48, 8 + boxHeight, "%dus", gDebugData->timer[i][TIME_TOTAL]);
         }
     }
-    int ramUsed = mem_info.uordblks - (size_t) (((display_get_width() * display_get_height()) * 2) - ((unsigned int) HEAP_START_ADDR - 0x80000000) - 0x10000);
+    int ramUsed = mem_info.uordblks - (size_t) (((width * height) * 2) - ((unsigned int) HEAP_START_ADDR - 0x80000000) - 0x10000);
     rdpq_text_printf(NULL, FONT_ARIAL, 8, gFrameBuffers->height - 8, "RAM: %dKB/%dKB", (ramUsed / 1024), get_memory_size() / 1024);
     rdpq_text_printf(NULL, FONT_ARIAL, 8, gFrameBuffers->height - 18, "Tex: %d | Loads: %d", gNumTextures, gNumTextureLoads);
     rdpq_text_printf(NULL, FONT_ARIAL, 8, gFrameBuffers->height - 28, "Obj: %d | Clu: %d | Par: %d", gNumObjects, gNumClutter, gNumParticles);

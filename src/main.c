@@ -44,7 +44,7 @@ void reset_display(void) {
         rdpq_close();
     }
     display_close();
-    display_init(sVideoModes[(unsigned) gConfig.screenMode], DEPTH_16_BPP, 3, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
+    display_init(sVideoModes[(int) gConfig.screenMode], DEPTH_16_BPP, 3, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
     //gZBuffer = surface_alloc(FMT_RGBA16, display_get_width(), display_get_height());
     gZBuffer.flags = FMT_RGBA16 | SURFACE_FLAGS_OWNEDBUFFER;
     gZBuffer.width = display_get_width();
@@ -78,7 +78,6 @@ void memory_error_screen(void) {
 }
 
 void init_memory(void) {
-    dfs_init(DFS_DEFAULT_LOCATION);
     timer_init();
     memory_error_screen();
 }
@@ -130,10 +129,11 @@ void update_game_time(int *updateRate, float *updateRateF) {
 }
 
 void boot_game(void) {
-    /*void *bootOvl = dlopen(asset_dir("boot", DFS_OVERLAY), RTLD_LOCAL);
+    dfs_init(DFS_DEFAULT_LOCATION);
+    void *bootOvl = dlopen(asset_dir("boot", DFS_OVERLAY), RTLD_LOCAL);
     void (*func)() = dlsym(bootOvl, "init_game");
     (*func)();
-    dlclose(bootOvl);*/
+    dlclose(bootOvl);
     init_game();
 }
 
@@ -155,8 +155,8 @@ int main(void) {
         update_inputs(updateRate);
         update_game_entities(updateRate, updateRateF);
         audio_loop(updateRate, updateRateF);
+        process_hud(updateRate, updateRateF);
         process_menus(updateRate, updateRateF);
-        
         render_game(updateRate, updateRateF);
         get_cpu_time(DEBUG_SNAPSHOT_1_END);
         

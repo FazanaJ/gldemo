@@ -71,9 +71,10 @@ void init_controller(void) {
     bzero(&gInputData, sizeof(Input));
     gInputData.pak = 0;
 }
+*/
 
 void init_game(void) {
-    init_memory();
+    /*init_memory();
     init_controller();
     init_hud();
     init_audio();
@@ -83,6 +84,6 @@ void init_game(void) {
     load_font(FONT_ARIAL);
     load_font(FONT_MVBOLI);
     gGlobalTimer = 0;
-    gGameTimer = 0;
-    debugf("init_game has run :)\n");
-}*/
+    gGameTimer = 0;*/
+    //debugf("init_game has run :)\n");
+}
