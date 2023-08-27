@@ -64,45 +64,6 @@ void set_region_type(int region) {
     reset_display();
 }
 
-void init_video(void) {
-    init_hud();
-}
-
-void memory_error_screen(void) {
-    if (get_memory_size() == 0x400000) {
-        rdpq_init();
-        display_init(RESOLUTION_640x480, DEPTH_16_BPP, 1, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
-        surface_t *disp = display_get();
-        rdpq_attach(disp, NULL);
-        rdpq_set_mode_copy(true);
-        sprite_t *background = sprite_load(asset_dir("memory_error.ci8", DFS_SPRITE));
-        rdpq_mode_tlut(TLUT_RGBA16);
-        rdpq_tex_upload_tlut(sprite_get_palette(background), 0, 256);
-        rdpq_sprite_blit(background, 0, 0, NULL);
-        rdpq_detach_show();
-        while (1);
-    }
-}
-
-void init_memory(void) {
-    timer_init();
-    memory_error_screen();
-}
-
-void init_game(void) {
-    init_memory();
-    init_controller();
-    init_video();
-    init_audio();
-    init_debug();
-    init_save_data();
-    set_region_type(gConfig.regionMode);
-    load_font(FONT_ARIAL);
-    load_font(FONT_MVBOLI);
-    gGlobalTimer = 0;
-    gGameTimer = 0;
-}
-
 /**
  * Generate the delta time values.
  * Use a while loop with a frame debt system to generate accurate integer delta, with just a regular comparison for floats.
@@ -141,7 +102,7 @@ void boot_game(void) {
     void (*func)() = dlsym(bootOvl, "init_game");
     (*func)();
     dlclose(bootOvl);
-    init_game();
+    //init_game();
 }
 
 int main(void) {

@@ -12,7 +12,7 @@
 
 int gCurrentController = -1;
 struct controller_data gController;
-static Input sInputData;
+Input gInputData;
 static char sPakDetectionTimer = 0;
 static short sRumbleTimer = 0;
 
@@ -26,17 +26,11 @@ static void set_player_controller_id(void) {
     }
 }
 
-void init_controller(void) {
-    controller_init();
-    bzero(&sInputData, sizeof(Input));
-    sInputData.pak = 0;
-}
-
 void reset_controller_inputs(void) {
-    bzero(&sInputData, sizeof(Input));
+    bzero(&gInputData, sizeof(Input));
     for (int i = 0; i < INPUT_TOTAL; i++) {
-        sInputData.button[INPUT_PRESSED][i] = 250;
-        sInputData.button[INPUT_RELEASED][i] = 250;
+        gInputData.button[INPUT_PRESSED][i] = 250;
+        gInputData.button[INPUT_RELEASED][i] = 250;
     }
 }
 
@@ -53,7 +47,7 @@ void update_inputs(int updateRate) {
 
     sPakDetectionTimer -= updateRate;
     if (sPakDetectionTimer <= 0) {
-        sInputData.pak = identify_accessory(p);
+        gInputData.pak = identify_accessory(p);
         sPakDetectionTimer = timer_int(120);
     }
 
@@ -64,7 +58,7 @@ void update_inputs(int updateRate) {
         }
     }
 
-    Input *controller = &sInputData;
+    Input *controller = &gInputData;
     struct controller_data pad;
     for (int i = 0; i < 3; i++) {
         switch (i) {
@@ -161,39 +155,39 @@ void update_inputs(int updateRate) {
 }
 
 int get_input_pressed(int input, int numFrames) {
-    return sInputData.button[INPUT_PRESSED][input] <= numFrames;
+    return gInputData.button[INPUT_PRESSED][input] <= numFrames;
 }
 
 int get_input_held(int input) {
-    return sInputData.button[INPUT_HELD][input] == 0;
+    return gInputData.button[INPUT_HELD][input] == 0;
 }
 
 int get_input_released(int input, int numFrames) {
-    return sInputData.button[INPUT_RELEASED][input] <= numFrames;
+    return gInputData.button[INPUT_RELEASED][input] <= numFrames;
 }
 
 int get_stick_x(int type) {
-    return sInputData.stickX[type];
+    return gInputData.stickX[type];
 }
 
 int get_stick_y(int type) {
-    return sInputData.stickY[type];
+    return gInputData.stickY[type];
 }
 
 short get_stick_angle(int type) {
-    return sInputData.stickAngle[type];
+    return gInputData.stickAngle[type];
 }
 
 float get_stick_mag(int type) {
-    return sInputData.stickMag[type];
+    return gInputData.stickMag[type];
 }
 
 int get_controller_type(void) {
-    return sInputData.type;
+    return gInputData.type;
 }
 
 void rumble_set(int timer) {
-    if (sInputData.pak != ACCESSORY_RUMBLEPAK) {
+    if (gInputData.pak != ACCESSORY_RUMBLEPAK) {
         return;
     }
 
@@ -209,6 +203,6 @@ void rumble_set(int timer) {
  * Sets the press timer to maximum, effectively making it so the button hasn't been touched.
 */
 void clear_input(int input) {
-    sInputData.button[INPUT_PRESSED][input] = 250;
-    sInputData.button[INPUT_RELEASED][input] = 250;
+    gInputData.button[INPUT_PRESSED][input] = 250;
+    gInputData.button[INPUT_RELEASED][input] = 250;
 }

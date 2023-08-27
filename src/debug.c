@@ -71,7 +71,7 @@ void get_cpu_time(int diff) {
     gDebugData->cpuTime[gDebugData->iteration] += time;
     gDebugData->cpuTime[TIME_AGGREGATE] += time;
 }
-extern Input sInputData;;
+extern Input gInputData;;
 void get_rsp_time(int diff) {
     int time = (diff * 10) / 625;
     if (time > 99999) {

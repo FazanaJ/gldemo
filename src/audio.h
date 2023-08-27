@@ -34,8 +34,8 @@ typedef struct SoundData {
     wav64_t sound;
 } SoundData;
 
-extern float sMusicVolume;
-extern float sSoundVolume;
+extern float gMusicVolume;
+extern float gSoundVolume;
 
 void init_audio(void);
 void audio_loop(int updateRate, float updateRateF);

@@ -196,23 +196,6 @@ Particle *allocate_particle(void) {
     return newParticle;
 }
 
-void projectile_init(Object *obj) {
-    ProjectileData *data = obj->data;
-
-    data->life = timer_int(60);
-
-}
-
-void projectile_loop(Object *obj, int updateRate, float updateRateF) {
-    ProjectileData *data = obj->data;
-
-    data->life --;
-
-    if (data->life == 0) {
-        delete_object(obj);
-    }
-}
-
 void object_move(Object *obj, float updateRateF) {
     if (obj->forwardVel != 0.0f) {
         obj->pos[0] += ((obj->forwardVel * sins(obj->moveAngle[1])) / 20.0f) * updateRateF;
@@ -241,14 +224,14 @@ void object_gravity(Object *obj, float updateRateF) {
 static void (*gObjectInits[])(Object *obj) = {
     NULL,
     player_init,
-    projectile_init,
+    NULL,
     NULL,
 };
 
 static void (*gObjectLoops[])(Object *obj, int updateRate, float updateRateF) = {
     0,
     player_loop,
-    projectile_loop,
+    NULL,
     NULL,
 };
 

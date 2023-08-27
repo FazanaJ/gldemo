@@ -208,9 +208,9 @@ void menu_change_pal60(void) {
 }
 
 void menu_set_sound(void) {
-    sMusicVolume = (float) gConfig.musicVolume / (float) 9.0f;
-    sSoundVolume = (float) gConfig.soundVolume / (float) 9.0f;
-    set_music_volume(sMusicVolume);
+    gMusicVolume = (float) gConfig.musicVolume / (float) 9.0f;
+    gSoundVolume = (float) gConfig.soundVolume / (float) 9.0f;
+    set_music_volume(gMusicVolume);
 }
 
 static MenuOption sMenuOptions[] = {

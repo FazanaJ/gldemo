@@ -52,8 +52,8 @@ typedef struct Input {
 
 extern int gCurrentController;
 extern struct controller_data gController;
+extern Input gInputData;
 
-void init_controller(void);
 void update_inputs(int updateRate);
 int get_input_pressed(int input, int numFrames);
 int get_input_held(int input);
