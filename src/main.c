@@ -70,9 +70,16 @@ void init_video(void) {
 
 void memory_error_screen(void) {
     if (get_memory_size() == 0x400000) {
-        display_init(RESOLUTION_320x240, DEPTH_16_BPP, 1, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
-        sprite_t *background = sprite_load(asset_dir("memory_error.rgba16", DFS_SPRITE));
-        graphics_draw_sprite(display_get(), 0, 0, background);
+        rdpq_init();
+        display_init(RESOLUTION_640x480, DEPTH_16_BPP, 1, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
+        surface_t *disp = display_get();
+        rdpq_attach(disp, NULL);
+        rdpq_set_mode_copy(true);
+        sprite_t *background = sprite_load(asset_dir("memory_error.ci8", DFS_SPRITE));
+        rdpq_mode_tlut(TLUT_RGBA16);
+        rdpq_tex_upload_tlut(sprite_get_palette(background), 0, 256);
+        rdpq_sprite_blit(background, 0, 0, NULL);
+        rdpq_detach_show();
         while (1);
     }
 }
@@ -159,7 +166,6 @@ int main(void) {
         process_menus(updateRate, updateRateF);
         render_game(updateRate, updateRateF);
         get_cpu_time(DEBUG_SNAPSHOT_1_END);
-        
         DEBUG_SNAPSHOT_1_RESET();
         process_profiler();
         if (gDebugData && gDebugData->enabled) {

@@ -33,10 +33,12 @@ int sPrevTextureID;
 MaterialList *gMaterialListHead;
 MaterialList *gMaterialListTail;
 static Material *sCurrentMaterial;
-short gNumTextures;
-short gNumTextureLoads;
 static rspq_block_t *sParticleMaterialBlock;
 rdpq_font_t *gFonts[FONT_TOTAL];
+#ifdef PUPPYPRINT_DEBUG
+short gNumTextures;
+short gNumTextureLoads;
+#endif
 
 void init_materials(void) {
     bzero(&sRenderSettings, sizeof(RenderSettings));
@@ -44,8 +46,10 @@ void init_materials(void) {
     sPrevTextureID = 0;
     gMaterialListHead = NULL;
     gMaterialListTail = NULL;
+#ifdef PUPPYPRINT_DEBUG
     gNumTextures = 0;
     gNumTextureLoads = 0;
+#endif
     sCurrentMaterial = NULL;
     rspq_block_begin();
     glDisable(GL_ALPHA_TEST);
@@ -155,7 +159,9 @@ int load_texture(Material *material) {
     bind_new_texture(list);
     list->loadTimer = 10;
     material->index = list;
+#ifdef PUPPYPRINT_DEBUG
     gNumTextures++;
+#endif
     return 0;
 }
 
@@ -182,7 +188,9 @@ void free_material(MaterialList *material) {
     sprite_free(material->sprite);
     glDeleteTextures(1, &material->texture);
     free(material);
+#ifdef PUPPYPRINT_DEBUG
     gNumTextures--;
+#endif
 }
 
 void cycle_textures(int updateRate) {
@@ -202,7 +210,9 @@ void cycle_textures(int updateRate) {
             break;
         }
     }
+#ifdef PUPPYPRINT_DEBUG
     gNumTextureLoads = 0;
+#endif
     sPrevRenderFlags = 0;
     sPrevTextureID = 0;
     sCurrentMaterial = 0;
@@ -359,7 +369,9 @@ void set_material(Material *material, int flags) {
             material->index->loadTimer = 10;
             glBindTexture(GL_TEXTURE_2D, material->index->texture);
             sPrevTextureID = material->textureID;
+#ifdef PUPPYPRINT_DEBUG
             gNumTextureLoads++;
+#endif
         }
     } else {
         if (sRenderSettings.texture) {

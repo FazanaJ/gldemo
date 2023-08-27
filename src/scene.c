@@ -181,5 +181,7 @@ void load_scene(int sceneID) {
     }
     setup_fog(sEnvironmentLight);
     camera_init();
+#ifdef PUPPYPRINT_DEBUG
     debugf("Scene %d loaded in %2.3fs.\n", sceneID, ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
+#endif
 }

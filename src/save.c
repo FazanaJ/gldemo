@@ -6,6 +6,7 @@
 #include "main.h"
 #include "menu.h"
 #include "audio.h"
+#include "assets.h"
 
 #define SAVE_MAGIC_NUMBER 0x14 // ¡Qué grande eres magic!
 #define EXPECTED_MEMSIZE sizeof(ConfigBits)
@@ -59,11 +60,25 @@ void write_config(void) {
     debugf("Config saved.\n");
 }
 
+void save_doesnt_exist(void) {
+    rdpq_init();
+    display_init(RESOLUTION_640x480, DEPTH_16_BPP, 1, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
+    surface_t *disp = display_get();
+    rdpq_attach(disp, NULL);
+    rdpq_set_mode_copy(true);
+    sprite_t *background = sprite_load(asset_dir("save_error.ci8", DFS_SPRITE));
+    rdpq_mode_tlut(TLUT_RGBA16);
+    rdpq_tex_upload_tlut(sprite_get_palette(background), 0, 256);
+    rdpq_sprite_blit(background, 0, 0, NULL);
+    rdpq_detach_show();
+    while (1);
+}
+
 void init_save_data(void) {
     const eeprom_type_t eeprom_type = eeprom_present();
     if (eeprom_type != EEPROM_16K) {
         debugf("Eeprom doesn't exist!\n");
-        return;
+        save_doesnt_exist();
     }
     int result = eepfs_init(eeprom_16k_files, sizeof(eeprom_16k_files) / sizeof(eepfs_entry_t));
     if (result != EEPFS_ESUCCESS) {

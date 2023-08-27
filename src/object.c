@@ -20,9 +20,11 @@ ParticleList *gParticleListHead = NULL;
 ParticleList *gParticleListTail = NULL;
 VoidList *gOverlayListHead = NULL;
 VoidList *gOverlayListTail = NULL;
+#ifdef PUPPYPRINT_DEBUG
 short gNumObjects = 0;
 short gNumClutter = 0;
 short gNumParticles = 0;
+#endif
 char gGamePaused = false;
 
 char *sObjectOverlays[] = {
@@ -133,9 +135,9 @@ Object *allocate_object(void) {
     newObj->flags = OBJ_FLAG_NONE;
     newObj->viewDist = SQR(300.0f);
     newObj->overlay = NULL;
-
+#ifdef PUPPYPRINT_DEBUG
     gNumObjects++;
-
+#endif
     return newObj;
 }
 
@@ -161,9 +163,9 @@ Clutter *allocate_clutter(void) {
     newClutter->gfx = NULL;
     newClutter->flags = OBJ_FLAG_NONE;
     newClutter->viewDist = SQR(200.0f);
-
+#ifdef PUPPYPRINT_DEBUG
     gNumClutter++;
-
+#endif
     return newClutter;
 }
 
@@ -188,9 +190,9 @@ Particle *allocate_particle(void) {
     }
     newParticle->material = NULL;
     newParticle->flags = OBJ_FLAG_NONE;
-
+#ifdef PUPPYPRINT_DEBUG
     gNumParticles++;
-
+#endif
     return newParticle;
 }
 
@@ -415,7 +417,9 @@ static void free_object(Object *obj) {
         free(obj->gfx);
     }
     free(obj);
+#ifdef PUPPYPRINT_DEBUG
     gNumObjects--;
+#endif
 }
 
 static void free_clutter(Clutter *obj) {
@@ -440,7 +444,9 @@ static void free_clutter(Clutter *obj) {
         free(obj->gfx);
     }
     free(obj);
+#ifdef PUPPYPRINT_DEBUG
     gNumClutter--;
+#endif
 }
 
 static void free_particle(Particle *obj) {
@@ -465,7 +471,9 @@ static void free_particle(Particle *obj) {
         free(obj->material);
     }
     free(obj);
+#ifdef PUPPYPRINT_DEBUG
     gNumParticles--;
+#endif
 }
 
 /**

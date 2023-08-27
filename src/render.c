@@ -428,14 +428,21 @@ void apply_render_settings(void) {
 int showAll = 1;
 
 void find_material_list(RenderNode *node) {
-    /*if (showAll && gPrevMatList && node->material->textureID == gPrevMatList->entryHead->material->textureID) {
+    // idk if this section is faster, yet.
+    if (showAll && gPrevMatList && node->material->textureID == gPrevMatList->entryHead->material->textureID) {
+        RenderList *list = gPrevMatList;
         if (list->entryHead == gRenderNodeHead) {
             gRenderNodeHead = node;
+        } else {
+            list->entryHead->prev->next = node;
         }
         node->next = list->entryHead;
+        node->prev = list->entryHead->prev;
         list->entryHead = node;
+        gPrevMatList = list;
         return;
-    }*/
+    }
+    // -----
     RenderList *matList;
     if (gRenderNodeHead == NULL) {
         gRenderNodeHead = node;
@@ -454,9 +461,6 @@ void find_material_list(RenderNode *node) {
                     node->next = list->entryHead;
                     node->prev = list->entryHead->prev;
                     list->entryHead = node;
-                    //node->next = list->entryHead;
-                    //list->entryHead->next = node;
-                    //list->entryHead = node;
                     gPrevMatList = list;
                     return;
                 }
