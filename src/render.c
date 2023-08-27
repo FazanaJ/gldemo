@@ -140,7 +140,7 @@ float lookat_dot(const float *a, const float *b) {
     return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
 
-void mtx_translate_rotate(short angleX, short angleY, short angleZ, GLfloat x, GLfloat y, GLfloat z) {
+void mtx_translate_rotate(Matrix *mtx, short angleX, short angleY, short angleZ, GLfloat x, GLfloat y, GLfloat z) {
     float sx = sins(angleX);
     float cx = coss(angleX);
 
@@ -150,17 +150,25 @@ void mtx_translate_rotate(short angleX, short angleY, short angleZ, GLfloat x, G
     float sz = sins(angleZ);
     float cz = coss(angleZ);
 
-    Matrix rotation = (Matrix){ .m={
-        {cy * cz, cy * sz, -sy, 0.0f},
-        {sx * sy * cz - cx * sz, sx * sy * sz + cx * cz, sx * cy, 0.0f},
-        {cx * sy * cz + sx * sz, cx * sy * sz - sx * cz, cx * cy, 0.0f},
-        {x, y, z, 1.0f},
-    }};
-
-    glMultMatrixf(rotation.m[0]);
+    mtx->m[0][0] = (cy * cz);
+    mtx->m[0][1] = (cy * sz);
+    mtx->m[0][2] = -sy;
+    mtx->m[0][3] = 0.0f;
+    mtx->m[1][0] = (sx * sy * cz - cx * sz);
+    mtx->m[1][1] = (sx * sy * sz + cx * cz);
+    mtx->m[1][2] = (sx * cy);
+    mtx->m[1][3] = 0.0f;
+    mtx->m[2][0] = (cx * sy * cz + sx * sz);
+    mtx->m[2][1] = (cx * sy * sz - sx * cz);
+    mtx->m[2][2] = (cx * cy);
+    mtx->m[2][3] = 0.0f;
+    mtx->m[3][0] = x;
+    mtx->m[3][1] = y;
+    mtx->m[3][2] = z;
+    mtx->m[3][3] = 1.0f;
 }
 
-void mtx_rotate(short angleX, short angleY, short angleZ) {
+void mtx_rotate(Matrix *mtx, short angleX, short angleY, short angleZ) {
     float sx = sins(angleX);
     float cx = coss(angleX);
 
@@ -170,17 +178,25 @@ void mtx_rotate(short angleX, short angleY, short angleZ) {
     float sz = sins(angleZ);
     float cz = coss(angleZ);
 
-    Matrix rotation = (Matrix){ .m={
-        {cy * cz, cy * sz, -sy, 0.0f},
-        {sx * sy * cz - cx * sz, sx * sy * sz + cx * cz, sx * cy, 0.0f},
-        {cx * sy * cz + sx * sz, cx * sy * sz - sx * cz, cx * cy, 0.0f},
-        {0.0f, 0.0f, 0.0f, 1.0f},
-    }};
-
-    glMultMatrixf(rotation.m[0]);
+    mtx->m[0][0] = (cy * cz);
+    mtx->m[0][1] = (cy * sz);
+    mtx->m[0][2] = -sy;
+    mtx->m[0][3] = 0.0f;
+    mtx->m[1][0] = (sx * sy * cz - cx * sz);
+    mtx->m[1][1] = (sx * sy * sz + cx * cz);
+    mtx->m[1][2] = (sx * cy);
+    mtx->m[1][3] = 0.0f;
+    mtx->m[2][0] = (cx * sy * cz + sx * sz);
+    mtx->m[2][1] = (cx * sy * sz - sx * cz);
+    mtx->m[2][2] = (cx * cy);
+    mtx->m[2][3] = 0.0f;
+    mtx->m[3][0] = 0.0f;
+    mtx->m[3][1] = 0.0f;
+    mtx->m[3][2] = 0.0f;
+    mtx->m[3][3] = 1.0f;
 }
 
-void mtx_translate_rotate_scale(short angleX, short angleY, short angleZ, GLfloat x, GLfloat y, GLfloat z, GLfloat scaleX, GLfloat scaleY, GLfloat scaleZ) {
+void mtx_translate_rotate_scale(Matrix *mtx, short angleX, short angleY, short angleZ, GLfloat x, GLfloat y, GLfloat z, GLfloat scaleX, GLfloat scaleY, GLfloat scaleZ) {
     float sx = sins(angleX);
     float cx = coss(angleX);
 
@@ -190,25 +206,22 @@ void mtx_translate_rotate_scale(short angleX, short angleY, short angleZ, GLfloa
     float sz = sins(angleZ);
     float cz = coss(angleZ);
 
-    Matrix rotation = (Matrix){ .m={
-        {cy * cz, cy * sz, -sy, 0.0f},
-        {sx * sy * cz - cx * sz, sx * sy * sz + cx * cz, sx * cy, 0.0f},
-        {cx * sy * cz + sx * sz, cx * sy * sz - sx * cz, cx * cy, 0.0f},
-        {x, y, z, 1.0f},
-    }};
-
-    glMultMatrixf(rotation.m[0]);
-
-    rotation.m[0][0] = scaleX;
-    rotation.m[0][1] = 0.0f;
-    rotation.m[1][0] = 0.0f;
-    rotation.m[1][1] = scaleY;
-    rotation.m[2][2] = scaleZ;
-    rotation.m[3][0] = 0.0f;
-    rotation.m[3][1] = 0.0f;
-    rotation.m[3][2] = 0.0f;
-
-    glMultMatrixf(rotation.m[0]);
+    mtx->m[0][0] = (cy * cz) * scaleX;
+    mtx->m[0][1] = (cy * sz) * scaleX;
+    mtx->m[0][2] = -sy * scaleX;
+    mtx->m[0][3] = 0.0f;
+    mtx->m[1][0] = (sx * sy * cz - cx * sz) * scaleY;
+    mtx->m[1][1] = (sx * sy * sz + cx * cz) * scaleY;
+    mtx->m[1][2] = (sx * cy) * scaleY;
+    mtx->m[1][3] = 0.0f;
+    mtx->m[2][0] = (cx * sy * cz + sx * sz) * scaleZ;
+    mtx->m[2][1] = (cx * sy * sz - sx * cz) * scaleZ;
+    mtx->m[2][2] = (cx * cy) * scaleZ;
+    mtx->m[2][3] = 0.0f;
+    mtx->m[3][0] = x;
+    mtx->m[3][1] = y;
+    mtx->m[3][2] = z;
+    mtx->m[3][3] = 1.0f;
 }
 
 void mtx_lookat(float eyex, float eyey, float eyez, float centerx, float centery, float centerz, float upx, float upy, float upz) {
@@ -256,27 +269,28 @@ void mtx_lookat(float eyex, float eyey, float eyez, float centerx, float centery
     glMultMatrixf(&m[0][0]);
 };
 
-void mtx_billboard(Matrix *dst, float x, float y, float z) {
+void mtx_billboard(Matrix *mtx, float x, float y, float z) {
     gBillboardMatrix.m[3][0] = x;
     gBillboardMatrix.m[3][1] = y;
     gBillboardMatrix.m[3][2] = z;
 
-    memcpy(dst, &gBillboardMatrix, sizeof(Matrix));
-
-    //glMultMatrixf(gBillboardMatrix.m[0]);
+    memcpy(mtx, &gBillboardMatrix, sizeof(Matrix));
 }
 
-void mtx_scale(float scaleX, float scaleY, float scaleZ) {
-    gScaleMatrix.m[3][0] = scaleX;
-    gScaleMatrix.m[3][1] = scaleY;
-    gScaleMatrix.m[3][2] = scaleZ;
-
-    glMultMatrixf(gScaleMatrix.m[0]);
+void mtx_scale(Matrix *mtx, float scaleX, float scaleY, float scaleZ) {
+    float s[3] = {scaleX, scaleY, scaleZ};
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            mtx->m[i][j] *= s[i];
+        }
+    }
 }
 
 void set_light(light_t light) {
     glPushMatrix();
-    mtx_rotate(light.direction[0], light.direction[1], light.direction[2]);
+    Matrix mtx;
+    mtx_rotate(&mtx, light.direction[0], light.direction[1], light.direction[2]);
+    glMultMatrixf(mtx.m[0]);
     glLightfv(GL_LIGHT0, GL_POSITION, light.position);
     glPopMatrix();
 }
@@ -511,8 +525,10 @@ void render_particles(void) {
         if (particle->material) {
             set_texture(particle->material);
         }
-        //mtx_billboard(particle->pos[0], particle->pos[1], particle->pos[2]);
-        mtx_scale(particle->scale[0], particle->scale[1], particle->scale[2]);
+        Matrix mtx;
+        mtx_billboard(&mtx, particle->pos[0], particle->pos[1], particle->pos[2]);
+        mtx_scale(&mtx, particle->scale[0], particle->scale[1], particle->scale[2]);
+        glMultMatrixf((GLfloat *) mtx.m);
         rspq_block_run(sParticleBlock);
         glPopMatrix();
         list = list->next;
@@ -566,39 +582,32 @@ void render_clutter(void) {
 }
 
 void render_objects(void) {
-    if (gPlayer) {
-        glPushMatrix();
-        mtx_translate_rotate_scale(0, gPlayer->faceAngle[1], 0, gPlayer->pos[0], gPlayer->pos[1], gPlayer->pos[2], 9.0f, 8.0f, 9.0f);
-        set_material(&gTempMaterials[1], MATERIAL_NULL);
-        if (sPlayerBlock == NULL) {
-            rspq_block_begin();
-            model64_draw(gPlayerModel);
-            sPlayerBlock = rspq_block_end();
-        }
-        rspq_block_run(sPlayerBlock);
-        glPopMatrix();
+    if (sPlayerBlock == NULL) {
+        rspq_block_begin();
+        model64_draw(gPlayerModel);
+        sPlayerBlock = rspq_block_end();
     }
     
-    ObjectList *list2 = gObjectListHead;
-    Object *obj2;
+    ObjectList *list = gObjectListHead;
+    Object *obj;
     
-    while (list2) {
-        obj2 = list2->obj;
-        if (obj2->objectID == OBJ_PROJECTILE) {
-            glPushMatrix();
-            set_material(&gTempMaterials[2], MATERIAL_NULL);
-            //mtx_billboard(obj2->pos[0], obj2->pos[1], obj2->pos[2]);
-            rspq_block_run(sBushBlock);
-            glPopMatrix();
-        } else if (obj2->objectID == OBJ_NPC) {
-            glPushMatrix();
-            set_material(&gTempMaterials[1], MATERIAL_NULL);
-            mtx_translate_rotate_scale(0, obj2->faceAngle[1], 0, obj2->pos[0], obj2->pos[1], obj2->pos[2], 9.0f, 8.0f, 9.0f);
-            rspq_block_run(sPlayerBlock);
-            glPopMatrix();
+    while (list) {
+        obj = list->obj;
+        if (obj->objectID == OBJ_PROJECTILE) {
+            RenderNode *entry = malloc(sizeof(RenderNode));
+            entry->matrix = malloc(sizeof(Matrix));
+            mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
+            add_render_node(entry, sBushBlock, &gTempMaterials[2], MATERIAL_NULL);
+        } else if (obj->objectID == OBJ_NPC || obj->objectID == OBJ_PLAYER) {
+            RenderNode *entry = malloc(sizeof(RenderNode));
+            entry->matrix = malloc(sizeof(Matrix));
+            mtx_translate_rotate_scale(entry->matrix, 0, obj->faceAngle[1], 0, obj->pos[0], obj->pos[1], obj->pos[2], 9.0f, 8.0f, 9.0f);
+            add_render_node(entry, sPlayerBlock, &gTempMaterials[1], MATERIAL_NULL);
         }
-        list2 = list2->next;
+        list = list->next;
     }
+
+    pop_render_list();
     
     if (sDecal1Block == NULL) {
         rspq_block_begin();
