@@ -69,7 +69,7 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
 
     if (get_input_pressed(INPUT_B, 0) && gGameTimer > 120) {
         play_sound_spatial(SOUND_LASER, obj->pos);
-        Object *bullet = spawn_object_pos(OBJ_PROJECTILE, obj->pos[0], obj->pos[1], obj->pos[2]);
+        Object *bullet = spawn_object_pos(OBJ_PROJECTILE, obj->pos[0], obj->pos[1] + 5.0f, obj->pos[2]);
         bullet->forwardVel = 20.0f;
         bullet->moveAngle[1] = obj->faceAngle[1];
         rumble_set(3);
@@ -84,7 +84,7 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
             Particle *part;
             play_sound_spatial_pitch(SOUND_CANNON, obj->pos, 1.0f);
             for (int i = 0; i < 7; i++) {
-                part = spawn_particle(OBJ_NULL, obj->pos[0], obj->pos[1], obj->pos[2] + 5.0f);
+                part = spawn_particle(OBJ_NULL, obj->pos[0], obj->pos[1] + 5.0f, obj->pos[2]);
                 part->yVel = 0.0f;
                 part->yVelIncrease = 0.01f;
                 part->moveAngle = random_float() * 0x10000;

@@ -597,7 +597,7 @@ void render_objects(void) {
             RenderNode *entry = malloc(sizeof(RenderNode));
             entry->matrix = malloc(sizeof(Matrix));
             mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
-            add_render_node(entry, sBushBlock, &gTempMaterials[2], MATERIAL_NULL);
+            add_render_node(entry, sParticleBlock, &gTempMaterials[2], MATERIAL_NULL);
         } else if (obj->objectID == OBJ_NPC || obj->objectID == OBJ_PLAYER) {
             RenderNode *entry = malloc(sizeof(RenderNode));
             entry->matrix = malloc(sizeof(Matrix));
