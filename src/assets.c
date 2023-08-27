@@ -29,6 +29,7 @@ char *gFontAssetTable[] = {
 
 RenderSettings sRenderSettings;
 int sPrevRenderFlags;
+int sPrevTextureID;
 MaterialList *gMaterialListHead;
 MaterialList *gMaterialListTail;
 static Material *sCurrentMaterial;
@@ -40,6 +41,7 @@ rdpq_font_t *gFonts[FONT_TOTAL];
 void init_materials(void) {
     bzero(&sRenderSettings, sizeof(RenderSettings));
     sPrevRenderFlags = 0;
+    sPrevTextureID = 0;
     gMaterialListHead = NULL;
     gMaterialListTail = NULL;
     gNumTextures = 0;
@@ -202,6 +204,7 @@ void cycle_textures(int updateRate) {
     }
     gNumTextureLoads = 0;
     sPrevRenderFlags = 0;
+    sPrevTextureID = 0;
     sCurrentMaterial = 0;
     sPrevRenderFlags = 0;
     bzero(&sRenderSettings, sizeof(RenderSettings));
@@ -341,19 +344,23 @@ void set_material(Material *material, int flags) {
         return;
     }
     if (material->textureID != -1) {
-        //if (material->index == NULL) {
-            if (load_texture(material) == -1) {
-                get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
-                return;
+        if (sPrevTextureID != material->textureID) {
+            //if (material->index == NULL) {
+                if (load_texture(material) == -1) {
+                    get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
+                    return;
+                }
+            //}
+            
+            if (!sRenderSettings.texture) {
+                glEnable(GL_TEXTURE_2D);
+                sRenderSettings.texture = true;
             }
-        //}
-        
-        if (!sRenderSettings.texture) {
-            glEnable(GL_TEXTURE_2D);
-            sRenderSettings.texture = true;
+            material->index->loadTimer = 10;
+            glBindTexture(GL_TEXTURE_2D, material->index->texture);
+            sPrevTextureID = material->textureID;
+            gNumTextureLoads++;
         }
-        material->index->loadTimer = 10;
-        glBindTexture(GL_TEXTURE_2D, material->index->texture);
     } else {
         if (sRenderSettings.texture) {
             glDisable(GL_TEXTURE_2D);
@@ -361,7 +368,6 @@ void set_material(Material *material, int flags) {
         }
     }
 
-    gNumTextureLoads++;
     newFlags:
     if (sPrevRenderFlags != flags) {
         set_render_settings(flags);

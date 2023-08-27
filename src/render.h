@@ -26,6 +26,7 @@ typedef struct RenderNode {
     Material *material;
     int flags;
     struct RenderNode *next;
+    struct RenderNode *prev;
 } RenderNode;
 
 typedef struct RenderList {

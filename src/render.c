@@ -16,12 +16,14 @@
 #include "menu.h"
 #include "object.h"
 #include "scene.h"
+#include "input.h"
 
 float gAspectRatio = 1.0f;
 RenderNode *gRenderNodeHead = NULL;
 RenderNode *gRenderNodeTail = NULL;
 RenderList *gMateriallistHead = NULL;
 RenderList *gMateriallistTail = NULL;
+RenderList *gPrevMatList = NULL;
 char gZTargetTimer = 0;
 static rspq_block_t *sRenderEndBlock;
 static rspq_block_t *sRenderSkyBlock;
@@ -409,22 +411,43 @@ void apply_render_settings(void) {
     }
 }
 
+int showAll = 1;
+
 void find_material_list(RenderNode *node) {
+    /*if (showAll && gPrevMatList && node->material->textureID == gPrevMatList->entryHead->material->textureID) {
+        if (list->entryHead == gRenderNodeHead) {
+            gRenderNodeHead = node;
+        }
+        node->next = list->entryHead;
+        list->entryHead = node;
+        return;
+    }*/
     RenderList *matList;
     if (gRenderNodeHead == NULL) {
         gRenderNodeHead = node;
         matList = malloc(sizeof(RenderList));
         gMateriallistHead = matList;
     } else {
-        RenderList *list = gMateriallistHead;
-        while (list) {
-            if (list->entryHead->material == node->material) {
-                node->next = list->entryHead->next;
-                list->entryHead->next = node;
-                list->entryHead = node;
-                return;
+        if (showAll) {
+            RenderList *list = gMateriallistHead;
+            while (list) {
+                if (list->entryHead->material->textureID == node->material->textureID) {
+                    if (list->entryHead == gRenderNodeHead) {
+                        gRenderNodeHead = node;
+                    } else {
+                        list->entryHead->prev->next = node;
+                    }
+                    node->next = list->entryHead;
+                    node->prev = list->entryHead->prev;
+                    list->entryHead = node;
+                    //node->next = list->entryHead;
+                    //list->entryHead->next = node;
+                    //list->entryHead = node;
+                    gPrevMatList = list;
+                    return;
+                }
+                list = list->next;
             }
-            list = list->next;
         }
         matList = malloc(sizeof(RenderList));
         gMateriallistTail->next = matList;
@@ -434,7 +457,9 @@ void find_material_list(RenderNode *node) {
     matList->entryHead = node;
     matList->next = NULL;
     gMateriallistTail = matList;
+    node->prev = gRenderNodeTail;
     gRenderNodeTail = node;
+    gPrevMatList = matList;
 }
 
 void add_render_node(RenderNode *entry, rspq_block_t *block, Material *material, int flags) {
@@ -444,24 +469,6 @@ void add_render_node(RenderNode *entry, rspq_block_t *block, Material *material,
     entry->flags = flags;
     find_material_list(entry);
     get_time_snapshot(PP_BATCH, DEBUG_SNAPSHOT_1_END);
-}
-
-void render_particles(void) {
-    ParticleList *list = gParticleListHead;
-    Particle *particle;
-    
-    while (list) {
-        particle = list->particle;
-        glPushMatrix();
-        if (particle->material) {
-            set_texture(particle->material);
-        }
-        //mtx_billboard(particle->pos[0], particle->pos[1], particle->pos[2]);
-        mtx_scale(particle->scale[0], particle->scale[1], particle->scale[2]);
-        rspq_block_run(sParticleBlock);
-        glPopMatrix();
-        list = list->next;
-    }
 }
 
 void pop_render_list(void) {
@@ -491,6 +498,25 @@ void pop_render_list(void) {
     gRenderNodeTail = NULL;
     gMateriallistHead = NULL;
     gMateriallistTail = NULL;
+    gPrevMatList = NULL;
+}
+
+void render_particles(void) {
+    ParticleList *list = gParticleListHead;
+    Particle *particle;
+    
+    while (list) {
+        particle = list->particle;
+        glPushMatrix();
+        if (particle->material) {
+            set_texture(particle->material);
+        }
+        //mtx_billboard(particle->pos[0], particle->pos[1], particle->pos[2]);
+        mtx_scale(particle->scale[0], particle->scale[1], particle->scale[2]);
+        rspq_block_run(sParticleBlock);
+        glPopMatrix();
+        list = list->next;
+    }
 }
 
 void render_world(void) {
@@ -631,4 +657,8 @@ void render_game(int updateRate, float updateRateF) {
     gl_context_end();
     render_hud(updateRate, updateRateF);
     render_menus(updateRate, updateRateF);
+
+    if (get_input_pressed(INPUT_CRIGHT, 0)) {
+        showAll ^= 1;
+    }
 }

@@ -34,7 +34,7 @@ SceneIDs sSceneTable[] = {
 };
 
 char sSceneTexIDs[][4] = {
-    {6, 7},
+    {7, 6},
     {4, 0, 5},
 };
 
@@ -134,9 +134,9 @@ void load_scene(int sceneID) {
                 m->mesh = model64_get_primitive(mesh, j);
                 m->material = malloc(sizeof(Material));
                 m->material->index = NULL;
-                m->material->textureID = sSceneTexIDs[sCurrentScene->sceneID][i];
+                m->material->textureID = sSceneTexIDs[sCurrentScene->sceneID][j];
                 m->material->flags = 0;
-                m->flags = sSceneMeshFlags[sCurrentScene->sceneID][i];
+                m->flags = sSceneMeshFlags[sCurrentScene->sceneID][j];
                 m->next = NULL;
                 rspq_block_begin();
                 glPushMatrix();
