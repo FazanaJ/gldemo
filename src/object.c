@@ -20,6 +20,8 @@ ParticleList *gParticleListHead = NULL;
 ParticleList *gParticleListTail = NULL;
 VoidList *gOverlayListHead = NULL;
 VoidList *gOverlayListTail = NULL;
+ModelList *gModelIDListHead = NULL;
+ModelList *gModelIDListTail = NULL;
 #ifdef PUPPYPRINT_DEBUG
 short gNumObjects = 0;
 short gNumClutter = 0;
@@ -73,6 +75,45 @@ void init_object_behaviour(Object *obj, int objectID) {
     if (entry->initFunc) {
         (*entry->initFunc)(obj);
     }
+}
+
+void check_unused_model(Object *obj, ModelList *model) {
+    ObjectList *objList = gObjectListHead;
+    Object *listObj;
+
+    while (objList) {
+        listObj = objList->obj;
+        if (listObj->gfx->modelID == model->id && listObj != obj) {
+            return;
+        }
+        objList = objList->next;
+    }
+
+    free(model->model64);
+    ObjectModel *m = model->entry;
+    ObjectModel *prevM = NULL;
+    while (prevM) {
+        free(prevM);
+        prevM = m;
+        m = m->next;
+    }
+    if (model == gModelIDListHead) {
+        if (gModelIDListHead->next) {
+            gModelIDListHead = gModelIDListHead->next;
+            gModelIDListHead->prev = NULL;
+        } else {
+            gModelIDListHead = NULL;
+        }
+    } else {
+        if (model == gModelIDListTail) {
+            gModelIDListTail = gModelIDListTail->prev;
+        }
+        model->prev->next = model->next;
+        if (model->next) {
+            model->next->prev = model->prev;
+        }
+    }
+    free(model);
 }
 
 void check_unused_overlay(Object *obj, VoidList *overlay) {
@@ -221,17 +262,34 @@ void object_gravity(Object *obj, float updateRateF) {
     }
 }
 
+
+void projectile_init(Object *obj) {
+    ProjectileData *data = obj->data;
+
+    data->life = timer_int(60);
+}
+
+void projectile_loop(Object *obj, int updateRate, float updateRateF) {
+    ProjectileData *data = obj->data;
+
+    data->life --;
+
+    if (data->life == 0) {
+        delete_object(obj);
+    }
+}
+
 static void (*gObjectInits[])(Object *obj) = {
     NULL,
     player_init,
-    NULL,
+    projectile_init,
     NULL,
 };
 
 static void (*gObjectLoops[])(Object *obj, int updateRate, float updateRateF) = {
     0,
     player_loop,
-    NULL,
+    projectile_loop,
     NULL,
 };
 
@@ -249,6 +307,88 @@ static const int gObjectFlags[] = {
     0,
 };
 
+char *gModelIDs[] = {
+    "humanoid",
+    "rock",
+    "bottombillboard"
+};
+
+short gObjectModels[] = {
+    0,
+    1,
+    2,
+    1,
+};
+
+//TODO: Fix memory leak somewhere.
+void load_object_model(Object *obj, int objectID) {
+    obj->gfx = malloc(sizeof(ObjectGraphics));
+    obj->gfx->envColour[0] = 0xFF;
+    obj->gfx->envColour[1] = 0xFF;
+    obj->gfx->envColour[2] = 0xFF;
+    obj->gfx->primColour[0] = 0xFF;
+    obj->gfx->primColour[1] = 0xFF;
+    obj->gfx->primColour[2] = 0xFF;
+    obj->gfx->opacity = 0xFF;
+    int modelID = gObjectModels[objectID];
+    obj->gfx->modelID = modelID;
+
+    if (gModelIDListHead) {
+        ModelList *modelList = gModelIDListHead;
+        while (modelList) {
+            if (modelList->id == modelID) {
+                obj->gfx->model = modelList->entry;
+                return;
+            }
+            modelList = modelList->next;
+        }
+    }
+
+    ModelList *list = malloc(sizeof(ModelList));
+    list->entry = NULL;
+
+    if (gModelIDListHead == NULL) {
+        gModelIDListHead = list;
+        list->prev = NULL;
+    } else {
+        gModelIDListTail->next = list;
+        list->prev = gModelIDListTail;
+    }
+    gModelIDListTail = list;
+
+    list->model64 = model64_load(asset_dir(gModelIDs[modelID - 1], DFS_MODEL64));
+    list->entry = NULL;
+    int numMeshes = model64_get_mesh_count(list->model64);
+    ObjectModel *tail = NULL;
+    for (int i = 0; i < numMeshes; i++) {
+        mesh_t *mesh = model64_get_mesh(list->model64, i);
+        int primCount = model64_get_primitive_count(mesh);
+        for (int j = 0; j < primCount; j++) {
+            ObjectModel *m = malloc(sizeof(ObjectModel));
+            primitive_t *prim = model64_get_primitive(mesh, j);
+            m->material.flags = MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_LIGHTING | MATERIAL_VTXCOL;
+            m->material.textureID = -1;
+            m->material.index = NULL;
+            m->next = NULL;
+            rspq_block_begin();
+            model64_draw_primitive(prim);
+            m->block = rspq_block_end();
+
+            if (list->entry == NULL) {
+                list->entry = m;
+            } else {
+                tail->next = m;
+            }
+            tail = m;
+        }
+    }
+
+    obj->gfx->model = list->entry;
+    list->next = NULL;
+    list->timer = 10;
+    list->id = modelID;
+}
+
 static void set_object_functions(Object *obj, int objectID) {
     void (*initFunc)(Object *obj) = gObjectInits[objectID];
     if (gObjectData[objectID]) {
@@ -260,6 +400,9 @@ static void set_object_functions(Object *obj, int objectID) {
     }
     obj->loopFunc = gObjectLoops[objectID];
     obj->flags = gObjectFlags[objectID];
+    if (gObjectModels[objectID]) {
+        load_object_model(obj, objectID);
+    }
 }
 
 Object *spawn_object_pos(int objectID, float x, float y, float z) {
@@ -280,9 +423,7 @@ Object *spawn_object_pos(int objectID, float x, float y, float z) {
     obj->scale[1] = 1.0f;
     obj->scale[2] = 1.0f;
     obj->objectID = objectID;
-    if (objectID != OBJ_NULL) {
-        set_object_functions(obj, objectID);
-    }
+    set_object_functions(obj, objectID);
     return obj;
 }
 

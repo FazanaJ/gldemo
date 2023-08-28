@@ -30,17 +30,17 @@ enum ClutterIDs {
 
 typedef struct ObjectModel {
 	Material material;
-	Matrix matrix;
 	struct ObjectModel *next;
 	void (*func)(struct Object *obj, int updateRate, float updateRateF);
-	mesh_t *mesh;
+	rspq_block_t *block;
 } ObjectModel;
 
 typedef struct ObjectGraphics {
-	ObjectModel model;
+	ObjectModel *model;
 	char envColour[3];
 	char primColour[3];
 	char opacity;
+	short modelID;
 } ObjectGraphics;
 
 typedef struct Object {
@@ -143,6 +143,15 @@ typedef struct VoidList {
 	short id;
 	short timer;
 } VoidList;
+
+typedef struct ModelList {
+	void *model64;
+	ObjectModel *entry;
+	struct ModelList *next;
+	struct ModelList *prev;
+	short id;
+	short timer;
+} ModelList;
 
 typedef struct ObjectEntry {
     void (*initFunc)(Object *obj);

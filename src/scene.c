@@ -147,11 +147,10 @@ void load_scene(int sceneID) {
 
                 if (s->meshList == NULL) {
                     s->meshList = m;
-                    tail = m;
                 } else {
                     tail->next = m;
-                    tail = m;
                 }
+                tail = m;
             }
         }
     }

@@ -597,16 +597,15 @@ void render_objects(void) {
     
     while (list) {
         obj = list->obj;
-        if (obj->objectID == OBJ_PROJECTILE) {
-            RenderNode *entry = malloc(sizeof(RenderNode));
-            entry->matrix = malloc(sizeof(Matrix));
-            mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
-            add_render_node(entry, sParticleBlock, &gTempMaterials[2], MATERIAL_NULL);
-        } else if (obj->objectID == OBJ_NPC || obj->objectID == OBJ_PLAYER) {
-            RenderNode *entry = malloc(sizeof(RenderNode));
-            entry->matrix = malloc(sizeof(Matrix));
-            mtx_translate_rotate_scale(entry->matrix, 0, obj->faceAngle[1], 0, obj->pos[0], obj->pos[1], obj->pos[2], 9.0f, 8.0f, 9.0f);
-            add_render_node(entry, sPlayerBlock, &gTempMaterials[1], MATERIAL_NULL);
+        if (obj->gfx) { 
+            ObjectModel *m = obj->gfx->model;
+            while (m) {
+                RenderNode *entry = malloc(sizeof(RenderNode));
+                entry->matrix = malloc(sizeof(Matrix));
+                mtx_translate_rotate_scale(entry->matrix, 0, obj->faceAngle[1], 0, obj->pos[0], obj->pos[1], obj->pos[2], 9.0f, 8.0f, 9.0f);
+                add_render_node(entry, m->block, &m->material, MATERIAL_NULL);
+                m = m->next;
+            }
         }
         list = list->next;
     }
