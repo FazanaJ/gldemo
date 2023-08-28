@@ -96,6 +96,7 @@ void init_save_data(void) {
     read_config();
 }
 
+#ifdef PUPPYPRINT_DEBUG
 void init_debug(void) {
     debug_init_isviewer();
     debug_init_usblog();
@@ -108,6 +109,7 @@ void init_debug(void) {
     bzero(gDebugData, sizeof(DebugData));
     gDebugData->enabled = false;
 }
+#endif
 
 void set_region_type(int region) {
     if (region == PAL60) {

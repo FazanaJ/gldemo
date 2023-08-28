@@ -150,44 +150,44 @@ void render_profiler(void) {
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
     rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
     if (gDebugData->rspTime[TIME_TOTAL] > 10) {
-        boxHeight += 10;
+        boxHeight += 8;
     }
     if (gDebugData->rdpTime[TIME_TOTAL] > 10) {
-        boxHeight += 10;
+        boxHeight += 8;
     }
-    rdpq_fill_rectangle(8, 6, 118, 28 + boxHeight);
-    rdpq_fill_rectangle(8, gFrameBuffers->height - 40, 132, gFrameBuffers->height - 6);
-    boxHeight = 12;
+    rdpq_fill_rectangle(8, 6, 96, 28 + boxHeight);
+    rdpq_fill_rectangle(8, gFrameBuffers->height - 34, 112, gFrameBuffers->height - 6);
+    boxHeight = 10;
     for (int i = 0; i < PP_TOTAL; i++) {
         if (gDebugData->timer[i][TIME_TOTAL] > 1) {
-            boxHeight += 10;
+            boxHeight += 8;
         }
     }
-    rdpq_fill_rectangle(width - 110, 0, width, boxHeight);
+    rdpq_fill_rectangle(width - 94, 0, width, boxHeight);
     rdpq_mode_blender(0);
     rdpq_text_printf(NULL, FONT_ARIAL, 8, 16, "FPS: %2.2f", gFPS);
     rdpq_text_printf(NULL, FONT_ARIAL, 8, 26, "CPU: %dus (%d%%)", gDebugData->cpuTime[TIME_TOTAL], gDebugData->cpuTime[TIME_TOTAL] / 333);
     boxHeight = 0;
     if (gDebugData->rspTime[TIME_TOTAL] > 10) {
-        boxHeight += 10;
+        boxHeight += 8;
         rdpq_text_printf(NULL, FONT_ARIAL, 8, 26 + boxHeight, "RSP: %dus (%d%%)", gDebugData->rspTime[TIME_TOTAL], gDebugData->rspTime[TIME_TOTAL] / 333);
     }
     if (gDebugData->rdpTime[TIME_TOTAL] > 10) {
-        boxHeight += 10;
+        boxHeight += 8;
         rdpq_text_printf(NULL, FONT_ARIAL, 8, 26 + boxHeight, "RDP: %dus (%d%%)", gDebugData->rdpTime[TIME_TOTAL], gDebugData->rdpTime[TIME_TOTAL] / 333);
     }
     boxHeight = 0;
     for (int i = 0; i < PP_TOTAL; i++) {
         if (gDebugData->timer[i][TIME_TOTAL] > 1) {
-            boxHeight += 10;
-            rdpq_text_printf(NULL, FONT_ARIAL, width - 106, 8 + boxHeight, "%s:", sDebugText[i]);
-            rdpq_text_printf(NULL, FONT_ARIAL, width - 48, 8 + boxHeight, "%dus", gDebugData->timer[i][TIME_TOTAL]);
+            boxHeight += 8;
+            rdpq_text_printf(NULL, FONT_ARIAL, width - 90, 8 + boxHeight, "%s:", sDebugText[i]);
+            rdpq_text_printf(NULL, FONT_ARIAL, width - 38, 8 + boxHeight, "%dus", gDebugData->timer[i][TIME_TOTAL]);
         }
     }
     int ramUsed = mem_info.uordblks - (size_t) (((width * height) * 2) - ((unsigned int) HEAP_START_ADDR - 0x80000000) - 0x10000);
     rdpq_text_printf(NULL, FONT_ARIAL, 8, gFrameBuffers->height - 8, "RAM: %dKB/%dKB", (ramUsed / 1024), get_memory_size() / 1024);
-    rdpq_text_printf(NULL, FONT_ARIAL, 8, gFrameBuffers->height - 18, "Tex: %d | Loads: %d", gNumTextures, gNumTextureLoads);
-    rdpq_text_printf(NULL, FONT_ARIAL, 8, gFrameBuffers->height - 28, "Obj: %d | Clu: %d | Par: %d", gNumObjects, gNumClutter, gNumParticles);
+    rdpq_text_printf(NULL, FONT_ARIAL, 8, gFrameBuffers->height - 16, "Tex: %d | Loads: %d", gNumTextures, gNumTextureLoads);
+    rdpq_text_printf(NULL, FONT_ARIAL, 8, gFrameBuffers->height - 24, "Obj: %d | Clu: %d | Par: %d", gNumObjects, gNumClutter, gNumParticles);
 }
 
 #endif

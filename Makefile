@@ -28,6 +28,8 @@ AUDIOCONV_FLAGS ?= --wav-compress 1
 
 all: gldemo.z64
 
+filesystem/arial.10.font64: MKFONT_FLAGS+=--size 10
+
 filesystem/%.font64: assets/fonts/%.ttf
 	@mkdir -p $(dir $@)
 	@echo "    [FONT] $@"

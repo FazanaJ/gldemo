@@ -23,8 +23,8 @@ const TextureInfo sTextureIDs[] = {
 };
 
 char *gFontAssetTable[] = {
-    "arial",
-    "mvboli"
+    "arial.10",
+    "mvboli.12"
 };
 
 RenderSettings sRenderSettings;

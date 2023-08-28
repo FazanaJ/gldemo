@@ -196,7 +196,7 @@ void menu_set_backward(int menuID) {
 }
 
 void menu_reset_display(void) {
-    reset_display();
+    gResetDisplay = true;
 }
 
 void menu_change_pal60(void) {
@@ -216,7 +216,7 @@ void menu_set_sound(void) {
 static MenuOption sMenuOptions[] = {
     {"Anti Aliasing", &gConfig.antiAliasing, -1, 1, OPTION_WRAP | OPTION_STRING, NULL, 0},
     {"Dedither", &gConfig.dedither, 0, 1, OPTION_WRAP | OPTION_STRING, NULL, 3},
-    {"Screen Mode", &gConfig.screenMode, 0, 2, OPTION_WRAP | OPTION_STRING | OPTION_STUB, NULL, 5},
+    {"Screen Mode", &gConfig.screenMode, 0, 2, OPTION_WRAP | OPTION_STRING, menu_reset_display, 5},
     {"PAL", &gConfig.regionMode, 0, 1, OPTION_WRAP | OPTION_PAL_ONLY | OPTION_STRING, menu_change_pal60, 8},
     {"Sound Mode", &gConfig.soundMode, 0, 2, OPTION_WRAP | OPTION_STRING, NULL, 10},
     {"Screen Pos X", &gConfig.screenPosX, -8, 8, OPTION_STUB | OPTION_BAR, NULL, 0},
