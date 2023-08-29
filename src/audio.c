@@ -68,7 +68,7 @@ void update_sequence(int updateRate) {
             }
             xm64player_open(&sXMPlayer, asset_dir(s->seqPath, DFS_XM64));
             xm64player_set_vol(&sXMPlayer, gMusicVolume);
-            xm64player_play(&sXMPlayer, 16);
+            xm64player_play(&sXMPlayer, sSoundChannelNum - s->channelCount);
             set_music_volume(gMusicVolume);
             sCurrentSequenceID = sNextSequenceID;
         } else {

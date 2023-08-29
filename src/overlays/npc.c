@@ -10,7 +10,7 @@ ObjectEntry entry = {
     NULL,
     NULL,
     0,
-    OBJ_FLAG_NONE,
+    OBJ_FLAG_SHADOW,
     OBJ_DIST(200),
     3,
     5

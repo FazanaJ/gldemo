@@ -82,6 +82,7 @@ void init_object_behaviour(Object *obj, int objectID) {
     if (entry->initFunc) {
         (*entry->initFunc)(obj);
     }
+    //*(volatile int *) 0 = 0;
 }
 
 void check_unused_model(Object *obj) {
@@ -95,16 +96,7 @@ void check_unused_model(Object *obj) {
         }
         objList = objList->next;
     }
-
-    model64_free(obj->gfx->listEntry->model64);
     
-    ObjectModel *curMesh = obj->gfx->listEntry->entry;
-    while (curMesh) {
-        ObjectModel *m = curMesh;
-        curMesh = curMesh->next;
-        rspq_block_free(m->block);
-        free(m);
-    }
     if (obj->gfx->listEntry == gModelIDListHead) {
         if (gModelIDListHead->next) {
             gModelIDListHead = gModelIDListHead->next;
@@ -121,6 +113,15 @@ void check_unused_model(Object *obj) {
             obj->gfx->listEntry->next->prev = obj->gfx->listEntry->prev;
         }
     }
+
+    ObjectModel *curMesh = obj->gfx->listEntry->entry;
+    while (curMesh) {
+        ObjectModel *m = curMesh;
+        curMesh = curMesh->next;
+        rspq_block_free(m->block);
+        free(m);
+    }
+    model64_free(obj->gfx->listEntry->model64);
     debugf("Freed model %d\n", obj->gfx->modelID);
     free(obj->gfx->listEntry);
 }
@@ -137,7 +138,6 @@ void check_unused_overlay(Object *obj, VoidList *overlay) {
         objList = objList->next;
     }
 
-    dlclose(overlay->addr);
     if (overlay == gOverlayListHead) {
         if (gOverlayListHead->next) {
             gOverlayListHead = gOverlayListHead->next;
@@ -154,6 +154,7 @@ void check_unused_overlay(Object *obj, VoidList *overlay) {
             overlay->next->prev = overlay->prev;
         }
     }
+    dlclose(overlay->addr);
     debugf("Freed overlay %d\n", overlay->id);
     free(overlay);
 }
@@ -181,6 +182,8 @@ Object *allocate_object(void) {
         list->obj = newObj;
         gObjectListTail = list;
     }
+    newObj->loopFunc = NULL;
+    newObj->flags = 0;
     newObj->gfx = NULL;
     newObj->data = NULL;
     newObj->flags = OBJ_FLAG_NONE;
@@ -356,10 +359,6 @@ void load_object_model(Object *obj, int objectID) {
 static void set_object_functions(Object *obj, int objectID) {
     if (sObjectOverlays[objectID]) {
         init_object_behaviour(obj, objectID);
-    } else {
-        obj->loopFunc = NULL;
-        obj->data = NULL;
-        obj->flags = 0;
     }
     if (gObjectModels[objectID]) {
         load_object_model(obj, objectID);

@@ -24,6 +24,8 @@ RenderNode *gRenderNodeTail = NULL;
 RenderList *gMateriallistHead = NULL;
 RenderList *gMateriallistTail = NULL;
 RenderList *gPrevMatList = NULL;
+Matrix gBillboardMatrix;
+Matrix gScaleMatrix;
 char gZTargetTimer = 0;
 static rspq_block_t *sRenderEndBlock;
 static rspq_block_t *sRenderSkyBlock;
@@ -46,6 +48,7 @@ light_t lightNeutral = {
     position: {1.0f, 0.0f, 0.0f, 0.0f},
     radius: 10.0f,
 };
+
 
 static void init_particles(void) {
     rspq_block_begin();
@@ -106,9 +109,6 @@ void setup_light(light_t light) {
 
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, light.diffuse);
 }
-
-Matrix gBillboardMatrix;
-Matrix gScaleMatrix;
 
 void set_frustrum(float l, float r, float b, float t, float n, float f) {
     Matrix frustum = (Matrix) { .m={
@@ -363,7 +363,6 @@ rspq_block_t *sDecal2Block;
 
 
 void render_shadow(float pos[3]) {
-    set_material(&gTempMaterials[5], MATERIAL_DECAL);
     glPushMatrix();
     glTranslatef(pos[0], pos[1], pos[2]);
     if (sShadowBlock == NULL) {
@@ -550,8 +549,16 @@ void render_world(void) {
 }
 
 void render_object_shadows(void) {
-    if (gPlayer) {
-        render_shadow(gPlayer->pos);
+    ObjectList *list = gObjectListHead;
+    Object *obj;
+    
+    set_material(&gTempMaterials[5], MATERIAL_DECAL);
+    while (list) {
+        obj = list->obj;
+        if (obj->flags & OBJ_FLAG_SHADOW) { 
+            render_shadow(obj->pos);
+        }
+        list = list->next;
     }
 }
 

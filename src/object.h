@@ -13,6 +13,7 @@ enum ObjectFlags {
 	OBJ_FLAG_MOVE = 		(1 << 2),
 	OBJ_FLAG_GRAVITY = 		(1 << 3),
 	OBJ_FLAG_COLLISION = 	(1 << 4),
+	OBJ_FLAG_SHADOW = 		(1 << 5),
 };
 
 enum ObjectIDs {

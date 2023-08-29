@@ -147,7 +147,7 @@ ObjectEntry entry = {
     init,
     loop,
     sizeof(PlayerData),
-    OBJ_FLAG_MOVE | OBJ_FLAG_GRAVITY | OBJ_FLAG_COLLISION,
+    OBJ_FLAG_MOVE | OBJ_FLAG_GRAVITY | OBJ_FLAG_COLLISION | OBJ_FLAG_SHADOW,
     OBJ_DIST(100),
     3,
     5
