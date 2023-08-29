@@ -588,6 +588,39 @@ void render_clutter(void) {
     pop_render_list();
 }
 
+void set_draw_matrix(Matrix *mtx, int matrixType, float *pos, u_uint16_t *angle, float *scale) {
+    switch (matrixType) {
+    case MTX_TRANSLATE:
+        mtx_translate_rotate(mtx, angle[0], angle[1], angle[2], pos[0], pos[1], pos[2]);
+        break;
+    case MTX_ROTATE:
+        mtx_rotate(mtx, angle[0], angle[1], angle[2]);
+        break;
+    case MTX_SCALE:
+        mtx_rotate(mtx, scale[0], scale[1], scale[2]);
+        break;
+    case MTX_TRANSLATE_ROTATE:
+        mtx_translate_rotate(mtx, angle[0], angle[1], angle[2], pos[0], pos[1], pos[2]);
+        break;
+    case MTX_TRANSLATE_SCALE:
+        mtx_translate_rotate_scale(mtx, 0, 0, 0, pos[0], pos[1], pos[2], scale[0], scale[1], scale[2]);
+        break;
+    case MTX_ROTATE_SCALE:
+        //mtx_translate_rotate(mtx, angle[0], angle[1], angle[2], pos[0], pos[1], pos[2]);
+        break;
+    case MTX_TRANSLATE_ROTATE_SCALE:
+        mtx_translate_rotate_scale(mtx, angle[0], angle[1], angle[2], pos[0], pos[1], pos[2], scale[0], scale[1], scale[2]);
+        break;
+    case MTX_BILLBOARD:
+        mtx_billboard(mtx, pos[0], pos[1], pos[2]);
+        break;
+    case MTX_BILLBOARD_SCALE:
+        mtx_billboard(mtx, pos[0], pos[1], pos[2]);
+        mtx_scale(mtx, scale[0], scale[1], scale[2]);
+        break;
+    }
+}
+
 void render_objects(void) {
     ObjectList *list = gObjectListHead;
     Object *obj;
@@ -599,7 +632,8 @@ void render_objects(void) {
             while (m) {
                 RenderNode *entry = malloc(sizeof(RenderNode));
                 entry->matrix = malloc(sizeof(Matrix));
-                mtx_translate_rotate_scale(entry->matrix, 0, obj->faceAngle[1], 0, obj->pos[0], obj->pos[1], obj->pos[2], 9.0f, 8.0f, 9.0f);
+                float scale[3] = {9.0f, 8.0f, 9.0f};
+                set_draw_matrix(entry->matrix, m->matrixBehaviour, obj->pos, obj->faceAngle, scale);
                 add_render_node(entry, m->block, &m->material, MATERIAL_NULL);
                 m = m->next;
             }

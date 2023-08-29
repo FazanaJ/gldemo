@@ -29,11 +29,25 @@ enum ClutterIDs {
 	CLUTTER_ROCK,
 };
 
+enum MatrixTypes {
+	MTX_TRANSLATE,
+	MTX_ROTATE,
+	MTX_SCALE,
+	MTX_TRANSLATE_ROTATE,
+	MTX_TRANSLATE_SCALE,
+	MTX_ROTATE_SCALE,
+	MTX_TRANSLATE_ROTATE_SCALE,
+	MTX_BILLBOARD,
+	MTX_BILLBOARD_SCALE
+};
+
 typedef struct ObjectModel {
 	Material material;
 	struct ObjectModel *next;
 	void (*func)(struct Object *obj, int updateRate, float updateRateF);
 	rspq_block_t *block;
+	char matrixBehaviour;
+	char pad[3];
 } ObjectModel;
 
 typedef struct ObjectGraphics {

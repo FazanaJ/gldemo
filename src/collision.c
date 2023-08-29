@@ -121,6 +121,7 @@ void object_collide(Object *obj) {
     DEBUG_SNAPSHOT_1();
 
     SceneMesh *mesh = sCurrentScene->meshList;
+    float peakY = 0;
     while (mesh) {
         ModelPrim *prim = (ModelPrim *) mesh->mesh;
         int numTris = prim->num_indices;
@@ -168,13 +169,16 @@ void object_collide(Object *obj) {
                 //*c3 = 0xFF0000FF;
                 //obj->pos[0] = hit[0];
                 //obj->pos[1] = hit[1];
-                obj->pos[1] = (hit[1] / 2) * 5;
+                if ((hit[1] / 2) * 5 > peakY) {
+                    peakY = (hit[1] / 2) * 5;
+                }
                 obj->yVel = 0.0f;
                 //obj->floorHeight = (hit[2] * 5);
             }
         }
         mesh = mesh->next;
     }
+    obj->pos[1] = peakY;
 
     get_time_snapshot(PP_COLLISION, DEBUG_SNAPSHOT_1_END);
 }

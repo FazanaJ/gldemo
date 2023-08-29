@@ -36,6 +36,19 @@ char *sObjectOverlays[] = {
     "npc",
 };
 
+char *gModelIDs[] = {
+    "humanoid",
+    "rock",
+    "bottombillboard"
+};
+
+short gObjectModels[] = {
+    0,
+    1,
+    3,
+    1,
+};
+
 void init_object_behaviour(Object *obj, int objectID) {
     void *addr = NULL;
     VoidList *list = gOverlayListHead;
@@ -65,6 +78,7 @@ void init_object_behaviour(Object *obj, int objectID) {
         list->id = objectID;
         list->next = NULL;
         list->timer = 10;
+        debugf("Loading overlay [%s]\n", sObjectOverlays[objectID]);
     }
     ObjectEntry *entry = dlsym(addr, "entry");
     obj->loopFunc = entry->loopFunc;
@@ -122,7 +136,7 @@ void check_unused_model(Object *obj) {
         free(m);
     }
     model64_free(obj->gfx->listEntry->model64);
-    debugf("Freed model %d\n", obj->gfx->modelID);
+    debugf("Freed model [%s]\n", gModelIDs[obj->gfx->modelID - 1]);
     free(obj->gfx->listEntry);
 }
 
@@ -155,7 +169,7 @@ void check_unused_overlay(Object *obj, VoidList *overlay) {
         }
     }
     dlclose(overlay->addr);
-    debugf("Freed overlay %d\n", overlay->id);
+    debugf("Freed overlay [%s]\n", sObjectOverlays[overlay->id]);
     free(overlay);
 }
 
@@ -275,18 +289,17 @@ void object_gravity(Object *obj, float updateRateF) {
     }
 }
 
-char *gModelIDs[] = {
-    "humanoid",
-    "rock",
-    "bottombillboard"
-};
-
-short gObjectModels[] = {
-    0,
-    1,
-    2,
-    1,
-};
+int temp_matrix_grabber(int modelID) {
+    switch (modelID) {
+    case 1:
+        return MTX_TRANSLATE_ROTATE_SCALE;
+    case 2:
+        return MTX_TRANSLATE_ROTATE_SCALE;
+    case 3:
+        return MTX_BILLBOARD;
+    }
+    return MTX_TRANSLATE;
+}
 
 void load_object_model(Object *obj, int objectID) {
     obj->gfx = malloc(sizeof(ObjectGraphics));
@@ -299,6 +312,7 @@ void load_object_model(Object *obj, int objectID) {
     obj->gfx->opacity = 0xFF;
     int modelID = gObjectModels[objectID];
     obj->gfx->modelID = modelID;
+    int matrixType = temp_matrix_grabber(modelID);
 
     if (gModelIDListHead) {
         ModelList *modelList = gModelIDListHead;
@@ -338,6 +352,7 @@ void load_object_model(Object *obj, int objectID) {
             m->material.textureID = -1;
             m->material.index = NULL;
             m->next = NULL;
+            m->matrixBehaviour = matrixType;
             rspq_block_begin();
             model64_draw_primitive(prim);
             m->block = rspq_block_end();
@@ -351,6 +366,7 @@ void load_object_model(Object *obj, int objectID) {
         }
     }
 
+    debugf("Loading model [%s]\n", gModelIDs[modelID - 1]);
     list->next = NULL;
     list->timer = 10;
     list->id = modelID;
