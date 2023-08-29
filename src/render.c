@@ -39,8 +39,6 @@ Material gTempMaterials[] = {
     {NULL, 3, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_XLU | MATERIAL_VTXCOL},
 };
 
-static model64_t *gPlayerModel;
-
 light_t lightNeutral = {
     color: { 0.66f, 0.66f, 0.66f, 0.66f},
     diffuse: {1.0f, 1.0f, 1.0f, 1.0f},
@@ -68,7 +66,6 @@ void init_renderer(void) {
     setup_light(lightNeutral);
     init_materials();
     init_particles();
-    gPlayerModel = model64_load(asset_dir("humanoid", DFS_MODEL64));
 
     rspq_block_begin();
     glAlphaFunc(GL_GREATER, 0.5f);
@@ -359,7 +356,6 @@ void render_end(void) {
     rspq_block_run(sRenderEndBlock);
 }
 
-rspq_block_t *sPlayerBlock;
 rspq_block_t *sBushBlock;
 rspq_block_t *sShadowBlock;
 rspq_block_t *sDecal1Block;
@@ -586,19 +582,13 @@ void render_clutter(void) {
 }
 
 void render_objects(void) {
-    if (sPlayerBlock == NULL) {
-        rspq_block_begin();
-        model64_draw(gPlayerModel);
-        sPlayerBlock = rspq_block_end();
-    }
-    
     ObjectList *list = gObjectListHead;
     Object *obj;
     
     while (list) {
         obj = list->obj;
         if (obj->gfx) { 
-            ObjectModel *m = obj->gfx->model;
+            ObjectModel *m = obj->gfx->listEntry->entry;
             while (m) {
                 RenderNode *entry = malloc(sizeof(RenderNode));
                 entry->matrix = malloc(sizeof(Matrix));

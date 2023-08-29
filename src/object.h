@@ -36,7 +36,7 @@ typedef struct ObjectModel {
 } ObjectModel;
 
 typedef struct ObjectGraphics {
-	ObjectModel *model;
+	struct ModelList *listEntry;
 	char envColour[3];
 	char primColour[3];
 	char opacity;

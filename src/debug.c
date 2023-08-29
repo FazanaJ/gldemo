@@ -18,19 +18,6 @@ char *sDebugText[] = {
     PROFILE_NAMES
 };
 
-void init_debug(void) {
-    debug_init_isviewer();
-    debug_init_usblog();
-    rspq_profile_start();
-    //console_init();
-    //console_set_render_mode(RENDER_MANUAL);
-    //rdpq_debug_start();
-    //rdpq_debug_log(true);
-    gDebugData = malloc(sizeof(DebugData));
-    bzero(gDebugData, sizeof(DebugData));
-    gDebugData->enabled = false;
-}
-
 void reset_profiler_times(void) {
     for (int i = 0; i < PP_TOTAL; i++) {
         gDebugData->timer[i][TIME_AGGREGATE] -= gDebugData->timer[i][gDebugData->iteration];

@@ -77,27 +77,28 @@ void init_object_behaviour(Object *obj, int objectID) {
     }
 }
 
-void check_unused_model(Object *obj, ModelList *model) {
+void check_unused_model(Object *obj) {
     ObjectList *objList = gObjectListHead;
     Object *listObj;
 
     while (objList) {
         listObj = objList->obj;
-        if (listObj->gfx->modelID == model->id && listObj != obj) {
+        if (listObj->gfx->modelID == obj->gfx->modelID && listObj != obj) {
             return;
         }
         objList = objList->next;
     }
 
-    free(model->model64);
-    ObjectModel *m = model->entry;
-    ObjectModel *prevM = NULL;
-    while (prevM) {
-        free(prevM);
-        prevM = m;
-        m = m->next;
+    model64_free(obj->gfx->listEntry->model64);
+    
+    ObjectModel *curMesh = obj->gfx->listEntry->entry;
+    while (curMesh) {
+        ObjectModel *m = curMesh;
+        curMesh = curMesh->next;
+        rspq_block_free(m->block);
+        free(m);
     }
-    if (model == gModelIDListHead) {
+    if (obj->gfx->listEntry == gModelIDListHead) {
         if (gModelIDListHead->next) {
             gModelIDListHead = gModelIDListHead->next;
             gModelIDListHead->prev = NULL;
@@ -105,15 +106,15 @@ void check_unused_model(Object *obj, ModelList *model) {
             gModelIDListHead = NULL;
         }
     } else {
-        if (model == gModelIDListTail) {
+        if (obj->gfx->listEntry == gModelIDListTail) {
             gModelIDListTail = gModelIDListTail->prev;
         }
-        model->prev->next = model->next;
-        if (model->next) {
-            model->next->prev = model->prev;
+        obj->gfx->listEntry->prev->next = obj->gfx->listEntry->next;
+        if (obj->gfx->listEntry->next) {
+            obj->gfx->listEntry->next->prev = obj->gfx->listEntry->prev;
         }
     }
-    free(model);
+    free(obj->gfx->listEntry);
 }
 
 void check_unused_overlay(Object *obj, VoidList *overlay) {
@@ -123,6 +124,7 @@ void check_unused_overlay(Object *obj, VoidList *overlay) {
     while (objList) {
         listObj = objList->obj;
         if (listObj->overlay == overlay && listObj != obj) {
+            debugf("Overlay ID %d still in use.\n", overlay->id);
             return;
         }
         objList = objList->next;
@@ -145,6 +147,7 @@ void check_unused_overlay(Object *obj, VoidList *overlay) {
             overlay->next->prev = overlay->prev;
         }
     }
+    debugf("Freed overlay %d\n", overlay->id);
     free(overlay);
 }
 
@@ -320,7 +323,7 @@ short gObjectModels[] = {
     1,
 };
 
-//TODO: Fix memory leak somewhere.
+//TODO: Fix memory leak
 void load_object_model(Object *obj, int objectID) {
     obj->gfx = malloc(sizeof(ObjectGraphics));
     obj->gfx->envColour[0] = 0xFF;
@@ -337,7 +340,7 @@ void load_object_model(Object *obj, int objectID) {
         ModelList *modelList = gModelIDListHead;
         while (modelList) {
             if (modelList->id == modelID) {
-                obj->gfx->model = modelList->entry;
+                obj->gfx->listEntry = modelList;
                 return;
             }
             modelList = modelList->next;
@@ -346,6 +349,7 @@ void load_object_model(Object *obj, int objectID) {
 
     ModelList *list = malloc(sizeof(ModelList));
     list->entry = NULL;
+    obj->gfx->listEntry = list;
 
     if (gModelIDListHead == NULL) {
         gModelIDListHead = list;
@@ -383,7 +387,6 @@ void load_object_model(Object *obj, int objectID) {
         }
     }
 
-    obj->gfx->model = list->entry;
     list->next = NULL;
     list->timer = 10;
     list->id = modelID;
@@ -538,6 +541,7 @@ static void free_object(Object *obj) {
         free(obj->data);
     }
     if (obj->gfx) {
+        check_unused_model(obj);
         free(obj->gfx);
     }
     free(obj);

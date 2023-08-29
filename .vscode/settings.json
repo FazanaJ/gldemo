@@ -20,6 +20,7 @@
         "main.h": "c",
         "global.h": "c",
         "audio.h": "c",
-        "rspq_profile.h": "c"
+        "rspq_profile.h": "c",
+        "player.h": "c"
     }
 }

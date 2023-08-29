@@ -1,5 +1,4 @@
 #include <libdragon.h>
-#include <malloc.h>
 
 #include "main.h"
 #include "../include/global.h"
