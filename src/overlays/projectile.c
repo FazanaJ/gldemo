@@ -17,7 +17,7 @@ void loop(Object *obj, int updateRate, float updateRateF) {
 
     data->life --;
 
-    if (data->life == 0) {
+    if (data->life <= 0) {
         delete_object(obj);
     }
 }

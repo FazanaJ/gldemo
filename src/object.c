@@ -5,7 +5,6 @@
 #include "../include/global.h"
 
 #include "debug.h"
-#include "player.h"
 #include "math_util.h"
 #include "main.h"
 #include "camera.h"
@@ -22,6 +21,7 @@ VoidList *gOverlayListHead = NULL;
 VoidList *gOverlayListTail = NULL;
 ModelList *gModelIDListHead = NULL;
 ModelList *gModelIDListTail = NULL;
+Object *gPlayer;
 #ifdef PUPPYPRINT_DEBUG
 short gNumObjects = 0;
 short gNumClutter = 0;
@@ -30,31 +30,37 @@ short gNumParticles = 0;
 char gGamePaused = false;
 
 char *sObjectOverlays[] = {
+    NULL,
     "player",
     "projectile",
     "npc",
 };
 
 void init_object_behaviour(Object *obj, int objectID) {
-    VoidList *list = gOverlayListHead;
     void *addr = NULL;
-    while (list) {
-        if (list->id == objectID) {
-            addr = list->addr;
-            break;
+    VoidList *list = gOverlayListHead;
+    if (gOverlayListHead) {
+        while (list) {
+            if (list->id == objectID) {
+                addr = list->addr;
+                break;
+            }
+            list = list->next;
         }
-        list = list->next;
     }
+
     if (addr == NULL) {
         list = malloc(sizeof(VoidList));
         if (gOverlayListHead == NULL) {
             gOverlayListHead = list;
+            list->prev = NULL;
         }
         if (gOverlayListTail) {
             gOverlayListTail->next = list;
+            list->prev = gOverlayListTail;
         }
         gOverlayListTail = list;
-        addr = dlopen(asset_dir(sObjectOverlays[objectID - 1], DFS_OVERLAY), RTLD_LOCAL);
+        addr = dlopen(asset_dir(sObjectOverlays[objectID], DFS_OVERLAY), RTLD_LOCAL);
         list->addr = addr;
         list->id = objectID;
         list->next = NULL;
@@ -69,8 +75,9 @@ void init_object_behaviour(Object *obj, int objectID) {
     } else {
         obj->viewDist = 500.0f;
     }
-    if (obj->data) {
+    if (entry->data) {
         obj->data = malloc(entry->data);
+        bzero(obj->data, entry->data);
     }
     if (entry->initFunc) {
         (*entry->initFunc)(obj);
@@ -114,6 +121,7 @@ void check_unused_model(Object *obj) {
             obj->gfx->listEntry->next->prev = obj->gfx->listEntry->prev;
         }
     }
+    debugf("Freed model %d\n", obj->gfx->modelID);
     free(obj->gfx->listEntry);
 }
 
@@ -124,7 +132,6 @@ void check_unused_overlay(Object *obj, VoidList *overlay) {
     while (objList) {
         listObj = objList->obj;
         if (listObj->overlay == overlay && listObj != obj) {
-            debugf("Overlay ID %d still in use.\n", overlay->id);
             return;
         }
         objList = objList->next;
@@ -265,51 +272,6 @@ void object_gravity(Object *obj, float updateRateF) {
     }
 }
 
-
-void projectile_init(Object *obj) {
-    ProjectileData *data = obj->data;
-
-    data->life = timer_int(60);
-}
-
-void projectile_loop(Object *obj, int updateRate, float updateRateF) {
-    ProjectileData *data = obj->data;
-
-    data->life --;
-
-    if (data->life == 0) {
-        delete_object(obj);
-    }
-}
-
-static void (*gObjectInits[])(Object *obj) = {
-    NULL,
-    player_init,
-    projectile_init,
-    NULL,
-};
-
-static void (*gObjectLoops[])(Object *obj, int updateRate, float updateRateF) = {
-    0,
-    player_loop,
-    projectile_loop,
-    NULL,
-};
-
-static const unsigned short gObjectData[] = {
-    0,
-    sizeof(PlayerData),
-    sizeof(ProjectileData),
-    0,
-};
-
-static const int gObjectFlags[] = {
-    0,
-    OBJ_FLAG_MOVE | OBJ_FLAG_GRAVITY | OBJ_FLAG_COLLISION,
-    OBJ_FLAG_MOVE,
-    0,
-};
-
 char *gModelIDs[] = {
     "humanoid",
     "rock",
@@ -323,7 +285,6 @@ short gObjectModels[] = {
     1,
 };
 
-//TODO: Fix memory leak
 void load_object_model(Object *obj, int objectID) {
     obj->gfx = malloc(sizeof(ObjectGraphics));
     obj->gfx->envColour[0] = 0xFF;
@@ -393,16 +354,13 @@ void load_object_model(Object *obj, int objectID) {
 }
 
 static void set_object_functions(Object *obj, int objectID) {
-    void (*initFunc)(Object *obj) = gObjectInits[objectID];
-    if (gObjectData[objectID]) {
-        obj->data = malloc(gObjectData[objectID]);
-        bzero(obj->data, gObjectData[objectID]);
+    if (sObjectOverlays[objectID]) {
+        init_object_behaviour(obj, objectID);
+    } else {
+        obj->loopFunc = NULL;
+        obj->data = NULL;
+        obj->flags = 0;
     }
-    if (initFunc != NULL) {
-        (*initFunc)(obj);
-    }
-    obj->loopFunc = gObjectLoops[objectID];
-    obj->flags = gObjectFlags[objectID];
     if (gObjectModels[objectID]) {
         load_object_model(obj, objectID);
     }

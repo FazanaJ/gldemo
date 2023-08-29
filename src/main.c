@@ -9,7 +9,6 @@
 #include "input.h"
 #include "math_util.h"
 #include "debug.h"
-#include "player.h"
 #include "object.h"
 #include "hud.h"
 #include "audio.h"

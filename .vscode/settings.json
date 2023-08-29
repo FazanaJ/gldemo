@@ -21,6 +21,8 @@
         "global.h": "c",
         "audio.h": "c",
         "rspq_profile.h": "c",
-        "player.h": "c"
+        "xm_internal.h": "c",
+        "math_util.h": "c",
+        "debug.h": "c"
     }
 }

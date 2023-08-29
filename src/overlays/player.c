@@ -1,20 +1,18 @@
 #include <libdragon.h>
-#include <malloc.h>
 
-#include "player.h"
-#include "../include/global.h"
+#include "../../include/global.h"
 
-#include "math_util.h"
-#include "object.h"
-#include "camera.h"
-#include "main.h"
-#include "input.h"
-#include "audio.h"
-#include "debug.h"
+#include "../object.h"
+#include "../object_data.h"
+#include "../math_util.h"
+#include "../camera.h"
+#include "../audio.h"
+#include "../input.h"
+#include "../debug.h"
+#include "../render.h"
+#include "../main.h"
 
-Object *gPlayer;
-
-void player_init(Object *obj) {
+void init(Object *obj) {
     PlayerData *data = (PlayerData *) obj->data;
 
     data->healthBase = 12;
@@ -24,7 +22,7 @@ void player_init(Object *obj) {
     obj->weight = 2.5f;
 }
 
-void player_loop(Object *obj, int updateRate, float updateRateF) {
+void loop(Object *obj, int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
     PlayerData *data = (PlayerData *) obj->data;
     Camera *c = gCamera;
@@ -144,3 +142,13 @@ void player_loop(Object *obj, int updateRate, float updateRateF) {
 
     get_time_snapshot(PP_PLAYER, DEBUG_SNAPSHOT_1_END);
 }
+
+ObjectEntry entry = {
+    init,
+    loop,
+    sizeof(PlayerData),
+    OBJ_FLAG_MOVE | OBJ_FLAG_GRAVITY | OBJ_FLAG_COLLISION,
+    OBJ_DIST(100),
+    3,
+    5
+};
