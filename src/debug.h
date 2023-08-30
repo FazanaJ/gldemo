@@ -9,17 +9,17 @@
 
 #define PROFILE_NAMES \
     "Player", \
-    "Objects", \
+    "BhvObjects", \
     "Render", \
     "Input", \
     "DMA", \
     "Audio", \
     "HUD", \
-    "Clutter", \
+    "BhvClutter", \
     "Camera", \
     "Materials", \
     "Profiler", \
-    "Particles", \
+    "BhvParticles", \
     "Collision", \
     "Batch"
 

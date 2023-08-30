@@ -100,7 +100,6 @@ void boot_game(void) {
     void (*func)() = dlsym(bootOvl, "init_game");
     (*func)();
     dlclose(bootOvl);
-    //init_game();
 }
 
 int main(void) {
@@ -141,6 +140,9 @@ int main(void) {
 
         gGlobalTimer++;
         gGameTimer += updateRate;
+#ifdef PUPPYPRINT_DEBUG
+        rspq_wait();
+#endif
     }
 
 }
