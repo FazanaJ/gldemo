@@ -50,10 +50,6 @@ void setup_fog(SceneHeader *header) {
     gEnvironment->flags = header->flags;
     gEnvironment->fogNear = header->fogNear;
     gEnvironment->fogFar = header->fogFar;
-    debugf("Top: R: %d, %2.2f, G: %d, %2.2f, B: %d, %2.2f\n", header->skyTop[0], gEnvironment->skyColourTop[0],
-     header->skyTop[1], gEnvironment->skyColourTop[1], header->skyTop[2], gEnvironment->skyColourTop[2]);
-    debugf("Bottom: R: %d, %2.2f, G: %d, %2.2f, B: %d, %2.2f\n", header->skyBottom[0], gEnvironment->skyColourBottom[0],
-     header->skyBottom[1], gEnvironment->skyColourBottom[1], header->skyBottom[2], gEnvironment->skyColourBottom[2]);
     glFogf(GL_FOG_START, gEnvironment->fogNear);
     glFogf(GL_FOG_END, gEnvironment->fogFar);
     glFogfv(GL_FOG_COLOR, gEnvironment->fogColour);
@@ -61,6 +57,7 @@ void setup_fog(SceneHeader *header) {
 
 static void clear_scene(void) {
     SceneMesh *curMesh = sCurrentScene->meshList;
+    rspq_wait();
     clear_objects();
     if (sRenderSkyBlock) {
         rspq_block_free(sRenderSkyBlock);
