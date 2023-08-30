@@ -18,7 +18,7 @@ char *sSceneTable[] = {
 };
 
 char sSceneTexIDs[][4] = {
-    {7, 6},
+    {7, 6, 8},
     {4, 0, 5},
 };
 

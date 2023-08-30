@@ -21,7 +21,13 @@
     "Profiler", \
     "BhvParticles", \
     "Collision", \
-    "Batch"
+    "Batch", \
+    "RenObjects", \
+    "RenClutter", \
+    "RenParticles", \
+    "RenLevel", \
+    "Shadows", \
+    "RenderList"
 
 
 enum ProfileTimers {
@@ -39,6 +45,12 @@ enum ProfileTimers {
     PP_PARTICLES,
     PP_COLLISION,
     PP_BATCH,
+    PP_RENDEROBJECTS,
+    PP_RENDERCLUTTER,
+    PP_RENDERPARTICLES,
+    PP_RENDERLEVEL,
+    PP_SHADOWS,
+    PP_RENDERLIST,
 
     PP_TOTAL
 };
@@ -49,8 +61,9 @@ typedef struct DebugData {
     unsigned int cpuTime[TIME_TOTAL + 1];
     unsigned int rspTime[TIME_TOTAL + 1];
     unsigned int rdpTime[TIME_TOTAL + 1];
-    unsigned char iteration;
+    unsigned char iteration : 8;
     char enabled : 1;
+    unsigned short matrixOps;
 } DebugData;
 
 extern DebugData *gDebugData;
@@ -84,6 +97,7 @@ void process_profiler(void);
 #define DEBUG_GET_TIME_1_END(index) get_profiler_time(index) - compare1
 #define DEBUG_GET_TIME_2_END(index) get_profiler_time(index) - compare2
 #define DEBUG_GET_TIME_3_END(index) get_profiler_time(index) - compare3
+#define DEBUG_MATRIX_OP() gDebugData->matrixOps++
 #else
 #define reset_profiler_times()
 #define get_time_snapshot(index, diff)
@@ -112,4 +126,5 @@ void process_profiler(void);
 #define DEBUG_GET_TIME_1_END(index)
 #define DEBUG_GET_TIME_2_END(index)
 #define DEBUG_GET_TIME_3_END(index)
+#define DEBUG_MATRIX_OP()
 #endif

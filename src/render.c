@@ -111,6 +111,7 @@ void setup_light(light_t light) {
 }
 
 void set_frustrum(float l, float r, float b, float t, float n, float f) {
+    DEBUG_MATRIX_OP();
     Matrix frustum = (Matrix) { .m={
         {(2*n)/(r-l), 0.f, 0.f, 0.f},
         {0.f, (2.f*n)/(t-b), 0.f, 0.f},
@@ -138,6 +139,7 @@ float lookat_dot(const float *a, const float *b) {
 }
 
 void mtx_lookat(float eyex, float eyey, float eyez, float centerx, float centery, float centerz, float upx, float upy, float upz) {
+    DEBUG_MATRIX_OP();
     GLfloat eye[3] = {eyex, eyey, eyez};
     GLfloat f[3] = {centerx - eyex, centery - eyey, centerz - eyez};
     GLfloat u[3] = {upx, upy, upz};
@@ -183,6 +185,7 @@ void mtx_lookat(float eyex, float eyey, float eyez, float centerx, float centery
 };
 
 void mtx_translate_rotate(Matrix *mtx, short angleX, short angleY, short angleZ, GLfloat x, GLfloat y, GLfloat z) {
+    DEBUG_MATRIX_OP();
     float sx = sins(angleX);
     float cx = coss(angleX);
 
@@ -211,6 +214,7 @@ void mtx_translate_rotate(Matrix *mtx, short angleX, short angleY, short angleZ,
 }
 
 void mtx_translate(Matrix *mtx, float x, float y, float z) {
+    DEBUG_MATRIX_OP();
     bzero(mtx, sizeof(Matrix));
 
     mtx->m[3][0] = x;
@@ -220,6 +224,7 @@ void mtx_translate(Matrix *mtx, float x, float y, float z) {
 }
 
 void mtx_rotate(Matrix *mtx, short angleX, short angleY, short angleZ) {
+    DEBUG_MATRIX_OP();
     float sx = sins(angleX);
     float cx = coss(angleX);
 
@@ -248,6 +253,7 @@ void mtx_rotate(Matrix *mtx, short angleX, short angleY, short angleZ) {
 }
 
 void mtx_billboard(Matrix *mtx, float x, float y, float z) {
+    DEBUG_MATRIX_OP();
     gBillboardMatrix.m[3][0] = x;
     gBillboardMatrix.m[3][1] = y;
     gBillboardMatrix.m[3][2] = z;
@@ -256,6 +262,7 @@ void mtx_billboard(Matrix *mtx, float x, float y, float z) {
 }
 
 void mtx_scale(Matrix *mtx, float scaleX, float scaleY, float scaleZ) {
+    DEBUG_MATRIX_OP();
     float s[3] = {scaleX, scaleY, scaleZ};
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
@@ -420,11 +427,15 @@ void apply_render_settings(void) {
     }
 }
 
+#ifdef PUPPYPRINT_DEBUG
 int showAll = 1;
+#else
+#define showAll 1
+#endif
 
 void find_material_list(RenderNode *node) {
     // idk if this section is faster, yet.
-    if (showAll && gPrevMatList && node->material->textureID == gPrevMatList->entryHead->material->textureID) {
+    if (gPrevMatList && node->material->textureID == gPrevMatList->entryHead->material->textureID) {
         RenderList *list = gPrevMatList;
         if (list->entryHead == gRenderNodeHead) {
             gRenderNodeHead = node;
@@ -444,23 +455,21 @@ void find_material_list(RenderNode *node) {
         matList = malloc(sizeof(RenderList));
         gMateriallistHead = matList;
     } else {
-        if (showAll) {
-            RenderList *list = gMateriallistHead;
-            while (list) {
-                if (list->entryHead->material->textureID == node->material->textureID) {
-                    if (list->entryHead == gRenderNodeHead) {
-                        gRenderNodeHead = node;
-                    } else {
-                        list->entryHead->prev->next = node;
-                    }
-                    node->next = list->entryHead;
-                    node->prev = list->entryHead->prev;
-                    list->entryHead = node;
-                    gPrevMatList = list;
-                    return;
+        RenderList *list = gMateriallistHead;
+        while (list) {
+            if (list->entryHead->material->textureID == node->material->textureID) {
+                if (list->entryHead == gRenderNodeHead) {
+                    gRenderNodeHead = node;
+                } else {
+                    list->entryHead->prev->next = node;
                 }
-                list = list->next;
+                node->next = list->entryHead;
+                node->prev = list->entryHead->prev;
+                list->entryHead = node;
+                gPrevMatList = list;
+                return;
             }
+            list = list->next;
         }
         matList = malloc(sizeof(RenderList));
         gMateriallistTail->next = matList;
@@ -515,6 +524,7 @@ void pop_render_list(void) {
 }
 
 void render_particles(void) {
+    DEBUG_SNAPSHOT_1();
     ParticleList *list = gParticleListHead;
     Particle *particle;
     
@@ -532,23 +542,33 @@ void render_particles(void) {
         glPopMatrix();
         list = list->next;
     }
+    get_time_snapshot(PP_RENDERPARTICLES, DEBUG_SNAPSHOT_1_END);
 }
 
 void render_world(void) {
+    DEBUG_SNAPSHOT_1();
     if (sCurrentScene && sCurrentScene->model) {
         SceneMesh *s = sCurrentScene->meshList;
 
         while (s != NULL) {
             RenderNode *entry = malloc(sizeof(RenderNode));
             entry->matrix = NULL;
-            add_render_node(entry, s->renderBlock, s->material, s->flags);
+            if (showAll) {
+                add_render_node(entry, s->renderBlock, s->material, s->flags);
+            } else {
+                set_material(s->material, s->flags);
+                rspq_block_run(s->renderBlock);
+                free(entry);
+            }
             s = s->next;
         }
     }
     pop_render_list();
+    get_time_snapshot(PP_RENDERLEVEL, DEBUG_SNAPSHOT_1_END);
 }
 
 void render_object_shadows(void) {
+    DEBUG_SNAPSHOT_1();
     ObjectList *list = gObjectListHead;
     Object *obj;
     
@@ -560,9 +580,11 @@ void render_object_shadows(void) {
         }
         list = list->next;
     }
+    get_time_snapshot(PP_SHADOWS, DEBUG_SNAPSHOT_1_END);
 }
 
 void render_clutter(void) {
+    DEBUG_SNAPSHOT_1();
     ClutterList *list = gClutterListHead;
     Clutter *obj; 
     if (sBushBlock == NULL) {
@@ -576,19 +598,41 @@ void render_clutter(void) {
             RenderNode *entry = malloc(sizeof(RenderNode));
             entry->matrix = malloc(sizeof(Matrix));
             mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
-            add_render_node(entry, sBushBlock, &gTempMaterials[3], MATERIAL_NULL);
+            if (showAll) {
+                add_render_node(entry, sBushBlock, &gTempMaterials[3], MATERIAL_NULL);
+            } else {
+                glPushMatrix();
+                glMultMatrixf((GLfloat *) entry->matrix->m);
+                set_material(&gTempMaterials[3], MATERIAL_NULL);
+                rspq_block_run(sBushBlock);
+                free(entry->matrix);
+                free(entry);
+                glPopMatrix();
+            }
         } else if (obj->objectID == CLUTTER_ROCK && !(obj->flags & OBJ_FLAG_INVISIBLE)) {
             RenderNode *entry = malloc(sizeof(RenderNode));
             entry->matrix = malloc(sizeof(Matrix));
             mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
-            add_render_node(entry, sBushBlock, &gTempMaterials[0], MATERIAL_NULL);
+            if (showAll) {
+                add_render_node(entry, sBushBlock, &gTempMaterials[0], MATERIAL_NULL);
+            } else {
+                glPushMatrix();
+                glMultMatrixf((GLfloat *) entry->matrix->m);
+                set_material(&gTempMaterials[0], MATERIAL_NULL);
+                rspq_block_run(sBushBlock);
+                free(entry->matrix);
+                free(entry);
+                glPopMatrix();
+            }
         }
         list = list->next;
     }
     pop_render_list();
+    get_time_snapshot(PP_RENDERCLUTTER, DEBUG_SNAPSHOT_1_END);
 }
 
 void render_objects(void) {
+    DEBUG_SNAPSHOT_1();
     ObjectList *list = gObjectListHead;
     Object *obj;
     
@@ -601,7 +645,17 @@ void render_objects(void) {
                 entry->matrix = malloc(sizeof(Matrix));
                 float scale[3] = {9.0f, 8.0f, 9.0f};
                 set_draw_matrix(entry->matrix, m->matrixBehaviour, obj->pos, obj->faceAngle, scale);
-                add_render_node(entry, m->block, &m->material, MATERIAL_NULL);
+                if (showAll) {
+                    add_render_node(entry, m->block, &m->material, MATERIAL_NULL);
+                } else {
+                    glPushMatrix();
+                    glMultMatrixf((GLfloat *) entry->matrix->m);
+                    set_material(&m->material, MATERIAL_NULL);
+                    rspq_block_run(m->block);
+                    free(entry->matrix);
+                    free(entry);
+                    glPopMatrix();
+                }
                 m = m->next;
             }
         }
@@ -609,6 +663,7 @@ void render_objects(void) {
     }
 
     pop_render_list();
+    get_time_snapshot(PP_RENDEROBJECTS, DEBUG_SNAPSHOT_1_END);
 }
 
 void render_game(int updateRate, float updateRateF) {

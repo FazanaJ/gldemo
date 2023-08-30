@@ -120,7 +120,7 @@ void process_profiler(void) {
         clear_input(INPUT_L);
     }
 
-    if ((gGlobalTimer % 60) == 0) {
+    if ((gGlobalTimer % 120) == 0) {
         debugf("FPS: %2.2f | CPU: %dus (%d%%) | RSP: %dus (%d%%) | RDP: %dus (%d%%)\n", 
         gFPS, gDebugData->cpuTime[TIME_TOTAL], gDebugData->cpuTime[TIME_TOTAL] / 333,
         gDebugData->rspTime[TIME_TOTAL], gDebugData->rspTime[TIME_TOTAL] / 333, gDebugData->rdpTime[TIME_TOTAL], gDebugData->rdpTime[TIME_TOTAL] / 333);
@@ -150,7 +150,7 @@ void render_profiler(void) {
             boxHeight += 8;
         }
     }
-    rdpq_fill_rectangle(width - 94, 0, width, boxHeight);
+    rdpq_fill_rectangle(width - 104, 0, width, boxHeight);
     rdpq_mode_blender(0);
     rdpq_text_printf(NULL, FONT_ARIAL, 8, 16, "FPS: %2.2f", gFPS);
     rdpq_text_printf(NULL, FONT_ARIAL, 8, 26, "CPU: %dus (%d%%)", gDebugData->cpuTime[TIME_TOTAL], gDebugData->cpuTime[TIME_TOTAL] / 333);
@@ -167,7 +167,7 @@ void render_profiler(void) {
     for (int i = 0; i < PP_TOTAL; i++) {
         if (gDebugData->timer[i][TIME_TOTAL] > 1) {
             boxHeight += 8;
-            rdpq_text_printf(NULL, FONT_ARIAL, width - 90, 8 + boxHeight, "%s:", sDebugText[i]);
+            rdpq_text_printf(NULL, FONT_ARIAL, width - 100, 8 + boxHeight, "%s:", sDebugText[i]);
             rdpq_text_printf(NULL, FONT_ARIAL, width - 38, 8 + boxHeight, "%dus", gDebugData->timer[i][TIME_TOTAL]);
         }
     }

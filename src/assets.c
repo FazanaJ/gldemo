@@ -20,6 +20,7 @@ const TextureInfo sTextureIDs[] = {
     {"water.ci8", TEX_NULL, 0},
     {"kitchentile.i8", TEX_NULL, 0},
     {"introsign.i4", TEX_NULL, 0},
+    {"introsign2.i4", TEX_NULL, 0},
 };
 
 char *gFontAssetTable[] = {
@@ -392,7 +393,7 @@ void set_material(Material *material, int flags) {
 
 void set_texture(Material *material) {
     DEBUG_SNAPSHOT_1();
-    if (material->textureID != -1) {
+    if (material->textureID != -1 && sPrevTextureID != material->textureID) {
         //if (material->index == NULL) {
             if (load_texture(material) == -1) {
                 get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
@@ -400,6 +401,7 @@ void set_texture(Material *material) {
             }
         //}
         material->index->loadTimer = 10;
+        sPrevTextureID = material->textureID;
         glBindTexture(GL_TEXTURE_2D, material->index->texture);
     }
     get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
