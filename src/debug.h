@@ -27,7 +27,8 @@
     "RenParticles", \
     "RenLevel", \
     "Shadows", \
-    "RenderList"
+    "RenderList", \
+    "Matrix"
 
 
 enum ProfileTimers {
@@ -51,6 +52,7 @@ enum ProfileTimers {
     PP_RENDERLEVEL,
     PP_SHADOWS,
     PP_RENDERLIST,
+    PP_MATRIX,
 
     PP_TOTAL
 };

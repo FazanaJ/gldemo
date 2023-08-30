@@ -141,7 +141,9 @@ int main(void) {
         gGlobalTimer++;
         gGameTimer += updateRate;
 #ifdef PUPPYPRINT_DEBUG
+    if (gDebugData && gDebugData->enabled) {
         rspq_wait();
+    }
 #endif
     }
 

@@ -272,6 +272,7 @@ void mtx_scale(Matrix *mtx, float scaleX, float scaleY, float scaleZ) {
 }
 
 void set_draw_matrix(Matrix *mtx, int matrixType, float *pos, u_uint16_t *angle, float *scale) {
+    DEBUG_SNAPSHOT_1();
     switch (matrixType) {
     case MTX_TRANSLATE:
         mtx_translate(mtx, pos[0], pos[1], pos[2]);
@@ -291,6 +292,7 @@ void set_draw_matrix(Matrix *mtx, int matrixType, float *pos, u_uint16_t *angle,
         mtx_scale(mtx, scale[0], scale[1], scale[2]);
         break;
     }
+    get_time_snapshot(PP_MATRIX, DEBUG_SNAPSHOT_1_END);
 }
 
 void set_light(light_t light) {
@@ -565,6 +567,11 @@ void render_world(void) {
     }
     pop_render_list();
     get_time_snapshot(PP_RENDERLEVEL, DEBUG_SNAPSHOT_1_END);
+#ifdef PUPPYPRINT_DEBUG
+    if (gDebugData && gDebugData->enabled) {
+        rspq_wait();
+    }
+#endif
 }
 
 void render_object_shadows(void) {
@@ -629,6 +636,11 @@ void render_clutter(void) {
     }
     pop_render_list();
     get_time_snapshot(PP_RENDERCLUTTER, DEBUG_SNAPSHOT_1_END);
+#ifdef PUPPYPRINT_DEBUG
+    if (gDebugData && gDebugData->enabled) {
+        rspq_wait();
+    }
+#endif
 }
 
 void render_objects(void) {
@@ -664,6 +676,11 @@ void render_objects(void) {
 
     pop_render_list();
     get_time_snapshot(PP_RENDEROBJECTS, DEBUG_SNAPSHOT_1_END);
+#ifdef PUPPYPRINT_DEBUG
+    if (gDebugData && gDebugData->enabled) {
+        rspq_wait();
+    }
+#endif
 }
 
 void render_game(int updateRate, float updateRateF) {
@@ -689,8 +706,9 @@ void render_game(int updateRate, float updateRateF) {
     gl_context_end();
     render_hud(updateRate, updateRateF);
     render_menus(updateRate, updateRateF);
-
+#ifdef PUPPYPRINT_DEBUG
     if (get_input_pressed(INPUT_CRIGHT, 0)) {
         showAll ^= 1;
     }
+#endif
 }

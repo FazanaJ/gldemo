@@ -26,6 +26,8 @@ Object *gPlayer;
 short gNumObjects = 0;
 short gNumClutter = 0;
 short gNumParticles = 0;
+short gNumModels = 0;
+short gNumOverlays = 0;
 #endif
 char gGamePaused = false;
 
@@ -79,6 +81,9 @@ void init_object_behaviour(Object *obj, int objectID) {
         list->next = NULL;
         list->timer = 10;
         debugf("Loading overlay [%s]\n", sObjectOverlays[objectID]);
+#ifdef PUPPYPRINT_DEBUG
+        gNumOverlays++;
+#endif
     }
     ObjectEntry *entry = dlsym(addr, "entry");
     obj->loopFunc = entry->loopFunc;
@@ -138,6 +143,9 @@ void check_unused_model(Object *obj) {
     model64_free(obj->gfx->listEntry->model64);
     debugf("Freed model [%s]\n", gModelIDs[obj->gfx->modelID - 1]);
     free(obj->gfx->listEntry);
+#ifdef PUPPYPRINT_DEBUG
+        gNumModels--;
+#endif
 }
 
 void check_unused_overlay(Object *obj, VoidList *overlay) {
@@ -171,6 +179,9 @@ void check_unused_overlay(Object *obj, VoidList *overlay) {
     dlclose(overlay->addr);
     debugf("Freed overlay [%s]\n", sObjectOverlays[overlay->id]);
     free(overlay);
+#ifdef PUPPYPRINT_DEBUG
+        gNumOverlays--;
+#endif
 }
 
 /**
@@ -366,6 +377,9 @@ void load_object_model(Object *obj, int objectID) {
         }
     }
 
+#ifdef PUPPYPRINT_DEBUG
+        gNumModels++;
+#endif
     debugf("Loading model [%s]\n", gModelIDs[modelID - 1]);
     list->next = NULL;
     list->timer = 10;

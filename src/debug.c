@@ -30,6 +30,8 @@ void reset_profiler_times(void) {
     gDebugData->rspTime[gDebugData->iteration] = 0;
     gDebugData->rdpTime[TIME_AGGREGATE] -= gDebugData->rdpTime[gDebugData->iteration];
     gDebugData->rdpTime[gDebugData->iteration] = 0;
+    
+    gDebugData->matrixOps = 0;
 }
 
 void get_time_snapshot(int index, int diff) {
@@ -58,7 +60,7 @@ void get_cpu_time(int diff) {
     gDebugData->cpuTime[gDebugData->iteration] += time;
     gDebugData->cpuTime[TIME_AGGREGATE] += time;
 }
-extern Input gInputData;;
+
 void get_rsp_time(int diff) {
     int time = (diff * 10) / 625;
     if (time > 99999) {
@@ -143,7 +145,7 @@ void render_profiler(void) {
         boxHeight += 8;
     }
     rdpq_fill_rectangle(8, 6, 96, 28 + boxHeight);
-    rdpq_fill_rectangle(8, gFrameBuffers->height - 34, 112, gFrameBuffers->height - 6);
+    rdpq_fill_rectangle(8, gFrameBuffers->height - 42, 120, gFrameBuffers->height - 6);
     boxHeight = 10;
     for (int i = 0; i < PP_TOTAL; i++) {
         if (gDebugData->timer[i][TIME_TOTAL] > 1) {
@@ -175,6 +177,7 @@ void render_profiler(void) {
     rdpq_text_printf(NULL, FONT_ARIAL, 8, gFrameBuffers->height - 8, "RAM: %dKB/%dKB", (ramUsed / 1024), get_memory_size() / 1024);
     rdpq_text_printf(NULL, FONT_ARIAL, 8, gFrameBuffers->height - 16, "Tex: %d | Loads: %d", gNumTextures, gNumTextureLoads);
     rdpq_text_printf(NULL, FONT_ARIAL, 8, gFrameBuffers->height - 24, "Obj: %d | Clu: %d | Par: %d", gNumObjects, gNumClutter, gNumParticles);
+    rdpq_text_printf(NULL, FONT_ARIAL, 8, gFrameBuffers->height - 32, "Mtx: %d | Mdl: %d | Ovl: %d", gDebugData->matrixOps, gNumModels, gNumOverlays);
 }
 
 #endif

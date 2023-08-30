@@ -185,6 +185,8 @@ extern ParticleList *gParticleListTail;
 extern short gNumObjects;
 extern short gNumClutter;
 extern short gNumParticles;
+extern short gNumModels;
+extern short gNumOverlays;
 
 Object *allocate_object(void);
 Clutter *allocate_clutter(void);
