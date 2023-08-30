@@ -28,7 +28,7 @@ Matrix gBillboardMatrix;
 Matrix gScaleMatrix;
 char gZTargetTimer = 0;
 static rspq_block_t *sRenderEndBlock;
-static rspq_block_t *sRenderSkyBlock;
+rspq_block_t *sRenderSkyBlock;
 static rspq_block_t *sBeginModeBlock;
 static rspq_block_t *sParticleBlock;
 

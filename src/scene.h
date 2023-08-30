@@ -5,15 +5,15 @@
 #define MAP_OBJ 0
 #define MAP_CLU 1
 
-enum EnvironmentFlags {
-    ENV_FOG = (1 << 0),
+enum SceneNames {
+    SCENE_INTRO,
+    SCENE_TESTAREA,
 };
 
-typedef struct SceneIDs {
-    char *model;
-    struct ObjectMap *objectMap;
-    struct SceneHeader *header;
-} SceneIDs;
+enum EnvironmentFlags {
+    ENV_NONE,
+    ENV_FOG = (1 << 0),
+};
 
 typedef struct SceneMesh {
     struct SceneMesh *next;
@@ -30,23 +30,26 @@ typedef struct ObjectMap {
     short x;
     short y;
     short z;
-    char pad[2];
 } ObjectMap;
 
 typedef struct SceneHeader {
+    char *model;
+    struct ObjectMap *objectMap;
     short fogNear;
     short fogFar;
-    char fogColour[4];
-    char lightColour[4];
-    char lightAmbient[4];
-    char skyTop[4];
-    char skyBottom[4];
+    unsigned char fogColour[3];
+    unsigned char lightColour[3];
+    unsigned char lightAmbient[3];
+    unsigned char skyTop[3];
+    unsigned char skyBottom[3];
+    int flags;
 } SceneHeader;
 
 typedef struct SceneBlock {
     model64_t *model;
     SceneMesh *meshList;
     int sceneID;
+    void *overlay;
 } SceneBlock;
 
 typedef struct Environment {
@@ -55,7 +58,7 @@ typedef struct Environment {
     GLfloat skyColourBottom[4];
     GLfloat fogNear;
     GLfloat fogFar;
-    char flags;
+    int flags;
 } Environment;
 
 extern SceneBlock *sCurrentScene;

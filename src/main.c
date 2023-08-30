@@ -108,7 +108,7 @@ int main(void) {
 
     boot_game();
     init_renderer();
-    load_scene(0);
+    load_scene(SCENE_INTRO);
 
     while (1) {
         gFrameBuffers = display_get();

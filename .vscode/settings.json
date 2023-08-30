@@ -23,6 +23,7 @@
         "rspq_profile.h": "c",
         "xm_internal.h": "c",
         "math_util.h": "c",
-        "debug.h": "c"
+        "debug.h": "c",
+        "menu.h": "c"
     }
 }

@@ -422,7 +422,7 @@ void process_options_menu(int updateRate) {
             break;
         case 2:
             menu_set_reset(MENU_TITLE);
-            load_scene(0);
+            load_scene(SCENE_INTRO);
             set_background_music(1, 30);
             break;
         }
@@ -455,7 +455,7 @@ void process_title_menu(int updateRate) {
         switch (sMenuSelection[1]) {
         case 0:
             menu_set_reset(MENU_CLOSED);
-            load_scene(1);
+            load_scene(SCENE_TESTAREA);
             set_background_music(0, 30);
             break;
         case 1:

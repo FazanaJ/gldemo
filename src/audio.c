@@ -32,7 +32,7 @@ static SoundData sSoundTable[] = {
 
 static SequenceData sSequenceTable[] = {
     {"ToysXM-8bit", 8},
-    {"racer", 8},
+    {"racer", 3},
 };
 
 void set_sound_channel_count(int channelCount) {

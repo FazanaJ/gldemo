@@ -12,7 +12,7 @@ assets_xm1 = $(wildcard assets/xm/*.xm)
 
 
 MAIN_ELF_EXTERNS := $(BUILD_DIR)/gldemo.externs
-DSO_MODULES = boot.dso projectile.dso player.dso npc.dso
+DSO_MODULES = boot.dso projectile.dso player.dso npc.dso intro.dso testarea.dso
 DSO_LIST = $(addprefix filesystem/, $(DSO_MODULES))
 
 assets_conv = $(addprefix filesystem/,$(notdir $(assets_ttf:%.ttf=%.font64))) \
@@ -72,6 +72,10 @@ n64brew_SRC = src/overlays/player.c
 filesystem/player.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 n64brew_SRC = src/overlays/npc.c
 filesystem/npc.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
+n64brew_SRC = src/overlays/intro.c
+filesystem/intro.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
+n64brew_SRC = src/overlays/testarea.c
+filesystem/testarea.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 
 gldemo.z64: N64_ROM_TITLE="Smile Emote"
 gldemo.z64: N64_ROM_SAVETYPE = eeprom16k
@@ -84,6 +88,6 @@ clean:
 clean_src:
 	rm -rf $(BUILD_DIR)/src $(DSO_LIST) gldemo.z64 
 
--include $(src:%.c=$(BUILD_DIR)/%.d)
+-include $(src:%.c=$(BUILD_DIR)/%.d) $(overlay:%.c=$(BUILD_DIR)/%.d)
 
 .PHONY: all clean

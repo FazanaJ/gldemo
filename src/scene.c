@@ -12,25 +12,9 @@
 SceneBlock *sCurrentScene;
 Environment *gEnvironment;
 
-ObjectMap sTestAreaObjs[] = {
-    {OBJ_PLAYER, MAP_OBJ, /*Yaw*/ 0, /*X*/ 0, /*Y*/ 0, /*Z*/ 0},
-    {OBJ_NPC, MAP_OBJ, /*Yaw*/ 0, /*X*/ 50, /*Y*/ 0, /*Z*/ 0},
-    {CLUTTER_ROCK, MAP_CLU, /*Yaw*/ 0, /*X*/ 20, /*Y*/ 0, /*Z*/ 40},
-    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 10, /*Y*/ 0, /*Z*/ 45},
-    {CLUTTER_ROCK, MAP_CLU, /*Yaw*/ 0, /*X*/ 35, /*Y*/ 0, /*Z*/ -100},
-    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 75, /*Y*/ 0, /*Z*/ -25},
-    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 60, /*Y*/ 0, /*Z*/ 40},
-    {CLUTTER_ROCK, MAP_CLU, /*Yaw*/ 0, /*X*/ -25, /*Y*/ 0, /*Z*/ 45},
-    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ -95, /*Y*/ 0, /*Z*/ 40},
-    {CLUTTER_ROCK, MAP_CLU, /*Yaw*/ 0, /*X*/ 45, /*Y*/ 0, /*Z*/ 0},
-    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 75, /*Y*/ 0, /*Z*/ -75},
-
-    {-1, MAP_CLU, /*Yaw*/ 0, /*X*/ 75, /*Y*/ -75, /*Z*/ 0},
-};
-
-SceneIDs sSceneTable[] = {
-    {"intro", NULL, NULL},
-    {"testarea", sTestAreaObjs, NULL},
+char *sSceneTable[] = {
+    "intro",
+    "testarea",
 };
 
 char sSceneTexIDs[][4] = {
@@ -47,40 +31,29 @@ int sSceneMeshFlags[][4] = {
     MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_XLU},
 };
 
-light_t sEnvironmentLight = {
-    color: {0.51f, 0.81f, 0.665f, 0.5f},
-    diffuse: {1.0f, 1.0f, 1.0f, 1.0f},
-    direction: {0, 0, 0x6000},
-    position: {1.0f, 0.0f, 0.0f, 0.0f},
-    radius: 10.0f,
-};
-
-void setup_fog(light_t light) {
+void setup_fog(SceneHeader *header) {
     if (gEnvironment == NULL) {
         gEnvironment = malloc(sizeof(Environment));
     }
-
-    gEnvironment->fogColour[0] = light.color[0];
-    gEnvironment->fogColour[1] = light.color[1];
-    gEnvironment->fogColour[2] = light.color[2];
-    gEnvironment->skyColourBottom[0] = light.color[0] * 0.66f;
-    gEnvironment->skyColourBottom[1] = light.color[1] * 0.66f;
-    gEnvironment->skyColourBottom[2] = light.color[2] * 0.66f;
-    gEnvironment->skyColourTop[0] = light.color[0] * 1.33f;
-    if (gEnvironment->skyColourTop[0] > 1.0f) {
-        gEnvironment->skyColourTop[0] = 1.0f;
-    }
-    gEnvironment->skyColourTop[1] = light.color[1] * 1.33f;
-    if (gEnvironment->skyColourTop[1] > 1.0f) {
-        gEnvironment->skyColourTop[1] = 1.0f;
-    }
-    gEnvironment->skyColourTop[2] = light.color[2] * 1.33f;
-    if (gEnvironment->skyColourTop[2] > 1.0f) {
-        gEnvironment->skyColourTop[2] = 1.0f;
-    }
-    gEnvironment->flags = ENV_FOG;
-    gEnvironment->fogNear = 150.0f;
-    gEnvironment->fogFar = 400.0f;
+    gEnvironment->fogColour[0] = ((float) header->fogColour[0]) / 255.0f;
+    gEnvironment->fogColour[1] = ((float) header->fogColour[1]) / 255.0f;
+    gEnvironment->fogColour[2] = ((float) header->fogColour[2]) / 255.0f;
+    gEnvironment->fogColour[3] = 1.0f;
+    gEnvironment->skyColourBottom[0] = ((float) header->skyBottom[0]) / 255.0f;
+    gEnvironment->skyColourBottom[1] = ((float) header->skyBottom[1]) / 255.0f;
+    gEnvironment->skyColourBottom[2] = ((float) header->skyBottom[2]) / 255.0f;
+    gEnvironment->skyColourBottom[3] = 1.0f;
+    gEnvironment->skyColourTop[0] = ((float) header->skyTop[0]) / 255.0f;
+    gEnvironment->skyColourTop[1] = ((float) header->skyTop[1]) / 255.0f;
+    gEnvironment->skyColourTop[2] = ((float) header->skyTop[2]) / 255.0f;
+    gEnvironment->skyColourTop[3] = 1.0f;
+    gEnvironment->flags = header->flags;
+    gEnvironment->fogNear = header->fogNear;
+    gEnvironment->fogFar = header->fogFar;
+    debugf("Top: R: %d, %2.2f, G: %d, %2.2f, B: %d, %2.2f\n", header->skyTop[0], gEnvironment->skyColourTop[0],
+     header->skyTop[1], gEnvironment->skyColourTop[1], header->skyTop[2], gEnvironment->skyColourTop[2]);
+    debugf("Bottom: R: %d, %2.2f, G: %d, %2.2f, B: %d, %2.2f\n", header->skyBottom[0], gEnvironment->skyColourBottom[0],
+     header->skyBottom[1], gEnvironment->skyColourBottom[1], header->skyBottom[2], gEnvironment->skyColourBottom[2]);
     glFogf(GL_FOG_START, gEnvironment->fogNear);
     glFogf(GL_FOG_END, gEnvironment->fogFar);
     glFogfv(GL_FOG_COLOR, gEnvironment->fogColour);
@@ -89,6 +62,10 @@ void setup_fog(light_t light) {
 static void clear_scene(void) {
     SceneMesh *curMesh = sCurrentScene->meshList;
     clear_objects();
+    if (sRenderSkyBlock) {
+        rspq_block_free(sRenderSkyBlock);
+        sRenderSkyBlock = NULL;
+    }
     gPlayer = NULL;
     if (sCurrentScene->model) {
         while (curMesh) {
@@ -108,6 +85,9 @@ static void clear_scene(void) {
     if (sCurrentScene->model) {
         free(sCurrentScene->model);
     }
+    if (sCurrentScene->overlay) {
+        dlclose(sCurrentScene->overlay);
+    }
     free(sCurrentScene);
 }
 
@@ -116,12 +96,13 @@ void load_scene(int sceneID) {
     if (sCurrentScene) {
         clear_scene();
     }
-    SceneIDs *t = &sSceneTable[sceneID];
     sCurrentScene = malloc(sizeof(SceneBlock));
     SceneBlock *s = sCurrentScene;
+    s->overlay = dlopen(asset_dir(sSceneTable[sceneID], DFS_OVERLAY), RTLD_LOCAL);
+    SceneHeader *header = dlsym(s->overlay, "header");
     s->model = NULL;
-    if (t->model) {
-        s->model = model64_load(asset_dir(t->model, DFS_MODEL64));
+    if (header->model) {
+        s->model = model64_load(asset_dir(header->model, DFS_MODEL64));
         s->meshList = NULL;
         s->sceneID = sceneID;
         int numMeshes = model64_get_mesh_count(s->model);
@@ -155,9 +136,9 @@ void load_scene(int sceneID) {
         }
     }
     
-    if (t->objectMap) {
+    if (header->objectMap) {
         int i = 0;
-        ObjectMap *o = &t->objectMap[i];
+        ObjectMap *o = &header->objectMap[i];
 
         while (1) {
             if (o->type == MAP_OBJ) {
@@ -170,17 +151,17 @@ void load_scene(int sceneID) {
                 spawn_clutter(o->objectID, o->x, o->y, o->z, 0, o->yaw, 0);
             }
 
-            if (t->objectMap[i + 1].objectID == -1) {
+            if (header->objectMap[i + 1].objectID == -1) {
                 break;
             } else {
                 i++;
-                o = &t->objectMap[i];
+                o = &header->objectMap[i];
             }
         }
     }
-    setup_fog(sEnvironmentLight);
+    setup_fog(header);
     camera_init();
 #ifdef PUPPYPRINT_DEBUG
-    debugf("Scene [%s] loaded in %2.3fs.\n", sSceneTable[sceneID].model, ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
+    debugf("Scene [%s] loaded in %2.3fs.\n", sSceneTable[sceneID], ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
 #endif
 }
