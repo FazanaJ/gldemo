@@ -6,27 +6,13 @@
 
 #include "assets.h"
 #include "../include/global.h"
+#define INCLUDE_TEX_TABLE
+#include "../include/texture_table.h"
+#undef INCLUDE_TEX_TABLE
 
 #include "debug.h"
 #include "scene.h"
 #include "main.h"
-
-const TextureInfo sTextureIDs[] = {
-    {"grass0.ci4", TEX_NULL, 0},
-    {"health.i8", TEX_CLAMP_H | TEX_CLAMP_V, 0},
-    {"plant1.ia8", TEX_MIRROR_H | TEX_CLAMP_V, 0},
-    {"shadow.i4", TEX_MIRROR_H | TEX_MIRROR_V, 0},
-    {"stone.ci4", TEX_NULL, 0},
-    {"water.ci8", TEX_NULL, 0},
-    {"kitchentile.i8", TEX_NULL, 0},
-    {"introsign.i4", TEX_NULL, 0},
-    {"introsign2.i4", TEX_NULL, 0},
-    {"eye1.ia4", TEX_MIRROR_H | TEX_CLAMP_V, 0},
-    {"eyebrow1.ia4", TEX_MIRROR_H | TEX_CLAMP_V, 0},
-    {"mouth1.ia4", TEX_MIRROR_H | TEX_CLAMP_V, 0},
-    {"shirt.ci8", TEX_CLAMP_H | TEX_CLAMP_V, 0},
-    {"trousers.ci8", TEX_CLAMP_H | TEX_CLAMP_V, 0},
-};
 
 char *gFontAssetTable[] = {
     "arial.10",

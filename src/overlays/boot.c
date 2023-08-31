@@ -26,6 +26,7 @@ static const resolution_t sVideoModes[] = {
 
 void read_config(void) {
     int region = get_tv_type();
+    int write = false;
     if (region == PAL50) {
         gIsPal = true;
     }
@@ -38,6 +39,7 @@ void read_config(void) {
         gConfig.soundVolume = 9;
         gConfig.soundMode = SOUND_STEREO;
         config.magic = SAVE_MAGIC_NUMBER;
+        write = true;
         debugf("Config failed to load: Generating new.\n");
     } else {
         gConfig.regionMode = config.regionMode;
@@ -52,6 +54,9 @@ void read_config(void) {
     gConfig.frameCap = config.frameCap;
     gMusicVolume = (float) gConfig.musicVolume / (float) 9.0f;
     gSoundVolume = (float) gConfig.soundVolume / (float) 9.0f;
+    if (write) {
+        write_config();
+    }
 }
 
 void save_doesnt_exist(void) {

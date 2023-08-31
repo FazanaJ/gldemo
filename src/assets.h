@@ -77,11 +77,10 @@ typedef struct Material {
     short flags;
 } Material;
 
-typedef struct TextureInfo {
+ typedef struct TextureInfo {
     char *file;
     unsigned char flags;
-    char pallettes;
-} TextureInfo;
+} __attribute__((__packed__)) TextureInfo;
 
 extern short gNumTextures;
 extern short gNumTextureLoads;

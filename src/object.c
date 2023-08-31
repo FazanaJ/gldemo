@@ -313,12 +313,12 @@ int temp_matrix_grabber(int modelID) {
 }
 
 short playerModelTextures[6][4] = {
-    {-1, 0, 0, 0},
-    {-1, 0, 0, 0},
-    {-1, 0, 0, 0},
-    {-1, -1, -1, 9},
-    {13, 0, 0, 0},
-    {-1, 12, 0, 0}
+    {TEXTURE_NONE, 0, 0, 0},
+    {TEXTURE_NONE, 0, 0, 0},
+    {TEXTURE_NONE, 0, 0, 0},
+    {TEXTURE_NONE, TEXTURE_NONE, TEXTURE_NONE, TEXTURE_EYE1},
+    {TEXTURE_TROUSERS, 0, 0, 0},
+    {TEXTURE_NONE, TEXTURE_SHIRT, 0, 0}
 };
 
 short playerModelFlags[6][4] = {

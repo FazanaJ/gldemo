@@ -18,8 +18,8 @@ char *sSceneTable[] = {
 };
 
 char sSceneTexIDs[][4] = {
-    {7, 6, 8},
-    {4, 0, 5},
+    {TEXTURE_INTROSIGN, TEXTURE_KITCHENTILE, TEXTURE_INTEROSIGN2},
+    {TEXTURE_STONE, TEXTURE_GRASS0, TEXTURE_WATER},
 };
 
 int sSceneMeshFlags[][4] = {

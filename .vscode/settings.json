@@ -24,6 +24,7 @@
         "xm_internal.h": "c",
         "math_util.h": "c",
         "debug.h": "c",
-        "menu.h": "c"
+        "menu.h": "c",
+        "texture_table.h": "c"
     }
 }
