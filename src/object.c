@@ -312,6 +312,24 @@ int temp_matrix_grabber(int modelID) {
     return MTX_TRANSLATE;
 }
 
+short playerModelTextures[6][4] = {
+    {-1, 0, 0, 0},
+    {-1, 0, 0, 0},
+    {-1, 0, 0, 0},
+    {-1, -1, -1, 9},
+    {13, 0, 0, 0},
+    {-1, 12, 0, 0}
+};
+
+short playerModelFlags[6][4] = {
+    {MATERIAL_VTXCOL, 0, 0, 0},
+    {MATERIAL_VTXCOL, 0, 0, 0},
+    {MATERIAL_VTXCOL, 0, 0, 0},
+    {MATERIAL_VTXCOL, MATERIAL_VTXCOL, MATERIAL_VTXCOL, MATERIAL_CUTOUT | MATERIAL_DECAL},
+    {0, 0, 0, 0},
+    {MATERIAL_VTXCOL, 0, 0, 0}
+};
+
 void load_object_model(Object *obj, int objectID) {
     obj->gfx = malloc(sizeof(ObjectGraphics));
     obj->gfx->envColour[0] = 0xFF;
@@ -359,8 +377,13 @@ void load_object_model(Object *obj, int objectID) {
         for (int j = 0; j < primCount; j++) {
             ObjectModel *m = malloc(sizeof(ObjectModel));
             primitive_t *prim = model64_get_primitive(mesh, j);
-            m->material.flags = MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_LIGHTING | MATERIAL_VTXCOL;
-            m->material.textureID = -1;
+            if (modelID == 1) {
+                m->material.flags = playerModelFlags[i][j] | MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_LIGHTING;
+                m->material.textureID = playerModelTextures[i][j];
+            } else {
+                m->material.flags = MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_LIGHTING | MATERIAL_VTXCOL;
+                m->material.textureID = -1;
+            }
             m->material.index = NULL;
             m->next = NULL;
             m->matrixBehaviour = matrixType;

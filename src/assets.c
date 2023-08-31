@@ -21,6 +21,11 @@ const TextureInfo sTextureIDs[] = {
     {"kitchentile.i8", TEX_NULL, 0},
     {"introsign.i4", TEX_NULL, 0},
     {"introsign2.i4", TEX_NULL, 0},
+    {"eye1.ia4", TEX_MIRROR_H | TEX_CLAMP_V, 0},
+    {"eyebrow1.ia4", TEX_MIRROR_H | TEX_CLAMP_V, 0},
+    {"mouth1.ia4", TEX_MIRROR_H | TEX_CLAMP_V, 0},
+    {"shirt.ci8", TEX_CLAMP_H | TEX_CLAMP_V, 0},
+    {"trousers.ci8", TEX_CLAMP_H | TEX_CLAMP_V, 0},
 };
 
 char *gFontAssetTable[] = {

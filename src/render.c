@@ -27,17 +27,16 @@ RenderList *gPrevMatList = NULL;
 Matrix gBillboardMatrix;
 Matrix gScaleMatrix;
 char gZTargetTimer = 0;
+char gUseOverrideMaterial = false;
 static rspq_block_t *sRenderEndBlock;
 rspq_block_t *sRenderSkyBlock;
 static rspq_block_t *sBeginModeBlock;
 static rspq_block_t *sParticleBlock;
+Material gOverrideMaterial;
 
 Material gTempMaterials[] = {
     {NULL, 0, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL},
-    {NULL, -1, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_LIGHTING | MATERIAL_VTXCOL},
-    {NULL, 1, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_XLU},
     {NULL, 2, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_VTXCOL},
-    {NULL, 1, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_VTXCOL},
     {NULL, 3, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_XLU | MATERIAL_VTXCOL},
 };
 
@@ -54,13 +53,13 @@ static void init_particles(void) {
     rspq_block_begin();
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
-    glVertex3i(-5, 5, 0);
+    glVertex3f(-5, 5, 0);
     glTexCoord2f(0, 1.024f);
-    glVertex3i(-5, -5, 0);
+    glVertex3f(-5, -5, 0);
     glTexCoord2f(1.024f, 1.024f);
-    glVertex3i(5, -5, 0);
+    glVertex3f(5, -5, 0);
     glTexCoord2f(1.024f, 0);
-    glVertex3i(5, 5, 0);
+    glVertex3f(5, 5, 0);
     glEnd();
     sParticleBlock = rspq_block_end();
 }
@@ -352,15 +351,15 @@ void render_bush(void) {
     glBegin(GL_QUADS);
     glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
     glTexCoord2f(0, 0);
-    glVertex3i(-5, 10, 0);
+    glVertex3f(-5, 10, 0);
     glColor3f(e->skyColourBottom[0], e->skyColourBottom[1], e->skyColourBottom[2]);
     glTexCoord2f(0, 1.024f);
-    glVertex3i(-5, 0, 0);
+    glVertex3f(-5, 0, 0);
     glTexCoord2f(2.048f, 1.024f);
-    glVertex3i(5, 0, 0);
+    glVertex3f(5, 0, 0);
     glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
     glTexCoord2f(2.048f, 0);
-    glVertex3i(5, 10, 0);
+    glVertex3f(5, 10, 0);
     glEnd();
 }
 
@@ -379,10 +378,10 @@ void render_shadow(float pos[3]) {
         glScalef(0.5f, 0.5f, 0.5f);
         glBegin(GL_QUADS);
         glColor3f(0, 0, 0);
-        glTexCoord2f(2.048f, 0);        glVertex3i(5.0f, 0.0f, -5.0f);
-        glTexCoord2f(0, 0);             glVertex3i(-5.0f, 0.0f, -5.0f);
-        glTexCoord2f(0, 2.048f);        glVertex3i(-5.0f, 0.0f, 5.0f);
-        glTexCoord2f(2.048f, 2.048f);   glVertex3i(5.0f, 0.0f, 5.0f);
+        glTexCoord2f(2.048f, 0);        glVertex3f(5.0f, 0.0f, -5.0f);
+        glTexCoord2f(0, 0);             glVertex3f(-5.0f, 0.0f, -5.0f);
+        glTexCoord2f(0, 2.048f);        glVertex3f(-5.0f, 0.0f, 5.0f);
+        glTexCoord2f(2.048f, 2.048f);   glVertex3f(5.0f, 0.0f, 5.0f);
         glEnd();
         sShadowBlock = rspq_block_end();
     }
@@ -556,7 +555,8 @@ void render_world(void) {
             RenderNode *entry = malloc(sizeof(RenderNode));
             entry->matrix = NULL;
             if (showAll) {
-                add_render_node(entry, s->renderBlock, s->material, s->flags);
+                Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : s->material;
+                add_render_node(entry, s->renderBlock, mat, s->flags);
             } else {
                 set_material(s->material, s->flags);
                 rspq_block_run(s->renderBlock);
@@ -579,7 +579,7 @@ void render_object_shadows(void) {
     ObjectList *list = gObjectListHead;
     Object *obj;
     
-    set_material(&gTempMaterials[5], MATERIAL_DECAL);
+    set_material(&gTempMaterials[2], MATERIAL_DECAL);
     while (list) {
         obj = list->obj;
         if (obj->flags & OBJ_FLAG_SHADOW) { 
@@ -606,11 +606,12 @@ void render_clutter(void) {
             entry->matrix = malloc(sizeof(Matrix));
             mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
             if (showAll) {
-                add_render_node(entry, sBushBlock, &gTempMaterials[3], MATERIAL_NULL);
+                Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[1];
+                add_render_node(entry, sBushBlock, mat, MATERIAL_NULL);
             } else {
                 glPushMatrix();
                 glMultMatrixf((GLfloat *) entry->matrix->m);
-                set_material(&gTempMaterials[3], MATERIAL_NULL);
+                set_material(&gTempMaterials[1], MATERIAL_NULL);
                 rspq_block_run(sBushBlock);
                 free(entry->matrix);
                 free(entry);
@@ -621,7 +622,8 @@ void render_clutter(void) {
             entry->matrix = malloc(sizeof(Matrix));
             mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
             if (showAll) {
-                add_render_node(entry, sBushBlock, &gTempMaterials[0], MATERIAL_NULL);
+                Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[0];
+                add_render_node(entry, sBushBlock, mat, MATERIAL_NULL);
             } else {
                 glPushMatrix();
                 glMultMatrixf((GLfloat *) entry->matrix->m);
@@ -655,10 +657,10 @@ void render_objects(void) {
             while (m) {
                 RenderNode *entry = malloc(sizeof(RenderNode));
                 entry->matrix = malloc(sizeof(Matrix));
-                float scale[3] = {9.0f, 8.0f, 9.0f};
-                set_draw_matrix(entry->matrix, m->matrixBehaviour, obj->pos, obj->faceAngle, scale);
+                set_draw_matrix(entry->matrix, m->matrixBehaviour, obj->pos, obj->faceAngle, obj->scale);
                 if (showAll) {
-                    add_render_node(entry, m->block, &m->material, MATERIAL_NULL);
+                    Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &m->material;
+                    add_render_node(entry, m->block, mat, MATERIAL_NULL);
                 } else {
                     glPushMatrix();
                     glMultMatrixf((GLfloat *) entry->matrix->m);

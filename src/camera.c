@@ -20,8 +20,8 @@ void camera_init(void) {
     bzero(gCamera, sizeof(Camera));
     
     gCamera->pitch = 0x3400;
-    gCamera->zoom = 400;
-    gCamera->intendedZoom = 400;
+    gCamera->zoom = 300;
+    gCamera->intendedZoom = 300;
     gCamera->yawTarget = 0x8000;
     gCamera->yaw = 0x8000;
     if (gPlayer) {
@@ -129,7 +129,7 @@ void camera_update_target(Camera *c, int updateRate, float updateRateF) {
 
     c->pos[0] = intendedFocus[0] + ((zoom) * coss(c->yaw - 0x4000));
     c->pos[2] = intendedFocus[2] - ((zoom) * sins(c->yaw - 0x4000));
-    c->pos[1] = intendedFocus[1] + 10.0f + (17.5f * sins(c->viewPitch + 0x4000));
+    c->pos[1] = intendedFocus[1] + 10.0f + (13.5f * sins(c->viewPitch + 0x4000));
 }
 
 void camera_loop(int updateRate, float updateRateF) {

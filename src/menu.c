@@ -11,6 +11,7 @@
 #include "math_util.h"
 #include "scene.h"
 #include "save.h"
+#include "debug.h"
 
 #define NUM_MENU_PREVS 4
 
@@ -467,6 +468,7 @@ void process_title_menu(int updateRate) {
 }
 
 void process_menus(int updateRate, float updateRateF) {
+    DEBUG_SNAPSHOT_1();
     DECREASE_VAR(sMenuSwapTimer, updateRate, 0);
     switch (gMenuStatus) {
     case MENU_CLOSED:
@@ -493,12 +495,15 @@ void process_menus(int updateRate, float updateRateF) {
         }
         return;
     }
+    get_time_snapshot(PP_MENU, DEBUG_SNAPSHOT_1_END);
 }
 
 void render_menus(int updateRate, float updateRateF) {
+    DEBUG_SNAPSHOT_1();
     switch (gMenuStatus) {
     case MENU_CLOSED:
         return;
     }
     render_menu_list();
+    get_time_snapshot(PP_MENU, DEBUG_SNAPSHOT_1_END);
 }
