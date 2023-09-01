@@ -91,6 +91,11 @@ void audio_loop(int updateRate, float updateRateF) {
 		audio_write_end();
 	}
     get_time_snapshot(PP_AUDIO, DEBUG_SNAPSHOT_1_END);
+#ifdef PUPPYPRINT_DEBUG
+    if (gDebugData && gDebugData->enabled) {
+        rspq_wait();
+    }
+#endif
 }
 
 static int find_sound_channel(int priority) {

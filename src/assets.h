@@ -23,10 +23,10 @@ enum MaterialFlags {
 
 enum TextureFlags {
     TEX_NULL,
-    TEX_MIRROR_H =  (1 << 0),
-    TEX_MIRROR_V =  (1 << 1),
-    TEX_CLAMP_H =   (1 << 2),
-    TEX_CLAMP_V =   (1 << 3),
+    TEX_CLAMP_H =   (1 << 0),
+    TEX_CLAMP_V =   (1 << 1),
+    TEX_MIRROR_H =  (1 << 2),
+    TEX_MIRROR_V =  (1 << 3),
 };
 
 enum FileFormat {
