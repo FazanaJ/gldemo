@@ -143,21 +143,42 @@ def init_tex_list():
             ln3 = line.rfind('"')
             ln4 = line.find('"')
             if ln == -1:
-                name = line[ln + 7:ln3]
+                name = line[ln + 3:ln3]
                 flagStr = line.partition(",")[2]
                 flags = flagStr[ln + 2:-3]
                 addClampH = False
                 addClampV = False
                 addMirrorH = False
                 addMirrorV = False
+                useNum = True
                 if (not flags.find("TEX_MIRROR_H") == -1):
                     addMirrorH = True
+                    useNum = False
                 if (not flags.find("TEX_MIRROR_V") == -1):
                     addMirrorV = True
+                    useNum = False
                 if (not flags.find("TEX_CLAMP_H") == -1):
                     addClampH = True
+                    useNum = False
                 if (not flags.find("TEX_CLAMP_V") == -1):
                     addClampV = True
+                    useNum = False
+                if (not flags.find("TEX_NULL") == -1):
+                    useNum = False
+                if useNum == True:
+                    num = int(flags)
+                    if (num >= 8):
+                        num -= 8
+                        addMirrorV = True
+                    if (num >= 4):
+                        num -= 4
+                        addMirrorH = True
+                    if (num >= 2):
+                        num -= 2
+                        addClampV = True
+                    if (num >= 1):
+                        num -= 1
+                        addClampH = True
                 index = len(app.textureNames)
                 app.textureClampH.insert(app.textureCount, addClampH)
                 app.textureClampV.insert(app.textureCount, addClampV)
@@ -178,11 +199,77 @@ def init_tex_list():
             ln = line.find("};")
             ln3 = line.rfind(',')
             if ln == -1:
-                name = line[ln + 5:ln3]
+                name = line[ln + 1:ln3]
+                print(name)
                 index = len(app.textureEnums)
                 app.textureEnums.insert(index, name)
     
     window.texList.addItems(app.textureNames)
+
+def write_textures():
+    with open("../include/texture_table.h", 'r+') as fp:
+    # read an store all lines into list
+        lines = fp.readlines()
+        # move file pointer to the beginning of a file
+        fp.seek(0)
+        # truncate the file
+        fp.truncate()
+        firstLine = ""
+        # start writing lines
+        # iterate line and line number
+        for number, line in enumerate(lines):
+            # delete line number 5 and 8
+            # note: list index start from 0
+            if (not line.find("sTextureIDs") == -1):
+                firstLine = line
+            if (line.find("},") == -1 and line.find("};") == -1):
+                fp.write(line)
+            
+        numLines = 0
+        for i in app.textureNames:
+            totalFlags = 0
+            if (app.textureClampH[numLines] == True):
+                totalFlags += 1
+            if (app.textureClampV[numLines] == True):
+                totalFlags += 2
+            if (app.textureMirrorH[numLines] == True):
+                totalFlags += 4
+            if (app.textureMirrorV[numLines] == True):
+                totalFlags += 8
+            name = '{"' + app.textureNames[numLines] + '", ' + str(totalFlags) + '},\n'
+            lines.insert(6, name)
+            new = "".join(name)
+            fp.write(new)
+            numLines += 1
+        fp.write("};")
+    
+    with open("../include/enums.h", 'r+') as fp:
+    # read an store all lines into list
+        lines = fp.readlines()
+        # move file pointer to the beginning of a file
+        fp.seek(0)
+        # truncate the file
+        fp.truncate()
+        firstLine = ""
+        # start writing lines
+        # iterate line and line number
+        for number, line in enumerate(lines):
+            # delete line number 5 and 8
+            # note: list index start from 0
+            if (not line.find("TextureNames") == -1):
+                firstLine = line
+            if (line.find(",") == -1 and line.find("};") == -1):
+                fp.write(line)
+            
+        numLines = 0
+        for i in app.textureNames:
+            name = app.textureEnums[numLines] + ',\n'
+            lines.insert(3, name)
+            new = "".join(name)
+            fp.write(new)
+            numLines += 1
+        fp.write("};")
+    
 
 def add_texture():
     window.texList.clear()
@@ -209,6 +296,7 @@ def delete_texture():
         app.textureEnums.pop(rowNum)
         window.texList.clear()
         window.texList.addItems(app.textureNames)
+        write_textures()
 
 def set_active_Texture():
     rowNum = window.texList.currentRow()
@@ -234,6 +322,7 @@ def save_texture():
     app.textureEnums[rowNum] = enumName
     window.texList.clear()
     window.texList.addItems(app.textureNames)
+    write_textures()
 
 if check_valid_directory() is True:
     print("Starting.")
