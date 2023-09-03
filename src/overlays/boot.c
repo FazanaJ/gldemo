@@ -14,9 +14,9 @@
 #include "../menu.h"
 #include "../save.h"
 
-static const resolution_t RESOLUTION_304x224 = {320, 240, false};
-static const resolution_t RESOLUTION_384x224 = {384, 240, false};
-static const resolution_t RESOLUTION_408x224 = {424, 240, false};
+static const resolution_t RESOLUTION_304x224 = {SCREEN_WIDTH, SCREEN_HEIGHT, false};
+static const resolution_t RESOLUTION_384x224 = {SCREEN_WIDTH_16_10, SCREEN_HEIGHT, false};
+static const resolution_t RESOLUTION_408x224 = {SCREEN_WIDTH_16_9, SCREEN_HEIGHT, false};
 
 static const resolution_t sVideoModes[] = {
     RESOLUTION_304x224,

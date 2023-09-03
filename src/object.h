@@ -30,11 +30,15 @@ enum ClutterIDs {
 };
 
 enum MatrixTypes {
+	MTX_NONE,
 	MTX_TRANSLATE,
 	MTX_ROTATE,
 	MTX_TRANSLATE_ROTATE_SCALE,
 	MTX_BILLBOARD,
-	MTX_BILLBOARD_SCALE
+	MTX_BILLBOARD_SCALE,
+
+	MTX_PUSH = 0xE0,
+	MTX_POP = 0xF0
 };
 
 typedef struct ObjectModel {

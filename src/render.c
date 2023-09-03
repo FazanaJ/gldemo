@@ -654,10 +654,21 @@ void render_objects(void) {
         obj = list->obj;
         if (obj->gfx) { 
             ObjectModel *m = obj->gfx->listEntry->entry;
+            Matrix *prevMtx = NULL;
             while (m) {
                 RenderNode *entry = malloc(sizeof(RenderNode));
-                entry->matrix = malloc(sizeof(Matrix));
-                set_draw_matrix(entry->matrix, m->matrixBehaviour, obj->pos, obj->faceAngle, obj->scale);
+                if (m->matrixBehaviour != MTX_NONE) {
+                    entry->matrix = malloc(sizeof(Matrix));
+                    prevMtx = entry->matrix;
+                    set_draw_matrix(entry->matrix, m->matrixBehaviour, obj->pos, obj->faceAngle, obj->scale);
+                } else {
+                    if (prevMtx) {
+                        entry->matrix = malloc(sizeof(Matrix));
+                        memcpy(entry->matrix, prevMtx, sizeof(Matrix));
+                    } else {
+                        entry->matrix = NULL;
+                    }
+                }
                 if (showAll) {
                     Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &m->material;
                     add_render_node(entry, m->block, mat, MATERIAL_NULL);

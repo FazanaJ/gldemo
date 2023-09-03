@@ -386,7 +386,11 @@ void load_object_model(Object *obj, int objectID) {
             }
             m->material.index = NULL;
             m->next = NULL;
-            m->matrixBehaviour = matrixType;
+            if (i == 0 && j == 0) {
+                m->matrixBehaviour = matrixType;
+            } else {
+                m->matrixBehaviour = 0;
+            }
             rspq_block_begin();
             model64_draw_primitive(prim);
             m->block = rspq_block_end();
