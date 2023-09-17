@@ -62,7 +62,7 @@ typedef struct ConfigBits {
     unsigned musicVolume : 4;
     unsigned frameCap : 1;
     unsigned magic : 6;
-} ConfigBits __attribute__((__packed__));
+} ConfigBits;
 
 extern surface_t gZBuffer;
 extern surface_t *gFrameBuffers;
