@@ -66,7 +66,7 @@ void update_game_time(int *updateRate, float *updateRateF) {
     
     curTime = timer_ticks();
     // Convert it to float too, and make it 20% faster on PAL systems.
-    *updateRateF = ((float) (curTime - prevTime) / 1000000.0f);
+    *updateRateF = ((float) TIMER_MICROS(curTime - prevTime) / 16666.666f);
     if (gConfig.regionMode == PAL50) {
         *updateRateF *= 1.2f;
     }
