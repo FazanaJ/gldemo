@@ -59,13 +59,13 @@ void read_config(void) {
     }
 }
 
-void save_doesnt_exist(void) {
+void error_print(char *file) {
     rdpq_init();
     display_init(RESOLUTION_640x480, DEPTH_16_BPP, 1, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
     surface_t *disp = display_get();
     rdpq_attach(disp, NULL);
     rdpq_set_mode_copy(true);
-    sprite_t *background = sprite_load(asset_dir("save_error.ci8", DFS_SPRITE));
+    sprite_t *background = sprite_load(asset_dir(file, DFS_SPRITE));
     rdpq_mode_tlut(TLUT_RGBA16);
     rdpq_tex_upload_tlut(sprite_get_palette(background), 0, 256);
     rdpq_sprite_blit(background, 0, 0, NULL);
@@ -77,7 +77,7 @@ void init_save_data(void) {
     const eeprom_type_t eeprom_type = eeprom_present();
     if (eeprom_type != EEPROM_16K) {
         debugf("Eeprom doesn't exist!\n");
-        save_doesnt_exist();
+        error_print("save_error.ci8");
     }
     int result = eepfs_init(eeprom_16k_files, sizeof(eeprom_16k_files) / sizeof(eepfs_entry_t));
     if (result != EEPFS_ESUCCESS) {
@@ -132,25 +132,13 @@ void set_region_type(int region) {
     init_renderer();
 }
 
-void memory_error_screen(void) {
-    if (get_memory_size() == 0x400000) {
-        rdpq_init();
-        display_init(RESOLUTION_640x480, DEPTH_16_BPP, 1, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
-        surface_t *disp = display_get();
-        rdpq_attach(disp, NULL);
-        rdpq_set_mode_copy(true);
-        sprite_t *background = sprite_load(asset_dir("memory_error.ci8", DFS_SPRITE));
-        rdpq_mode_tlut(TLUT_RGBA16);
-        rdpq_tex_upload_tlut(sprite_get_palette(background), 0, 256);
-        rdpq_sprite_blit(background, 0, 0, NULL);
-        rdpq_detach_show();
-        while (1);
-    }
-}
-
 void init_memory(void) {
     timer_init();
-    memory_error_screen();
+    asset_init_compression(3);
+    if (get_memory_size() == 0x400000) {
+        error_print("memory_error.ci8");
+    }
+    asset_init_compression(2);
 }
 
 void init_controller(void) {
