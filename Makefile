@@ -4,6 +4,7 @@ include $(N64_INST)/include/n64.mk
 src = $(wildcard src/*.c)
 src += $(wildcard assets/*.c)
 overlay = $(wildcard src/overlays/*.c)
+scene = $(wildcard src/scenes/*.c)
 assets_ttf = $(wildcard assets/fonts/*.ttf) $(wildcard assets/archives/*.ttf)
 assets_png = $(wildcard assets/textures/*.png) $(wildcard assets/icons/*.png) $(wildcard assets/archives/*.png)
 assets_wav = $(wildcard assets/sounds/*.wav)
@@ -33,7 +34,7 @@ filesystem/arial.10.font64: MKFONT_FLAGS+=--size 10
 filesystem/%.font64: assets/fonts/%.ttf
 	@mkdir -p $(dir $@)
 	@echo "    [FONT] $@"
-	@$(N64_MKFONT) $(MKFONT_FLAGS) --compress 2 -o filesystem "$<"
+	@$(N64_MKFONT) $(MKFONT_FLAGS) --compress 3 -o filesystem "$<"
 
 filesystem/%.font64: assets/archives/%.ttf
 	@mkdir -p $(dir $@)
@@ -43,12 +44,12 @@ filesystem/%.font64: assets/archives/%.ttf
 filesystem/%.sprite: assets/textures/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 2 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) --compress 3 -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/icons/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 2 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) --compress 3 -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/archives/%.png
 	@mkdir -p $(dir $@)
@@ -68,7 +69,7 @@ filesystem/%.xm64: assets/xm/%.xm
 filesystem/%.model64: assets/models/%.glb
 	@mkdir -p $(dir $@)
 	@echo "    [MODEL] $@"
-	@$(N64_MKMODEL) --compress 2 -o filesystem $<
+	@$(N64_MKMODEL) --compress 3 -o filesystem $<
 
 filesystem/%.model64: assets/archives/%.glb
 	@mkdir -p $(dir $@)
@@ -87,9 +88,9 @@ n64brew_SRC = src/overlays/player.c
 filesystem/player.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 n64brew_SRC = src/overlays/npc.c
 filesystem/npc.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
-n64brew_SRC = src/overlays/intro.c
+n64brew_SRC = src/scenes/intro.c
 filesystem/intro.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
-n64brew_SRC = src/overlays/testarea.c
+n64brew_SRC = src/scenes/testarea.c
 filesystem/testarea.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 
 gldemo.z64: N64_ROM_TITLE="Smile Emote"

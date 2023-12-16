@@ -10,17 +10,20 @@
 #include "camera.h"
 #include "menu.h"
 
+#define CHANNEL_MAX_NUM 32
+
 static char sSoundChannelNum = 0;
 static char sSoundPrioTable[32];
 static short sNextSequenceID = -1;
 static short sCurrentSequenceID = -1;
 static short sSequenceFadeTimerSet;
 static short sSequenceFadeTimer;
+static int sChannelMask;
+static float sChannelVol[CHANNEL_MAX_NUM];
 float gMusicVolume;
 float gSoundVolume;
 static xm64player_t sXMPlayer;
 
-#define CHANNEL_MAX_NUM 32
 
 static SoundData sSoundTable[] = {
     {"laser", 10},
@@ -51,10 +54,21 @@ void init_audio(void) {
         wav64_open(&sSoundTable[i].sound, asset_dir(sSoundTable[i].path, DFS_WAV64));
     }
     set_background_music(1, 0);
+    for (int i = 0; i < CHANNEL_MAX_NUM; i++) {
+        sChannelVol[i] = 1.0f;
+    }
 }
 
 void set_music_volume(float volume) {
     xm64player_set_vol(&sXMPlayer, volume);
+}
+
+void sound_channel_off(int channel) {
+    sChannelMask |= (1 << channel);
+}
+
+void sound_channel_on(int channel) {
+    sChannelMask &= ~(1 << channel);
 }
 
 void update_sequence(int updateRate) {
@@ -69,6 +83,9 @@ void update_sequence(int updateRate) {
             xm64player_open(&sXMPlayer, asset_dir(s->seqPath, DFS_XM64));
             xm64player_set_vol(&sXMPlayer, gMusicVolume);
             xm64player_play(&sXMPlayer, sSoundChannelNum - s->channelCount);
+            for (int i = sSoundChannelNum - s->channelCount; i < CHANNEL_MAX_NUM; i++) {
+                sChannelVol[i] = 1.0f;
+            }
             set_music_volume(gMusicVolume);
             sCurrentSequenceID = sNextSequenceID;
         } else {
@@ -82,8 +99,31 @@ void update_sequence(int updateRate) {
     }
 }
 
+void update_sound(float updateRateF) {
+    for (int i = 0; i < sSoundChannelNum; i++) {
+        if (sChannelMask & (1 << i)) {
+            if (sChannelVol[i] > 0.0f) {
+                sChannelVol[i] -= 0.05f * updateRateF;
+                if (sChannelVol[i] < 0.0f) {
+                    sChannelVol[i] = 0.0f;
+                }
+                mixer_ch_set_vol(i, sChannelVol[i], sChannelVol[i]);
+            }
+        } else {
+            if (sChannelVol[i] < 1.0f) {
+                sChannelVol[i] += 0.05f * updateRateF;
+                if (sChannelVol[i] > 1.0f) {
+                    sChannelVol[i] = 1.0f;
+                }
+                mixer_ch_set_vol(i, sChannelVol[i], sChannelVol[i]);
+            }
+        }
+    }
+}
+
 void audio_loop(int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
+    update_sound(updateRateF);
     update_sequence(updateRate);
     if (audio_can_write()) {    	
 		short *buf = audio_write_begin();

@@ -45,3 +45,5 @@ void play_sound_spatial(int soundID, float pos[3]);
 void set_background_music(int seqID, int fadeTime);
 void play_sound_spatial_pitch(int soundID, float pos[3], float pitch);
 void set_music_volume(float volume);
+void sound_channel_off(int channel);
+void sound_channel_on(int channel);
