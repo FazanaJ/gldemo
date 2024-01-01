@@ -9,23 +9,22 @@
 #include "math_util.h"
 #include "camera.h"
 #include "menu.h"
+#include "hud.h"
+#include "object.h"
 
-#define CHANNEL_MAX_NUM 32
-
-static char sSoundChannelNum = 0;
-static char sSoundPrioTable[32];
+char gSoundChannelNum = 0;
+char gSoundPrioTable[32];
 static short sNextSequenceID = -1;
 static short sCurrentSequenceID = -1;
 static short sSequenceFadeTimerSet;
 static short sSequenceFadeTimer;
 static int sChannelMask;
-static float sChannelVol[CHANNEL_MAX_NUM];
+float gChannelVol[CHANNEL_MAX_NUM];
 float gMusicVolume;
 float gSoundVolume;
 static xm64player_t sXMPlayer;
 
-
-static SoundData sSoundTable[] = {
+SoundData sSoundTable[] = {
     {"laser", 10},
     {"cannon", 10},
     {"stonestep", 10},
@@ -33,7 +32,11 @@ static SoundData sSoundTable[] = {
     {"shell1", 10},
 };
 
-static SequenceData sSequenceTable[] = {
+VoiceData sVoiceTable[] = {
+    {{"necromancy", 10}, "Necromancy may be legal in Cryodil,\nbut few will openly admit to practicing it,\nnow that the Mages Guild has banned it.", 420},
+};
+
+SequenceData sSequenceTable[] = {
     {"ToysXM-8bit", 8},
     {"racer", 3},
 };
@@ -41,22 +44,7 @@ static SequenceData sSequenceTable[] = {
 void set_sound_channel_count(int channelCount) {
     mixer_close();
     mixer_init(channelCount);
-    sSoundChannelNum = channelCount;
-}
-
-void init_audio(void) {
-    audio_init(AUDIO_FREQUENCY, MIXER_BUFFER_SIZE);
-    mixer_init(24);
-    sSoundChannelNum = 24;
-    bzero(&sSoundPrioTable, sizeof(sSoundPrioTable));
-
-    for (int i = 0; i < sizeof(sSoundTable) / sizeof(SoundData); i++) {
-        wav64_open(&sSoundTable[i].sound, asset_dir(sSoundTable[i].path, DFS_WAV64));
-    }
-    set_background_music(1, 0);
-    for (int i = 0; i < CHANNEL_MAX_NUM; i++) {
-        sChannelVol[i] = 1.0f;
-    }
+    gSoundChannelNum = channelCount;
 }
 
 void set_music_volume(float volume) {
@@ -82,9 +70,9 @@ void update_sequence(int updateRate) {
             }
             xm64player_open(&sXMPlayer, asset_dir(s->seqPath, DFS_XM64));
             xm64player_set_vol(&sXMPlayer, gMusicVolume);
-            xm64player_play(&sXMPlayer, sSoundChannelNum - s->channelCount);
-            for (int i = sSoundChannelNum - s->channelCount; i < CHANNEL_MAX_NUM; i++) {
-                sChannelVol[i] = 1.0f;
+            xm64player_play(&sXMPlayer, gSoundChannelNum - s->channelCount);
+            for (int i = gSoundChannelNum - s->channelCount; i < CHANNEL_MAX_NUM; i++) {
+                gChannelVol[i] = 1.0f;
             }
             set_music_volume(gMusicVolume);
             sCurrentSequenceID = sNextSequenceID;
@@ -100,22 +88,22 @@ void update_sequence(int updateRate) {
 }
 
 void update_sound(float updateRateF) {
-    for (int i = 0; i < sSoundChannelNum; i++) {
+    for (int i = 0; i < gSoundChannelNum; i++) {
         if (sChannelMask & (1 << i)) {
-            if (sChannelVol[i] > 0.0f) {
-                sChannelVol[i] -= 0.05f * updateRateF;
-                if (sChannelVol[i] < 0.0f) {
-                    sChannelVol[i] = 0.0f;
+            if (gChannelVol[i] > 0.0f) {
+                gChannelVol[i] -= 0.05f * updateRateF;
+                if (gChannelVol[i] < 0.0f) {
+                    gChannelVol[i] = 0.0f;
                 }
-                mixer_ch_set_vol(i, sChannelVol[i], sChannelVol[i]);
+                mixer_ch_set_vol(i, gChannelVol[i], gChannelVol[i]);
             }
         } else {
-            if (sChannelVol[i] < 1.0f) {
-                sChannelVol[i] += 0.05f * updateRateF;
-                if (sChannelVol[i] > 1.0f) {
-                    sChannelVol[i] = 1.0f;
+            if (gChannelVol[i] < 1.0f) {
+                gChannelVol[i] += 0.05f * updateRateF;
+                if (gChannelVol[i] > 1.0f) {
+                    gChannelVol[i] = 1.0f;
                 }
-                mixer_ch_set_vol(i, sChannelVol[i], sChannelVol[i]);
+                mixer_ch_set_vol(i, gChannelVol[i], gChannelVol[i]);
             }
         }
     }
@@ -231,4 +219,15 @@ void set_background_music(int seqID, int fadeTime) {
     sNextSequenceID = seqID;
     sSequenceFadeTimerSet = fadeTime;
     sSequenceFadeTimer = fadeTime;
+}
+
+void voice_play(int voiceID, int subtitle) {
+    mixer_ch_set_freq(CHANNEL_VOICE, AUDIO_FREQUENCY * 2);
+    wav64_play(&sVoiceTable[voiceID].sound.sound, CHANNEL_VOICE);
+    
+    debugf("%d\n", sVoiceTable[voiceID].sound.sound.wave.len);
+
+    if (subtitle && gConfig.subtitles) {
+        add_subtitle(sVoiceTable[voiceID].subtitle, sVoiceTable[voiceID].sound.sound.wave.len / 720);
+    }
 }

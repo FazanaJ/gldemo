@@ -48,6 +48,7 @@ typedef struct Config {
     char soundVolume;
     char musicVolume;
     char frameCap;
+    char subtitles;
 } Config;
 
 typedef struct ConfigBits {
@@ -62,6 +63,7 @@ typedef struct ConfigBits {
     unsigned musicVolume : 4;
     unsigned frameCap : 1;
     unsigned magic : 6;
+    unsigned subtitles : 1;
 } ConfigBits;
 
 extern surface_t gZBuffer;

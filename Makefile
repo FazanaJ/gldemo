@@ -10,6 +10,7 @@ assets_png = $(wildcard assets/textures/*.png) $(wildcard assets/icons/*.png) $(
 assets_wav = $(wildcard assets/sounds/*.wav)
 assets_gltf = $(wildcard assets/models/*.glb) $(wildcard assets/archives/*.glb)
 assets_xm1 = $(wildcard assets/xm/*.xm)
+assets_opus = $(wildcard assets/opus/*.wav)
 
 
 MAIN_ELF_EXTERNS := $(BUILD_DIR)/gldemo.externs
@@ -21,6 +22,7 @@ assets_conv = $(addprefix filesystem/,$(notdir $(assets_ttf:%.ttf=%.font64))) \
               $(addprefix filesystem/,$(notdir $(assets_wav:%.wav=%.wav64))) \
 			  $(addprefix filesystem/,$(notdir $(assets_xm1:%.xm=%.xm64))) \
               $(addprefix filesystem/,$(notdir $(assets_gltf:%.glb=%.model64))) \
+              $(addprefix filesystem/,$(notdir $(assets_opus:%.wav=%.wav64))) \
 			  $(addprefix filesystem/, $(DSO_MODULES))
 
 MKSPRITE_FLAGS ?=
@@ -59,12 +61,17 @@ filesystem/%.sprite: assets/archives/%.png
 filesystem/%.wav64: assets/sounds/%.wav
 	@mkdir -p $(dir $@)
 	@echo "    [AUDIO] $@"
-	@$(N64_AUDIOCONV) $(AUDIOCONV_FLAGS) -o filesystem $<
+	@$(N64_AUDIOCONV) --wav-compress 1 -o filesystem $<
+
+filesystem/%.wav64: assets/opus/%.wav
+	@mkdir -p $(dir $@)
+	@echo "    [AUDIO] $@"
+	@$(N64_AUDIOCONV) --wav-compress 1 -o filesystem $<
 
 filesystem/%.xm64: assets/xm/%.xm
 	@mkdir -p $(dir $@)
 	@echo "    [AUDIO] $@"
-	@$(N64_AUDIOCONV) $(AUDIOCONV_FLAGS) -o filesystem "$<"
+	@$(N64_AUDIOCONV) --wav-compress 1 -o filesystem "$<"
 
 filesystem/%.model64: assets/models/%.glb
 	@mkdir -p $(dir $@)

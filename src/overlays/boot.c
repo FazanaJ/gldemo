@@ -38,6 +38,7 @@ void read_config(void) {
         gConfig.musicVolume = 9;
         gConfig.soundVolume = 9;
         gConfig.soundMode = SOUND_STEREO;
+        gConfig.subtitles = true;
         config.magic = SAVE_MAGIC_NUMBER;
         write = true;
         debugf("Config failed to load: Generating new.\n");
@@ -46,6 +47,7 @@ void read_config(void) {
         gConfig.musicVolume = config.musicVolume;
         gConfig.soundVolume = config.soundVolume;
         gConfig.soundMode = config.soundMode;
+        gConfig.subtitles = true;//config.subtitles;
         debugf("Config loaded.\n");
     }
     gConfig.antiAliasing = config.antiAliasing;
@@ -145,6 +147,24 @@ void init_controller(void) {
     controller_init();
     bzero(&gInputData, sizeof(Input));
     gInputData.pak = 0;
+}
+
+void init_audio(void) {
+    audio_init(AUDIO_FREQUENCY, MIXER_BUFFER_SIZE);
+    mixer_init(24);
+    gSoundChannelNum = 24;
+    bzero(&gSoundPrioTable, sizeof(gSoundPrioTable));
+
+    for (int i = 0; i < SOUND_TOTAL; i++) {
+        wav64_open(&sSoundTable[i].sound, asset_dir(sSoundTable[i].path, DFS_WAV64));
+    }
+    for (int i = 0; i < VOICE_TOTAL; i++) {
+        wav64_open(&sVoiceTable[i].sound.sound, asset_dir(sVoiceTable[i].sound.path, DFS_WAV64));
+    }
+    set_background_music(1, 0);
+    for (int i = 0; i < CHANNEL_MAX_NUM; i++) {
+        gChannelVol[i] = 1.0f;
+    }
 }
 
 void init_game(void) {
