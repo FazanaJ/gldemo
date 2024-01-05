@@ -66,7 +66,7 @@ filesystem/%.wav64: assets/sounds/%.wav
 filesystem/%.wav64: assets/opus/%.wav
 	@mkdir -p $(dir $@)
 	@echo "    [AUDIO] $@"
-	@$(N64_AUDIOCONV) --wav-compress 3 -o filesystem $<
+	@$(N64_AUDIOCONV) --wav-compress 1 -o filesystem $<
 
 filesystem/%.xm64: assets/xm/%.xm
 	@mkdir -p $(dir $@)

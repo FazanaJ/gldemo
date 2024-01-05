@@ -8,6 +8,7 @@
 #include "camera.h"
 #include "render.h"
 #include "debug.h"
+#include "hud.h"
 
 SceneBlock *sCurrentScene;
 Environment *gEnvironment;
@@ -90,6 +91,9 @@ static void clear_scene(void) {
 
 void load_scene(int sceneID) {
     DEBUG_SNAPSHOT_1();
+    if (gScreenshotStatus == -1) {
+        screenshot_clear();
+    }
     if (sCurrentScene) {
         clear_scene();
     }

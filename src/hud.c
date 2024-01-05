@@ -369,6 +369,8 @@ void process_subtitle_timers(int updateRate, float updateRateF) {
                 SubtitleData *old = s;
                 s = s->next;
                 clear_subtitle(old);
+            } else {
+                s = s->next;
             }
         } else {
             INCREASE_VAR(s->opacity, updateRate * 8, 255);
@@ -384,6 +386,7 @@ void render_hud_subtitles(void) {
     SubtitleData *s = sSubtitleHead;
     int screenMid = display_get_width() / 2;
     int screenBottom = display_get_height();
+    int opacity = 0;
     rdpq_textparms_t parms = {
         .width = display_get_width(),
         .height = 0,
@@ -395,7 +398,13 @@ void render_hud_subtitles(void) {
     rdpq_set_mode_standard();
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
     rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-    rdpq_set_prim_color(RGBA32(0, 0, 0, 96));
+    while (s) {
+        opacity = MAX(opacity, s->opacity);
+        s = s->next;
+    }
+    s = sSubtitleHead;
+    opacity *= 0.375f;
+    rdpq_set_prim_color(RGBA32(0, 0, 0, opacity));
 
     rdpq_fill_rectangle(screenMid - sBoxWidth, screenBottom - 32 - sBoxHeight, screenMid + sBoxWidth, screenBottom - 32 - s->y + s->height);
     while (s) {        
