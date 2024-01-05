@@ -63,3 +63,4 @@ extern char gIsPal;
 void render_menus(int updateRate, float updateRateF);
 void process_menus(int updateRate, float updateRateF);
 void menu_set_sound(void);
+void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short *selectionY,  int minX, int minY, int maxX, int maxY);

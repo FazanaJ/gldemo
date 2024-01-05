@@ -82,6 +82,26 @@ typedef struct Material {
     unsigned char flags;
 } __attribute__((__packed__)) TextureInfo;
 
+ typedef struct SpriteInfo {
+    char *file;
+    unsigned char frames;
+} __attribute__((__packed__)) SpriteInfo;
+
+typedef struct TalkSpriteElement {
+    unsigned short spriteID;
+    unsigned char x;
+    unsigned char y;
+} TalkSpriteElement;
+
+typedef struct TalkSpriteFrame {
+    TalkSpriteElement head;
+    TalkSpriteElement eyes;
+    TalkSpriteElement mouth;
+    TalkSpriteElement body;
+    TalkSpriteElement armLeft;
+    TalkSpriteElement armRight;
+} TalkSpriteFrame;
+
 extern short gNumTextures;
 extern short gNumTextureLoads;
 extern rdpq_font_t *gFonts[FONT_TOTAL];

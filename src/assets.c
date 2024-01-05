@@ -8,6 +8,7 @@
 #include "../include/global.h"
 #define INCLUDE_TEX_TABLE
 #include "../include/texture_table.h"
+//#include "../include/talksprite_table.h"
 #undef INCLUDE_TEX_TABLE
 
 #include "debug.h"

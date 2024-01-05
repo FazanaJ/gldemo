@@ -10,6 +10,7 @@
 #include "camera.h"
 #include "menu.h"
 #include "collision.h"
+#include "talk.h"
 
 ObjectList *gObjectListHead = NULL;
 ObjectList *gObjectListTail = NULL;

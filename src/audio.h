@@ -18,9 +18,12 @@ enum SoundChannelIDs {
 
 enum VoiceIDs {
     VOICE_NECROMANCY,
+    VOICE_BUTWHY,
 
     VOICE_TOTAL
 };
+
+#define VOICE_NULL 65535
 
 enum SoundIDs {
     SOUND_LASER,
@@ -28,6 +31,7 @@ enum SoundIDs {
     SOUND_STEP_STONE,
     SOUND_MENU_CLICK,
     SOUND_SHELL1,
+    SOUND_TEXTBLIP,
 
     SOUND_TOTAL
 };
@@ -64,6 +68,7 @@ void init_audio(void);
 void audio_loop(int updateRate, float updateRateF);
 void set_sound_channel_count(int channelCount);
 void play_sound_global(int soundID);
+void play_sound_global_pitch(int soundID, float pitch);
 void play_sound_spatial(int soundID, float pos[3]);
 void set_background_music(int seqID, int fadeTime);
 void play_sound_spatial_pitch(int soundID, float pos[3], float pitch);
@@ -71,3 +76,4 @@ void set_music_volume(float volume);
 void sound_channel_off(int channel);
 void sound_channel_on(int channel);
 void voice_play(int voiceID, int subtitle);
+void voice_stop(void);

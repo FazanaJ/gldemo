@@ -17,6 +17,7 @@
 #include "object.h"
 #include "scene.h"
 #include "input.h"
+#include "talk.h"
 
 float gAspectRatio = 1.0f;
 RenderNode *gRenderNodeHead = NULL;
@@ -698,27 +699,41 @@ void render_objects(void) {
 
 void render_game(int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
-    rdpq_attach(gFrameBuffers, &gZBuffer);
+    if (gScreenshotStatus > SCREENSHOT_NONE) {
+        screenshot_generate();
+    } else {
+        rdpq_attach_clear(gFrameBuffers, &gZBuffer);
+    }
     gl_context_begin();
     glClear(GL_DEPTH_BUFFER_BIT);
-    render_sky();
-    apply_anti_aliasing(AA_GEO);
-    project_camera();
-    apply_render_settings();
-    set_light(lightNeutral);
-    render_world();
-    render_object_shadows();
-    render_clutter();
-    apply_anti_aliasing(AA_ACTOR);
-    render_objects();
-    apply_anti_aliasing(AA_GEO);
-    set_particle_render_settings();
-    render_particles();
+    if (gScreenshotStatus != SCREENSHOT_SHOW) {
+        render_sky();
+        apply_anti_aliasing(AA_GEO);
+        project_camera();
+        apply_render_settings();
+        set_light(lightNeutral);
+        render_world();
+        render_object_shadows();
+        render_clutter();
+        apply_anti_aliasing(AA_ACTOR);
+        render_objects();
+        apply_anti_aliasing(AA_GEO);
+        set_particle_render_settings();
+        render_particles();
+        render_end();
+        gl_context_end();
+    } else if (gScreenshotStatus == SCREENSHOT_SHOW) {
+        render_end();
+        gl_context_end();
+        rdpq_set_mode_copy(false);
+        rdpq_tex_blit(&gScreenshot, 0, 0, NULL);
+        rdpq_set_mode_standard();
+    }
     get_time_snapshot(PP_RENDER, DEBUG_SNAPSHOT_1_END);
-    render_end();
-    gl_context_end();
-    render_hud(updateRate, updateRateF);
-    render_menus(updateRate, updateRateF);
+    if (gScreenshotStatus <= SCREENSHOT_NONE) {
+        render_hud(updateRate, updateRateF);
+        render_menus(updateRate, updateRateF);
+    }
 #ifdef PUPPYPRINT_DEBUG
     if (get_input_pressed(INPUT_CRIGHT, 0)) {
         showAll ^= 1;

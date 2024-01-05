@@ -12,6 +12,7 @@
 #include "input.h"
 #include "math_util.h"
 #include "debug.h"
+#include "talk.h"
 
 static sprite_t *sHealthSprite;
 static rspq_block_t *sHealthBlock;
@@ -20,6 +21,9 @@ static unsigned short sPrevHealth;
 static unsigned short sPrevHealthMax;
 static short sHealthPosX;
 static short sHealthPosY;
+char gScreenshotStatus;
+surface_t gScreenshot;
+sprite_t *gScreenshotSprite;
 
 sprite_t *gPanelSprite[4];
 rspq_block_t *gPanelBlock;
@@ -284,8 +288,8 @@ void add_subtitle(char *text, int timer) {
     int textLen = strlen(text);
 
     SubtitleData *s = malloc(sizeof(SubtitleData));
-    s->text = malloc(textLen);
-    memcpy(s->text, text, textLen);
+    s->text = malloc(textLen + 1);
+    strcpy(s->text, text);
 
     if (sSubtitleHead == NULL) {
         sSubtitleHead = s;
@@ -437,16 +441,31 @@ void render_panel(int x1, int y1, int x2, int y2, int style, unsigned int colour
 
 void process_hud(int updateRate, float updateRateF) {
     process_subtitle_timers(updateRate, updateRateF);
+    talk_update(updateRate);
+}
+
+void screenshot_generate(void) {
+    if (gScreenshot.buffer) {
+        surface_free(&gScreenshot);
+    }
+    gScreenshot = surface_alloc(FMT_RGBA16, display_get_width(), display_get_height());
+    rdpq_attach_clear(&gScreenshot, &gZBuffer);
+    
+}
+
+void screenshot_clear(void) {
+    surface_free(&gScreenshot);
+    gScreenshotStatus = SCREENSHOT_NONE;
 }
 
 void render_hud(int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0.0f, display_get_width(), display_get_height(), 0.0f, -1.0f, 1.0f);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
     if (gPlayer) {
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glOrtho(0.0f, display_get_width(), display_get_height(), 0.0f, -1.0f, 1.0f);
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
         render_ztarget();
         render_health(updateRateF);
     }
@@ -458,7 +477,11 @@ void render_hud(int updateRate, float updateRateF) {
     if (get_input_pressed(INPUT_CLEFT, 0)) {
         add_subtitle("You have pressed C left!\nThat's quite an acomplishment right there.", 200);
     }
+    if (get_input_pressed(INPUT_CUP, 0)) {
+        add_subtitle("You have pressed C left!\nThat's quite an acomplishment right there.\nOh god, we have a THIRD line now?", 200);
+    }
 
+    talk_render();
 
     if (gCurrentController == -1) {
         render_panel((gFrameBuffers->width / 2) - 64, (gFrameBuffers->height / 2) - 64, (gFrameBuffers->width / 2) + 64, (gFrameBuffers->height / 2) - 32, 0, 0xFFFFFFFF);

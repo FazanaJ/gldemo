@@ -15,6 +15,7 @@
 #include "menu.h"
 #include "scene.h"
 #include "save.h"
+#include "talk.h"
 
 surface_t gZBuffer;
 surface_t *gFrameBuffers;
@@ -110,7 +111,9 @@ int main(void) {
         update_game_time(&updateRate, &updateRateF);
         cycle_textures(updateRate);
         update_inputs(updateRate);
-        update_game_entities(updateRate, updateRateF);
+        if (gTalkControl == NULL) {
+            update_game_entities(updateRate, updateRateF);
+        }
         audio_loop(updateRate, updateRateF);
         process_hud(updateRate, updateRateF);
         process_menus(updateRate, updateRateF);
@@ -118,12 +121,18 @@ int main(void) {
         get_cpu_time(DEBUG_SNAPSHOT_1_END);
         DEBUG_SNAPSHOT_1_RESET();
         process_profiler();
-        if (gDebugData && gDebugData->enabled) {
+        if (gDebugData && gDebugData->enabled && gScreenshotStatus != SCREENSHOT_GENERATE) {
             render_profiler();
         }
         get_time_snapshot(PP_PROFILER, DEBUG_SNAPSHOT_1_END);
 
-        rdpq_detach_show();
+        if (gScreenshotStatus > SCREENSHOT_NONE) {
+            rdpq_detach_wait();
+            gScreenshotStatus = SCREENSHOT_SHOW;
+            display_show(gFrameBuffers);
+        } else {
+            rdpq_detach_show();
+        }
 
         if (gResetDisplay) {
             reset_display();

@@ -30,10 +30,12 @@ SoundData sSoundTable[] = {
     {"stonestep", 10},
     {"mouseclick", 10},
     {"shell1", 10},
+    {"textblip", 10},
 };
 
 VoiceData sVoiceTable[] = {
     {{"necromancy", 10}, "Necromancy may be legal in Cryodil,\nbut few will openly admit to practicing it,\nnow that the Mages Guild has banned it.", 420},
+    {{"butwhy", 10}, "But why in the name of all hell am I quoting Oblivion?", 420},
 };
 
 SequenceData sSequenceTable[] = {
@@ -155,7 +157,12 @@ static int find_sound_channel(int priority) {
 }
 
 void play_sound_global(int soundID) {
-    wav64_play(&sSoundTable[soundID].sound, 0);
+    wav64_play(&sSoundTable[soundID].sound, CHANNEL_GLOBAL);
+}
+
+void play_sound_global_pitch(int soundID, float pitch) {
+    wav64_play(&sSoundTable[soundID].sound, CHANNEL_GLOBAL);
+    mixer_ch_set_freq(CHANNEL_GLOBAL, (32000 / 2) * pitch);
 }
 
 int get_sound_pan(int channel, float pos[3]) {
@@ -224,10 +231,12 @@ void set_background_music(int seqID, int fadeTime) {
 void voice_play(int voiceID, int subtitle) {
     mixer_ch_set_freq(CHANNEL_VOICE, AUDIO_FREQUENCY * 2);
     wav64_play(&sVoiceTable[voiceID].sound.sound, CHANNEL_VOICE);
-    
-    debugf("%d\n", sVoiceTable[voiceID].sound.sound.wave.len);
 
     if (subtitle && gConfig.subtitles) {
         add_subtitle(sVoiceTable[voiceID].subtitle, sVoiceTable[voiceID].sound.sound.wave.len / 720);
     }
+}
+
+void voice_stop(void) {
+    mixer_ch_stop(CHANNEL_VOICE);
 }

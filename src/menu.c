@@ -12,6 +12,8 @@
 #include "scene.h"
 #include "save.h"
 #include "debug.h"
+#include "talk.h"
+#include "hud.h"
 
 #define NUM_MENU_PREVS 4
 
@@ -41,6 +43,12 @@ void free_menu_display(void) {
         }
         free(sMenuDisplay);
         sMenuDisplay = NULL;
+    }
+
+    if (gMenuStatus == MENU_CLOSED) {
+        if (gScreenshotStatus == -1) {
+            screenshot_clear();
+        }
     }
 }
 
@@ -472,10 +480,11 @@ void process_menus(int updateRate, float updateRateF) {
     DECREASE_VAR(sMenuSwapTimer, updateRate, 0);
     switch (gMenuStatus) {
     case MENU_CLOSED:
-        if (get_input_pressed(INPUT_START, 3) && sMenuSwapTimer == 0) {
+        if (sMenuSwapTimer == 0 && gTalkControl == NULL && get_input_pressed(INPUT_START, 3)) {
             play_sound_global(SOUND_MENU_CLICK);
             clear_input(INPUT_START);
             menu_set_forward(MENU_OPTIONS);
+            gScreenshotStatus = SCREENSHOT_GENERATE;
         }
         return;
     case MENU_TITLE:
