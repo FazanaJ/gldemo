@@ -591,7 +591,7 @@ void render_object_shadows(void) {
     }
 
     list = gObjectListHead;
-    set_material(&gBlankMaterial, MATERIAL_DECAL | MATERIAL_XLU);
+    set_material(&gBlankMaterial, MATERIAL_DECAL | MATERIAL_XLU | MATERIAL_DEPTH_READ);
     glEnable(GL_TEXTURE_2D);
     while (list) {
         obj = list->obj;
@@ -614,6 +614,11 @@ void render_object_shadows(void) {
     }
     glDisable(GL_RDPQ_MATERIAL_N64);
     get_time_snapshot(PP_SHADOWS, DEBUG_SNAPSHOT_1_END);
+#ifdef PUPPYPRINT_DEBUG
+    if (gDebugData && gDebugData->enabled) {
+        rspq_wait();
+    }
+#endif
 }
 
 void render_clutter(void) {
@@ -776,12 +781,16 @@ void generate_dynamic_shadows(void) {
             }
             glDisable(GL_RDPQ_MATERIAL_N64);
             gl_context_end();
-            rdpq_detach_wait();
+            rdpq_detach();
         }
         list = list->next;
     }
-
     get_time_snapshot(PP_SHADOWS, DEBUG_SNAPSHOT_1_END);
+#ifdef PUPPYPRINT_DEBUG
+    if (gDebugData && gDebugData->enabled) {
+        rspq_wait();
+    }
+#endif
 }
 
 void clear_dynamic_shadows(void) {
