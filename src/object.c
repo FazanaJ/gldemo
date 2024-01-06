@@ -531,6 +531,7 @@ void free_dynamic_shadow(Object *obj) {
     glDeleteTextures(1, &obj->dynamicTex);
     obj->dynamicStaleTimer = 0;
     obj->dynamicExists = false;
+    debugf("Freeing dynamic shadow for [%s] object.\n", sObjectOverlays[obj->objectID]);
 }
 
 /**

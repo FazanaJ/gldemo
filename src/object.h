@@ -184,6 +184,7 @@ typedef struct ObjectEntry {
 	unsigned char pad;
 } ObjectEntry;
 
+extern char *sObjectOverlays[];
 extern Object *gPlayer;
 extern ObjectList *gObjectListHead;
 extern ObjectList *gObjectListTail;
@@ -212,3 +213,4 @@ Object *find_nearest_object(Object *obj, int objectID, float baseDist);
 Object *find_nearest_object_facing(Object *obj, int objectID, float baseDist, int range, int angle);
 void object_move(Object *obj, float updateRateF);
 void clear_objects(void);
+void free_dynamic_shadow(Object *obj);

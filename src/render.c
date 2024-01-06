@@ -580,7 +580,6 @@ void render_object_shadows(void) {
     DEBUG_SNAPSHOT_1();
     ObjectList *list = gObjectListHead;
     Object *obj;
-    int texBase = 1000;
     
     set_material(&gTempMaterials[2], MATERIAL_DECAL);
     while (list) {
@@ -746,6 +745,7 @@ void generate_dynamic_shadows(void) {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glSurfaceTexImageN64(GL_TEXTURE_2D, 0, &obj->dynamic, &(rdpq_texparms_t){.s.repeats = 0, .t.repeats = 0, .s.mirror = 0, .t.mirror = 0});
                 obj->dynamicExists = true;
+                debugf("Allocating dynamic shadow for [%s] object.\n", sObjectOverlays[obj->objectID]);
             }
             rdpq_attach(&obj->dynamic, NULL);
             rdpq_clear(RGBA32(0, 0, 0, 0));
@@ -784,6 +784,19 @@ void generate_dynamic_shadows(void) {
     get_time_snapshot(PP_SHADOWS, DEBUG_SNAPSHOT_1_END);
 }
 
+void clear_dynamic_shadows(void) {
+    ObjectList *objList = gObjectListHead;
+    Object *obj;
+    while (objList) {
+        obj = objList->obj;
+        if (obj->dynamicExists) {
+            obj->dynamicStaleTimer = 0;
+            free_dynamic_shadow(obj);
+        }
+        objList = objList->next;
+    }
+}
+
 void render_game(int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
     if (gScreenshotStatus != SCREENSHOT_SHOW) {
@@ -812,6 +825,9 @@ void render_game(int updateRate, float updateRateF) {
         render_particles();
         render_end();
         gl_context_end();
+        if (gScreenshotStatus == SCREENSHOT_GENERATE) {
+            clear_dynamic_shadows();
+        }
     } else if (gScreenshotStatus == SCREENSHOT_SHOW) {
         render_end();
         gl_context_end();
