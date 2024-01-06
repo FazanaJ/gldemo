@@ -81,7 +81,7 @@ static void clear_scene(void) {
         //free(gEnvironment);
     }
     if (sCurrentScene->model) {
-        free(sCurrentScene->model);
+        model64_free(sCurrentScene->model);
     }
     if (sCurrentScene->overlay) {
         dlclose(sCurrentScene->overlay);
