@@ -209,7 +209,6 @@ Object *allocate_object(void) {
         gObjectListTail = list;
     }
     newObj->loopFunc = NULL;
-    newObj->flags = 0;
     newObj->gfx = NULL;
     newObj->data = NULL;
     newObj->flags = OBJ_FLAG_NONE;
@@ -527,6 +526,13 @@ Particle *spawn_particle(int particleID, float x, float y, float z) {
     return particle;
 }
 
+void free_dynamic_shadow(Object *obj) {
+    surface_free(&obj->dynamic);
+    glDeleteTextures(1, &obj->dynamicTex);
+    obj->dynamicStaleTimer = 0;
+    obj->dynamicExists = false;
+}
+
 /**
  * Remove an object from the list, then reconnect the list.
  * Free the list entry, then the object, and any further elements from RAM.
@@ -549,7 +555,11 @@ static void free_object(Object *obj) {
         }
     }
     if (obj->overlay) {
+        rdpq_set_mode_standard();
         check_unused_overlay(obj, obj->overlay);
+    }
+    if (obj->dynamicExists) {
+        free_dynamic_shadow(obj);
     }
     free(obj->entry);
     if (obj->data) {
@@ -711,6 +721,12 @@ static void update_objects(int updateRate, float updateRateF) {
     DEBUG_GET_TIME_1(PP_PLAYER);
     while (objList) {
         obj = objList->obj;
+        if (obj->dynamicStaleTimer > 0 && obj->dynamicExists) {
+            obj->dynamicStaleTimer -= updateRate;
+            if (obj->dynamicStaleTimer <= 0) {
+                free_dynamic_shadow(obj);
+            }
+        }
         obj->cameraDist = DIST3(obj->pos, gCamera->pos);
         if (obj->cameraDist < obj->viewDist) {
             obj->flags &= ~OBJ_FLAG_INVISIBLE;

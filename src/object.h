@@ -8,12 +8,13 @@
 
 enum ObjectFlags {
 	OBJ_FLAG_NONE,
-	OBJ_FLAG_DELETE = 		(1 << 0),
-	OBJ_FLAG_INVISIBLE = 	(1 << 1),
-	OBJ_FLAG_MOVE = 		(1 << 2),
-	OBJ_FLAG_GRAVITY = 		(1 << 3),
-	OBJ_FLAG_COLLISION = 	(1 << 4),
-	OBJ_FLAG_SHADOW = 		(1 << 5),
+	OBJ_FLAG_DELETE = 			(1 << 0),
+	OBJ_FLAG_INVISIBLE = 		(1 << 1),
+	OBJ_FLAG_MOVE = 			(1 << 2),
+	OBJ_FLAG_GRAVITY = 			(1 << 3),
+	OBJ_FLAG_COLLISION = 		(1 << 4),
+	OBJ_FLAG_SHADOW = 			(1 << 5),
+	OBJ_FLAG_SHADOW_DYNAMIC =	(1 << 6),
 };
 
 enum ObjectIDs {
@@ -78,6 +79,10 @@ typedef struct Object {
 	void *data;
 	short objectID;
 	short floorHeight;
+	char dynamicStaleTimer : 4;
+	char dynamicExists : 4;
+	surface_t dynamic;
+	GLuint dynamicTex;
 } Object;
 
 typedef struct ObjectList {

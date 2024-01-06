@@ -206,7 +206,6 @@ void cycle_textures(int updateRate) {
 #ifdef PUPPYPRINT_DEBUG
     gNumTextureLoads = 0;
 #endif
-    sPrevRenderFlags = 0;
     sPrevTextureID = 0;
     sCurrentMaterial = 0;
     sPrevRenderFlags = 0;

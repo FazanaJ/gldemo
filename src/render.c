@@ -34,6 +34,7 @@ rspq_block_t *sRenderSkyBlock;
 static rspq_block_t *sBeginModeBlock;
 static rspq_block_t *sParticleBlock;
 Material gOverrideMaterial;
+Material gBlankMaterial = {NULL, -1, MATERIAL_NULL};
 
 Material gTempMaterials[] = {
     {NULL, 0, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL},
@@ -373,7 +374,7 @@ rspq_block_t *sShadowBlock;
 
 void render_shadow(float pos[3]) {
     glPushMatrix();
-    glTranslatef(pos[0], pos[1], pos[2]);
+    glTranslatef(pos[0], pos[1] + 0.1f, pos[2]);
     if (sShadowBlock == NULL) {
         rspq_block_begin();
         glScalef(0.5f, 0.5f, 0.5f);
@@ -579,6 +580,7 @@ void render_object_shadows(void) {
     DEBUG_SNAPSHOT_1();
     ObjectList *list = gObjectListHead;
     Object *obj;
+    int texBase = 1000;
     
     set_material(&gTempMaterials[2], MATERIAL_DECAL);
     while (list) {
@@ -588,6 +590,30 @@ void render_object_shadows(void) {
         }
         list = list->next;
     }
+
+    list = gObjectListHead;
+    set_material(&gBlankMaterial, MATERIAL_DECAL | MATERIAL_XLU);
+    glEnable(GL_TEXTURE_2D);
+    while (list) {
+        obj = list->obj;
+        if (obj->flags & OBJ_FLAG_SHADOW_DYNAMIC && obj->dynamicExists) {
+            glBindTexture(GL_TEXTURE_2D, obj->dynamicTex);
+            gNumTextureLoads++;
+            glPushMatrix();
+            glTranslatef(obj->pos[0], obj->floorHeight + 0.1f, obj->pos[2]);
+            glScalef(0.5f, 0.5f, 0.5f);
+            glBegin(GL_QUADS);
+            glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
+            glTexCoord2f(0, 0);        glVertex3f(55.0f, 0.0f, -17.5f);
+            glTexCoord2f(0, 1.024f);             glVertex3f(-17.5f, 0.0f, -17.5f);
+            glTexCoord2f(1.024f, 1.024f);        glVertex3f(-17.5f, 0.0f, 17.5f);
+            glTexCoord2f(1.024f, 0);   glVertex3f(55.0f, 0.0f, 17.5f);
+            glEnd();
+            glPopMatrix();
+        }
+        list = list->next;
+    }
+    glDisable(GL_RDPQ_MATERIAL_N64);
     get_time_snapshot(PP_SHADOWS, DEBUG_SNAPSHOT_1_END);
 }
 
@@ -697,8 +723,72 @@ void render_objects(void) {
 #endif
 }
 
+void generate_dynamic_shadows(void) {
+    DEBUG_SNAPSHOT_1();
+    ObjectList *list = gObjectListHead;
+    Object *obj;
+
+    Camera *c = gCamera;
+    float nearClip = 5.0f;
+    float farClip = 500.0f;
+
+    apply_render_settings();
+    float pos[3] = {0.0f, 0.0f, 0.0f};
+    float scale[3] = {1.0f, 1.0f, 1.0f};
+    while (list) {
+        obj = list->obj;
+        if (obj->flags & OBJ_FLAG_SHADOW_DYNAMIC) {
+            if (obj->dynamicExists == false) {
+                obj->dynamic = surface_alloc(FMT_I8, 48, 84);
+                glGenTextures(1, &obj->dynamicTex);
+                glBindTexture(GL_TEXTURE_2D, obj->dynamicTex);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glSurfaceTexImageN64(GL_TEXTURE_2D, 0, &obj->dynamic, &(rdpq_texparms_t){.s.repeats = 0, .t.repeats = 0, .s.mirror = 0, .t.mirror = 0});
+                obj->dynamicExists = true;
+            }
+            rdpq_attach(&obj->dynamic, NULL);
+            rdpq_clear(RGBA32(0, 0, 0, 0));
+            gl_context_begin();
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+            set_frustrum(-nearClip * 1.0f, nearClip * 1.0f, -nearClip, nearClip, nearClip, farClip);
+            glMatrixMode(GL_MODELVIEW);
+            glLoadIdentity();
+            mtx_lookat(-8.0f, 12.0f, 0.0f, 8.0f, 2.5f, 0.0f, 0.0f, 1.0f, 0.0f);
+            set_material(&gBlankMaterial, MATERIAL_CAM_ONLY);
+            glEnable(GL_RDPQ_MATERIAL_N64);
+            obj->dynamicStaleTimer = 10;
+            ObjectModel *m = obj->gfx->listEntry->entry;
+            while (m) {
+                Matrix matrix;
+                if (m->matrixBehaviour != MTX_NONE) {
+                    set_draw_matrix(&matrix, m->matrixBehaviour, pos, obj->faceAngle, scale);
+                    glMultMatrixf((GLfloat *) &matrix.m);
+                }
+                rdpq_mode_antialias(AA_NONE);
+                rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+                rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+                glPushMatrix();
+                rspq_block_run(m->block);
+                glPopMatrix();
+                m = m->next;
+            }
+            glDisable(GL_RDPQ_MATERIAL_N64);
+            gl_context_end();
+            rdpq_detach_wait();
+        }
+        list = list->next;
+    }
+
+    get_time_snapshot(PP_SHADOWS, DEBUG_SNAPSHOT_1_END);
+}
+
 void render_game(int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
+    if (gScreenshotStatus != SCREENSHOT_SHOW) {
+        generate_dynamic_shadows();
+    }
     if (gScreenshotStatus > SCREENSHOT_NONE) {
         screenshot_generate();
     } else {
