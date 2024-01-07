@@ -100,11 +100,9 @@ int main(void) {
     float updateRateF;
 
     boot_game();
-    init_renderer();
     load_scene(SCENE_INTRO);
 
     while (1) {
-        gFrameBuffers = display_get();
         reset_profiler_times();
         DEBUG_SNAPSHOT_1();
 
@@ -114,9 +112,12 @@ int main(void) {
         if (gTalkControl == NULL) {
             update_game_entities(updateRate, updateRateF);
         }
-        audio_loop(updateRate, updateRateF);
         process_hud(updateRate, updateRateF);
         process_menus(updateRate, updateRateF);
+        if (gScreenshotStatus <= SCREENSHOT_NONE) {
+            gFrameBuffers = display_get();
+        }
+        audio_loop(updateRate, updateRateF);
         render_game(updateRate, updateRateF);
         get_cpu_time(DEBUG_SNAPSHOT_1_END);
         DEBUG_SNAPSHOT_1_RESET();
@@ -129,7 +130,6 @@ int main(void) {
         if (gScreenshotStatus > SCREENSHOT_NONE) {
             rdpq_detach_wait();
             gScreenshotStatus = SCREENSHOT_SHOW;
-            display_show(gFrameBuffers);
         } else {
             rdpq_detach_show();
         }

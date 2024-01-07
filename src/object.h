@@ -81,6 +81,7 @@ typedef struct Object {
 	short floorHeight;
 	char dynamicStaleTimer : 4;
 	char dynamicExists : 4;
+	unsigned char animID;
 	surface_t dynamic;
 	GLuint dynamicTex;
 } Object;

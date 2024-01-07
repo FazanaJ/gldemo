@@ -312,22 +312,29 @@ int temp_matrix_grabber(int modelID) {
     return MTX_TRANSLATE;
 }
 
-short playerModelTextures[6][4] = {
-    {TEXTURE_NONE, 0, 0, 0},
-    {TEXTURE_NONE, 0, 0, 0},
-    {TEXTURE_NONE, 0, 0, 0},
-    {TEXTURE_NONE, TEXTURE_NONE, TEXTURE_NONE, TEXTURE_EYE1},
-    {TEXTURE_TROUSERS, 0, 0, 0},
-    {TEXTURE_NONE, TEXTURE_SHIRT, 0, 0}
+short playerModelTextures[][9] = {
+    {TEXTURE_PLEASE, 0, 0, 0, 0, 0, 0, 0, 0}, // Ears
+    {TEXTURE_PLEASE, 0, 0, 0, 0, 0, 0, 0, 0}, // Feet
+    {TEXTURE_STONEFLOOR4, 0, 0, 0, 0, 0, 0, 0, 0}, // Hair
+    {TEXTURE_PLEASE, 0, 0, 0, 0, 0, 0, 0, 0}, // Hands
+    {TEXTURE_EYE1, TEXTURE_INTEROSIGN2, TEXTURE_MOUTH1, TEXTURE_PLEASE, 0, 0, 0, 0, 0}, // Head
+    {TEXTURE_TROUSERS, 0, 0, 0, 0, 0, 0, 0, 0}, // Legs
+    {TEXTURE_PLEASE, 0, 0, 0, 0, 0, 0, 0, 0}, // Tail
+    {TEXTURE_PLEASE, TEXTURE_SHIRT, 0, 0, 0, 0, 0, 0, 0}, // Torso
 };
 
-short playerModelFlags[6][4] = {
-    {MATERIAL_VTXCOL, 0, 0, 0},
-    {MATERIAL_VTXCOL, 0, 0, 0},
-    {MATERIAL_VTXCOL, 0, 0, 0},
-    {MATERIAL_VTXCOL, MATERIAL_VTXCOL, MATERIAL_VTXCOL, MATERIAL_CUTOUT | MATERIAL_DECAL},
-    {0, 0, 0, 0},
-    {MATERIAL_VTXCOL, 0, 0, 0}
+short playerModelFlags[][9] = {
+    {0, 0, 0, MATERIAL_CUTOUT | MATERIAL_DECAL, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0 | 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0 | 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0 | 0, 0, 0, 0, 0, 0},
+    {MATERIAL_CUTOUT | MATERIAL_DECAL, 0, MATERIAL_CUTOUT | MATERIAL_DECAL, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0 | 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0 | 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0 | 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0 | 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0 | 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0 | 0, 0, 0, 0, 0, 0},
 };
 
 void load_object_model(Object *obj, int objectID) {
@@ -392,6 +399,8 @@ void load_object_model(Object *obj, int objectID) {
                 m->matrixBehaviour = 0;
             }
             rspq_block_begin();
+            //glScalef(10.0f, 9.0f, 10.0f);
+            glScalef(1.0f, 1.33f, 1.33f);
             model64_draw_primitive(prim);
             m->block = rspq_block_end();
 

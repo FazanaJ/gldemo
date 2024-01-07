@@ -19,4 +19,7 @@ const TextureInfo sTextureIDs[] = {
 {"mouth1.ia4", 6},
 {"shirt.ci8", 3},
 {"trousers.ci8", 3},
+{"rocksurface4.ci4", 0},
+{"mountainsidebottom.ci4", 0},
+{"broijustwantcolour.ci4", 0},
 };
