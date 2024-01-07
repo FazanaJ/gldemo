@@ -572,7 +572,9 @@ void render_world(void) {
     get_time_snapshot(PP_RENDERLEVEL, DEBUG_SNAPSHOT_1_END);
 #ifdef PUPPYPRINT_DEBUG
     if (gDebugData && gDebugData->enabled) {
+        DEBUG_SNAPSHOT_3();
         rspq_wait();
+        get_time_snapshot(PP_HALT, DEBUG_SNAPSHOT_3_END);
     }
 #endif
 }
@@ -580,7 +582,9 @@ void render_world(void) {
 void render_object_shadows(void) {
 #ifdef PUPPYPRINT_DEBUG
     if (gDebugData && gDebugData->enabled) {
+        DEBUG_SNAPSHOT_3();
         rspq_wait();
+        get_time_snapshot(PP_HALT, DEBUG_SNAPSHOT_3_END);
     }
 #endif
     DEBUG_SNAPSHOT_1();
@@ -622,7 +626,9 @@ void render_object_shadows(void) {
     get_time_snapshot(PP_SHADOWS, DEBUG_SNAPSHOT_1_END);
 #ifdef PUPPYPRINT_DEBUG
     if (gDebugData && gDebugData->enabled) {
+        DEBUG_SNAPSHOT_3();
         rspq_wait();
+        get_time_snapshot(PP_HALT, DEBUG_SNAPSHOT_3_END);
     }
 #endif
 }
@@ -678,7 +684,9 @@ void render_clutter(void) {
     get_time_snapshot(PP_RENDERCLUTTER, DEBUG_SNAPSHOT_1_END);
 #ifdef PUPPYPRINT_DEBUG
     if (gDebugData && gDebugData->enabled) {
+        DEBUG_SNAPSHOT_3();
         rspq_wait();
+        get_time_snapshot(PP_HALT, DEBUG_SNAPSHOT_3_END);
     }
 #endif
 }
@@ -686,7 +694,9 @@ void render_clutter(void) {
 void render_objects(void) {
 #ifdef PUPPYPRINT_DEBUG
     if (gDebugData && gDebugData->enabled) {
+        DEBUG_SNAPSHOT_3();
         rspq_wait();
+        get_time_snapshot(PP_HALT, DEBUG_SNAPSHOT_3_END);
     }
 #endif
     DEBUG_SNAPSHOT_1();
@@ -734,7 +744,9 @@ void render_objects(void) {
     get_time_snapshot(PP_RENDEROBJECTS, DEBUG_SNAPSHOT_1_END);
 #ifdef PUPPYPRINT_DEBUG
     if (gDebugData && gDebugData->enabled) {
+        DEBUG_SNAPSHOT_3();
         rspq_wait();
+        get_time_snapshot(PP_HALT, DEBUG_SNAPSHOT_3_END);
     }
 #endif
 }
@@ -765,7 +777,9 @@ void reset_shadow_perspective(void) {
 void generate_dynamic_shadows(void) {
 #ifdef PUPPYPRINT_DEBUG
     if (gDebugData && gDebugData->enabled) {
+        DEBUG_SNAPSHOT_3();
         rspq_wait();
+        get_time_snapshot(PP_HALT, DEBUG_SNAPSHOT_3_END);
     }
 #endif
     DEBUG_SNAPSHOT_1();
@@ -817,7 +831,9 @@ void generate_dynamic_shadows(void) {
     get_time_snapshot(PP_SHADOWS, DEBUG_SNAPSHOT_1_END);
 #ifdef PUPPYPRINT_DEBUG
     if (gDebugData && gDebugData->enabled) {
+        DEBUG_SNAPSHOT_3();
         rspq_wait();
+        get_time_snapshot(PP_HALT, DEBUG_SNAPSHOT_3_END);
     }
 #endif
 }
@@ -836,7 +852,10 @@ void clear_dynamic_shadows(void) {
 }
 
 void render_game(int updateRate, float updateRateF) {
+#ifdef PUPPYPRINT_DEBUG
     DEBUG_SNAPSHOT_1();
+    unsigned int offset = gDebugData->timer[PP_HALT][gDebugData->iteration];
+#endif
     if (gScreenshotStatus != SCREENSHOT_SHOW) {
         generate_dynamic_shadows();
     }
@@ -882,5 +901,7 @@ void render_game(int updateRate, float updateRateF) {
     if (get_input_pressed(INPUT_CRIGHT, 0)) {
         showAll ^= 1;
     }
+    offset = gDebugData->timer[PP_HALT][gDebugData->iteration] - offset;
+    add_time_offset(PP_RENDER, offset);
 #endif
 }

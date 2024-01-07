@@ -108,7 +108,7 @@ void process_profiler(void) {
         gDebugData->timer[i][TIME_TOTAL] = gDebugData->timer[i][TIME_AGGREGATE] / TIME_TOTAL;
     }
 
-    gDebugData->cpuTime[TIME_TOTAL] = gDebugData->cpuTime[TIME_AGGREGATE] / TIME_TOTAL;
+    gDebugData->cpuTime[TIME_TOTAL] = (gDebugData->cpuTime[TIME_AGGREGATE] / TIME_TOTAL) - gDebugData->timer[PP_HALT][TIME_TOTAL];
     gDebugData->rspTime[TIME_TOTAL] = gDebugData->rspTime[TIME_AGGREGATE] / TIME_TOTAL;
     gDebugData->rdpTime[TIME_TOTAL] = gDebugData->rdpTime[TIME_AGGREGATE] / TIME_TOTAL;
 
@@ -148,7 +148,7 @@ void render_profiler(void) {
     rdpq_fill_rectangle(8, gFrameBuffers->height - 42, 120, gFrameBuffers->height - 6);
     boxHeight = 10;
     for (int i = 0; i < PP_TOTAL; i++) {
-        if (gDebugData->timer[i][TIME_TOTAL] > 1) {
+        if (i != PP_HALT && gDebugData->timer[i][TIME_TOTAL] > 1) {
             boxHeight += 8;
         }
     }
@@ -167,7 +167,7 @@ void render_profiler(void) {
     }
     boxHeight = 0;
     for (int i = 0; i < PP_TOTAL; i++) {
-        if (gDebugData->timer[i][TIME_TOTAL] > 1) {
+        if (i != PP_HALT && gDebugData->timer[i][TIME_TOTAL] > 1) {
             boxHeight += 8;
             rdpq_text_printf(NULL, FONT_ARIAL, width - 100, 8 + boxHeight, "%s:", sDebugText[i]);
             rdpq_text_printf(NULL, FONT_ARIAL, width - 38, 8 + boxHeight, "%dus", gDebugData->timer[i][TIME_TOTAL]);

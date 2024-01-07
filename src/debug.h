@@ -29,7 +29,8 @@
     "Shadows", \
     "RenderList", \
     "Matrix", \
-    "Menu"
+    "Menu", \
+    ""
 
 
 enum ProfileTimers {
@@ -55,6 +56,7 @@ enum ProfileTimers {
     PP_RENDERLIST,
     PP_MATRIX,
     PP_MENU,
+    PP_HALT,
 
     PP_TOTAL
 };
