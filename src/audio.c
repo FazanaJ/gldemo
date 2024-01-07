@@ -81,7 +81,7 @@ void update_sequence(int updateRate) {
         } else {
             float fade;
             fade = ((float) sSequenceFadeTimer / (float) sSequenceFadeTimerSet) * gMusicVolume;
-            if (fade > 0.0001f) {
+            if (fade < 0.0001f) {
                 fade = 0.0001f;
             }
             xm64player_set_vol(&sXMPlayer, fade);
