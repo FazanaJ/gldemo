@@ -13,6 +13,7 @@
 #include "math_util.h"
 #include "debug.h"
 #include "talk.h"
+#include "scene.h"
 
 static sprite_t *sHealthSprite;
 static rspq_block_t *sHealthBlock;
@@ -22,6 +23,11 @@ static unsigned short sPrevHealthMax;
 static short sHealthPosX;
 static short sHealthPosY;
 char gScreenshotStatus;
+char gTransitionTimer;
+char gTransitionTarget;
+char gTransitionType;
+char gTransitionSceneOut;
+int gTransitionScene;
 surface_t gScreenshot;
 sprite_t *gScreenshotSprite;
 
@@ -448,7 +454,45 @@ void render_panel(int x1, int y1, int x2, int y2, int style, unsigned int colour
     rdpq_tex_blit(&surf, x1 + 8, y1 + 8, &(rdpq_blitparms_t){.scale_x = xScale, .scale_y = yScale});
 }
 
+void transition_into_scene(int sceneID, int transitionType, int timer, int transitionOut) {
+    transition_set(transitionType, timer);
+    gTransitionScene = sceneID;
+    gTransitionSceneOut = transitionOut;
+}
+
+void transition_timer(int updateRate) {
+    if (gTransitionType != TRANSITION_NONE) {
+        gTransitionTimer += updateRate;
+        if (gTransitionTimer > gTransitionTarget) {
+            gTransitionTimer = gTransitionTarget;
+            if (gTransitionScene != -1) {
+                load_scene(gTransitionScene);
+                gTransitionScene = -1;
+                if (gTransitionSceneOut) {
+                    transition_set(gTransitionSceneOut, gTransitionTarget);
+                }
+                return;
+            }
+            if ((gTransitionType % 2) == 0) {
+                transition_clear();
+            }
+        }
+    }
+}
+
+void transition_set(int type, int timer) {
+    gTransitionType = type;
+    gTransitionTarget = timer;
+    gTransitionTimer = 0;
+}
+
+inline void transition_clear(void) {
+    gTransitionType = TRANSITION_NONE;
+    gTransitionScene = -1;
+}
+
 void process_hud(int updateRate, float updateRateF) {
+    transition_timer(updateRate);
     process_subtitle_timers(updateRate, updateRateF);
     talk_update(updateRate);
 }
@@ -465,6 +509,31 @@ void screenshot_generate(void) {
 void screenshot_clear(void) {
     surface_free(&gScreenshot);
     gScreenshotStatus = SCREENSHOT_NONE;
+}
+
+void transition_render_fullscreen(void) {
+    int offset;
+    if (gTransitionType == TRANSITION_FULLSCREEN_OUT) {
+        offset = gTransitionTarget - gTransitionTimer;
+    } else {
+        offset = gTransitionTimer;
+    }
+    int alpha = ((float) offset / (float) gTransitionTarget) * 255.0f;
+    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    rdpq_set_prim_color(RGBA32(0, 0, 0, alpha));
+    rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+    rdpq_fill_rectangle(0, 0, display_get_width(), display_get_height());
+}
+
+void transition_render(void) {
+    switch (gTransitionType) {
+    case TRANSITION_NONE:
+        return;
+    case TRANSITION_FULLSCREEN_IN:
+    case TRANSITION_FULLSCREEN_OUT:
+        transition_render_fullscreen();
+        return;
+    }
 }
 
 void render_hud(int updateRate, float updateRateF) {
@@ -489,6 +558,8 @@ void render_hud(int updateRate, float updateRateF) {
     if (get_input_pressed(INPUT_CUP, 0)) {
         add_subtitle("You have pressed C left!\nThat's quite an acomplishment right there.\nOh god, we have a THIRD line now?", 200);
     }
+
+    transition_render();
 
     talk_render();
 

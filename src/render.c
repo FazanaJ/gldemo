@@ -35,6 +35,8 @@ static rspq_block_t *sBeginModeBlock;
 static rspq_block_t *sParticleBlock;
 Material gOverrideMaterial;
 Material gBlankMaterial = {NULL, -1, MATERIAL_NULL};
+void *gSortHeap;
+unsigned int gSortPos;
 
 Material gTempMaterials[] = {
     {NULL, 0, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL},
@@ -97,6 +99,11 @@ void init_renderer(void) {
     glDepthMask(GL_FALSE);
     glScissor(0, 0, display_get_width(), display_get_height());
     sRenderEndBlock = rspq_block_end();
+
+    if (gSortHeap == NULL) {
+        gSortHeap = malloc(0x4000);
+        gSortPos = ((unsigned int) gSortHeap) + 0x3F80;
+    }
 }
 
 void setup_light(light_t light) {
@@ -455,7 +462,8 @@ void find_material_list(RenderNode *node) {
     RenderList *matList;
     if (gRenderNodeHead == NULL) {
         gRenderNodeHead = node;
-        matList = malloc(sizeof(RenderList));
+        gSortPos -= sizeof(RenderList);
+        matList = (RenderList *) gSortPos;
         gMateriallistHead = matList;
     } else {
         RenderList *list = gMateriallistHead;
@@ -474,7 +482,8 @@ void find_material_list(RenderNode *node) {
             }
             list = list->next;
         }
-        matList = malloc(sizeof(RenderList));
+        gSortPos -= sizeof(RenderList);
+        matList = (RenderList *) gSortPos;
         gMateriallistTail->next = matList;
         gRenderNodeTail->next = node;
     }
@@ -503,7 +512,6 @@ void pop_render_list(void) {
         glPushMatrix();
         if (renderList->matrix) {
             glMultMatrixf((GLfloat *) renderList->matrix->m);
-            free(renderList->matrix);
         }
         if (renderList->material) {
             set_material(renderList->material, renderList->flags);
@@ -511,19 +519,18 @@ void pop_render_list(void) {
         rspq_block_run(renderList->block);
         glPopMatrix();
         renderList = renderList->next;
-        free(oldList);
     }
     RenderList *matList = gMateriallistHead;
     while (matList) {
         RenderList *oldList = matList;
         matList = matList->next;
-        free(oldList);
     }
     gRenderNodeHead = NULL;
     gRenderNodeTail = NULL;
     gMateriallistHead = NULL;
     gMateriallistTail = NULL;
     gPrevMatList = NULL;
+    gSortPos = ((unsigned int) gSortHeap) + 0x4000;
 }
 
 void render_particles(void) {
@@ -554,7 +561,8 @@ void render_world(void) {
         SceneMesh *s = sCurrentScene->meshList;
 
         while (s != NULL) {
-            RenderNode *entry = malloc(sizeof(RenderNode));
+            gSortPos -= sizeof(RenderNode);
+            RenderNode *entry = (RenderNode *) gSortPos;
             entry->matrix = NULL;
             if (showAll) {
                 Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : s->material;
@@ -562,7 +570,6 @@ void render_world(void) {
             } else {
                 set_material(s->material, s->flags);
                 rspq_block_run(s->renderBlock);
-                free(entry);
             }
             s = s->next;
         }
@@ -577,6 +584,11 @@ void render_world(void) {
 }
 
 void render_object_shadows(void) {
+#ifdef PUPPYPRINT_DEBUG
+    if (gDebugData && gDebugData->enabled) {
+        rspq_wait();
+    }
+#endif
     DEBUG_SNAPSHOT_1();
     ObjectList *list = gObjectListHead;
     Object *obj;
@@ -633,8 +645,11 @@ void render_clutter(void) {
     while (list) {
         obj = list->clutter;
         if (obj->objectID == CLUTTER_BUSH && !(obj->flags & OBJ_FLAG_INVISIBLE)) {
-            RenderNode *entry = malloc(sizeof(RenderNode));
-            entry->matrix = malloc(sizeof(Matrix));
+            gSortPos -= sizeof(RenderNode);
+            RenderNode *entry = (RenderNode *) gSortPos;
+            gSortPos -= sizeof(Matrix);
+            entry->matrix = (Matrix *) gSortPos;
+            
             mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
             if (showAll) {
                 Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[1];
@@ -644,13 +659,13 @@ void render_clutter(void) {
                 glMultMatrixf((GLfloat *) entry->matrix->m);
                 set_material(&gTempMaterials[1], MATERIAL_NULL);
                 rspq_block_run(sBushBlock);
-                free(entry->matrix);
-                free(entry);
                 glPopMatrix();
             }
         } else if (obj->objectID == CLUTTER_ROCK && !(obj->flags & OBJ_FLAG_INVISIBLE)) {
-            RenderNode *entry = malloc(sizeof(RenderNode));
-            entry->matrix = malloc(sizeof(Matrix));
+            gSortPos -= sizeof(RenderNode);
+            RenderNode *entry = (RenderNode *) gSortPos;
+            gSortPos -= sizeof(Matrix);
+            entry->matrix = (Matrix *) gSortPos;
             mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
             if (showAll) {
                 Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[0];
@@ -660,8 +675,6 @@ void render_clutter(void) {
                 glMultMatrixf((GLfloat *) entry->matrix->m);
                 set_material(&gTempMaterials[0], MATERIAL_NULL);
                 rspq_block_run(sBushBlock);
-                free(entry->matrix);
-                free(entry);
                 glPopMatrix();
             }
         }
@@ -677,6 +690,11 @@ void render_clutter(void) {
 }
 
 void render_objects(void) {
+#ifdef PUPPYPRINT_DEBUG
+    if (gDebugData && gDebugData->enabled) {
+        rspq_wait();
+    }
+#endif
     DEBUG_SNAPSHOT_1();
     ObjectList *list = gObjectListHead;
     Object *obj;
@@ -686,15 +704,17 @@ void render_objects(void) {
         if (obj->gfx) { 
             ObjectModel *m = obj->gfx->listEntry->entry;
             Matrix *prevMtx = NULL;
-            while (m) {
-                RenderNode *entry = malloc(sizeof(RenderNode));
+            while (m) {                
+                gSortPos -= sizeof(RenderNode);
+                RenderNode *entry = (RenderNode *) gSortPos;
                 if (m->matrixBehaviour != MTX_NONE) {
                     entry->matrix = malloc(sizeof(Matrix));
                     prevMtx = entry->matrix;
                     set_draw_matrix(entry->matrix, m->matrixBehaviour, obj->pos, obj->faceAngle, obj->scale);
                 } else {
                     if (prevMtx) {
-                        entry->matrix = malloc(sizeof(Matrix));
+                        gSortPos -= sizeof(Matrix);
+                        entry->matrix = (Matrix *) gSortPos;
                         memcpy(entry->matrix, prevMtx, sizeof(Matrix));
                     } else {
                         entry->matrix = NULL;
@@ -708,8 +728,6 @@ void render_objects(void) {
                     glMultMatrixf((GLfloat *) entry->matrix->m);
                     set_material(&m->material, MATERIAL_NULL);
                     rspq_block_run(m->block);
-                    free(entry->matrix);
-                    free(entry);
                     glPopMatrix();
                 }
                 m = m->next;
@@ -727,18 +745,46 @@ void render_objects(void) {
 #endif
 }
 
+rspq_block_t *sDynamicShadowBlock;
+
+void reset_shadow_perspective(void) {
+    if (sDynamicShadowBlock == NULL) {
+        float nearClip = 5.0f;
+        float farClip = 500.0f;
+        rspq_block_begin();
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        set_frustrum(-nearClip * 1.0f, nearClip * 1.0f, -nearClip, nearClip, nearClip, farClip);
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+        set_material(&gBlankMaterial, MATERIAL_CAM_ONLY);
+        glEnable(GL_RDPQ_MATERIAL_N64);
+        rdpq_mode_antialias(AA_NONE);
+        rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+        rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+        sDynamicShadowBlock = rspq_block_end();
+    }
+    rspq_block_run(sDynamicShadowBlock);
+    mtx_lookat(-8.0f, 12.0f, 0.0f, 8.0f, 2.5f, 0.0f, 0.0f, 1.0f, 0.0f);
+}
+
 void generate_dynamic_shadows(void) {
+#ifdef PUPPYPRINT_DEBUG
+    if (gDebugData && gDebugData->enabled) {
+        rspq_wait();
+    }
+#endif
     DEBUG_SNAPSHOT_1();
     ObjectList *list = gObjectListHead;
     Object *obj;
 
     Camera *c = gCamera;
-    float nearClip = 5.0f;
-    float farClip = 500.0f;
 
     apply_render_settings();
     float pos[3] = {0.0f, 0.0f, 0.0f};
     float scale[3] = {1.0f, 1.0f, 1.0f};
+    reset_shadow_perspective();
+    
     while (list) {
         obj = list->obj;
         if (obj->flags & OBJ_FLAG_SHADOW_DYNAMIC) {
@@ -755,14 +801,6 @@ void generate_dynamic_shadows(void) {
             rdpq_attach(&obj->dynamic, NULL);
             rdpq_clear(RGBA32(0, 0, 0, 0));
             gl_context_begin();
-            glMatrixMode(GL_PROJECTION);
-            glLoadIdentity();
-            set_frustrum(-nearClip * 1.0f, nearClip * 1.0f, -nearClip, nearClip, nearClip, farClip);
-            glMatrixMode(GL_MODELVIEW);
-            glLoadIdentity();
-            mtx_lookat(-8.0f, 12.0f, 0.0f, 8.0f, 2.5f, 0.0f, 0.0f, 1.0f, 0.0f);
-            set_material(&gBlankMaterial, MATERIAL_CAM_ONLY);
-            glEnable(GL_RDPQ_MATERIAL_N64);
             obj->dynamicStaleTimer = 10;
             ObjectModel *m = obj->gfx->listEntry->entry;
             while (m) {
@@ -771,20 +809,17 @@ void generate_dynamic_shadows(void) {
                     set_draw_matrix(&matrix, m->matrixBehaviour, pos, obj->faceAngle, scale);
                     glMultMatrixf((GLfloat *) &matrix.m);
                 }
-                rdpq_mode_antialias(AA_NONE);
-                rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-                rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
                 glPushMatrix();
                 rspq_block_run(m->block);
                 glPopMatrix();
                 m = m->next;
             }
-            glDisable(GL_RDPQ_MATERIAL_N64);
             gl_context_end();
             rdpq_detach();
         }
         list = list->next;
     }
+    glDisable(GL_RDPQ_MATERIAL_N64);
     get_time_snapshot(PP_SHADOWS, DEBUG_SNAPSHOT_1_END);
 #ifdef PUPPYPRINT_DEBUG
     if (gDebugData && gDebugData->enabled) {

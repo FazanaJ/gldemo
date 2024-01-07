@@ -114,12 +114,16 @@ int main(void) {
         }
         process_hud(updateRate, updateRateF);
         process_menus(updateRate, updateRateF);
+#ifdef PUPPYPRINT_DEBUG
+        first1 = DEBUG_SNAPSHOT_1_END;
+#endif
         if (gScreenshotStatus <= SCREENSHOT_NONE) {
             gFrameBuffers = display_get();
         }
+        DEBUG_SNAPSHOT_2();
         audio_loop(updateRate, updateRateF);
         render_game(updateRate, updateRateF);
-        get_cpu_time(DEBUG_SNAPSHOT_1_END);
+        get_cpu_time((DEBUG_SNAPSHOT_2_END) + first1);
         DEBUG_SNAPSHOT_1_RESET();
         process_profiler();
         if (gDebugData && gDebugData->enabled && gScreenshotStatus != SCREENSHOT_GENERATE) {
@@ -143,7 +147,7 @@ int main(void) {
         gGameTimer += updateRate;
 #ifdef PUPPYPRINT_DEBUG
     if (gDebugData && gDebugData->enabled) {
-        rspq_wait();
+        //rspq_wait();
     }
 #endif
     }

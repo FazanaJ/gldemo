@@ -112,6 +112,11 @@ void update_sound(float updateRateF) {
 }
 
 void audio_loop(int updateRate, float updateRateF) {
+#ifdef PUPPYPRINT_DEBUG
+    if (gDebugData && gDebugData->enabled) {
+        rspq_wait();
+    }
+#endif
     DEBUG_SNAPSHOT_1();
     update_sound(updateRateF);
     update_sequence(updateRate);

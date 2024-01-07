@@ -431,7 +431,7 @@ void process_options_menu(int updateRate) {
             break;
         case 2:
             menu_set_reset(MENU_TITLE);
-            load_scene(SCENE_INTRO);
+            transition_into_scene(SCENE_INTRO, TRANSITION_FULLSCREEN_IN, 30, TRANSITION_FULLSCREEN_OUT);
             set_background_music(1, 30);
             break;
         }
@@ -464,7 +464,7 @@ void process_title_menu(int updateRate) {
         switch (sMenuSelection[1]) {
         case 0:
             menu_set_reset(MENU_CLOSED);
-            load_scene(SCENE_TESTAREA);
+            transition_into_scene(SCENE_TESTAREA, TRANSITION_FULLSCREEN_IN, 30, TRANSITION_FULLSCREEN_OUT);
             set_background_music(0, 30);
             break;
         case 1:
