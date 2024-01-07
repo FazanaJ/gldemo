@@ -771,7 +771,6 @@ void reset_shadow_perspective(void) {
         sDynamicShadowBlock = rspq_block_end();
     }
     rspq_block_run(sDynamicShadowBlock);
-    mtx_lookat(-8.0f, 12.0f, 0.0f, 8.0f, 2.5f, 0.0f, 0.0f, 1.0f, 0.0f);
 }
 
 void generate_dynamic_shadows(void) {
@@ -809,6 +808,8 @@ void generate_dynamic_shadows(void) {
             rdpq_attach(&obj->dynamic, NULL);
             rdpq_clear(RGBA32(0, 0, 0, 0));
             gl_context_begin();
+            glPushMatrix();
+            mtx_lookat(-8.0f, 12.0f, 0.0f, 8.0f, 2.5f, 0.0f, 0.0f, 1.0f, 0.0f);
             obj->dynamicStaleTimer = 10;
             ObjectModel *m = obj->gfx->listEntry->entry;
             while (m) {
@@ -822,6 +823,7 @@ void generate_dynamic_shadows(void) {
                 glPopMatrix();
                 m = m->next;
             }
+            glPopMatrix();
             gl_context_end();
             rdpq_detach();
         }
