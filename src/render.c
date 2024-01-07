@@ -508,7 +508,6 @@ void add_render_node(RenderNode *entry, rspq_block_t *block, Material *material,
 void pop_render_list(void) {
     RenderNode *renderList = gRenderNodeHead;
     while (renderList) {
-        RenderNode *oldList = renderList;
         glPushMatrix();
         if (renderList->matrix) {
             glMultMatrixf((GLfloat *) renderList->matrix->m);
@@ -519,11 +518,6 @@ void pop_render_list(void) {
         rspq_block_run(renderList->block);
         glPopMatrix();
         renderList = renderList->next;
-    }
-    RenderList *matList = gMateriallistHead;
-    while (matList) {
-        RenderList *oldList = matList;
-        matList = matList->next;
     }
     gRenderNodeHead = NULL;
     gRenderNodeTail = NULL;
@@ -701,7 +695,7 @@ void render_objects(void) {
     
     while (list) {
         obj = list->obj;
-        if (obj->gfx) { 
+        if (obj->gfx) {
             ObjectModel *m = obj->gfx->listEntry->entry;
             Matrix *prevMtx = NULL;
             while (m) {                
@@ -789,7 +783,7 @@ void generate_dynamic_shadows(void) {
         obj = list->obj;
         if (obj->flags & OBJ_FLAG_SHADOW_DYNAMIC) {
             if (obj->dynamicExists == false) {
-                obj->dynamic = surface_alloc(FMT_I8, 48, 84);
+                obj->dynamic = surface_alloc(FMT_I8, 64, 64);
                 glGenTextures(1, &obj->dynamicTex);
                 glBindTexture(GL_TEXTURE_2D, obj->dynamicTex);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
