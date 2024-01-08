@@ -15,6 +15,7 @@ void loop(Object *obj, int updateRate, float updateRateF) {
         if (DIST3(obj->pos, gPlayer->pos) < 10.0f * 10.0f) {
             clear_input(INPUT_A);
             talk_open(0);
+            //voice_play(VOICE_NECROMANCY, true);
         }
     }
 }

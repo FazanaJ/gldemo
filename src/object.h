@@ -42,6 +42,18 @@ enum MatrixTypes {
 	MTX_POP = 0xF0
 };
 
+typedef struct DynamicShadow {
+	GLuint tex[9];
+	surface_t surface;
+	unsigned short texW;
+	unsigned short texH;
+	float planeW;
+	float planeH;
+	float offset;
+	unsigned char texCount;
+	signed char staleTimer;
+} DynamicShadow;
+
 typedef struct ObjectModel {
 	Material material;
 	struct ObjectModel *next;
@@ -57,6 +69,7 @@ typedef struct ObjectGraphics {
 	char primColour[3];
 	char opacity;
 	short modelID;
+	DynamicShadow *dynamicShadow;
 } ObjectGraphics;
 
 typedef struct Object {
@@ -79,11 +92,7 @@ typedef struct Object {
 	void *data;
 	short objectID;
 	short floorHeight;
-	char dynamicStaleTimer : 4;
-	char dynamicExists : 4;
 	unsigned char animID;
-	surface_t dynamic;
-	GLuint dynamicTex;
 } Object;
 
 typedef struct ObjectList {

@@ -339,6 +339,7 @@ short playerModelFlags[][9] = {
 
 void load_object_model(Object *obj, int objectID) {
     obj->gfx = malloc(sizeof(ObjectGraphics));
+    bzero(obj->gfx, sizeof(ObjectGraphics));
     obj->gfx->envColour[0] = 0xFF;
     obj->gfx->envColour[1] = 0xFF;
     obj->gfx->envColour[2] = 0xFF;
@@ -536,10 +537,13 @@ Particle *spawn_particle(int particleID, float x, float y, float z) {
 }
 
 void free_dynamic_shadow(Object *obj) {
-    surface_free(&obj->dynamic);
-    glDeleteTextures(1, &obj->dynamicTex);
-    obj->dynamicStaleTimer = 0;
-    obj->dynamicExists = false;
+    DynamicShadow *d = obj->gfx->dynamicShadow;
+    surface_free(&d->surface);
+    for (int i = 0; i < d->texCount; i++) {
+        glDeleteTextures(1, &d->tex[i]);
+    }
+    free(obj->gfx->dynamicShadow);
+    obj->gfx->dynamicShadow = NULL;
     debugf("Freeing dynamic shadow for [%s] object.\n", sObjectOverlays[obj->objectID]);
 }
 
@@ -568,14 +572,14 @@ static void free_object(Object *obj) {
         rdpq_set_mode_standard();
         check_unused_overlay(obj, obj->overlay);
     }
-    if (obj->dynamicExists) {
-        free_dynamic_shadow(obj);
-    }
     free(obj->entry);
     if (obj->data) {
         free(obj->data);
     }
     if (obj->gfx) {
+        if (obj->gfx->dynamicShadow) {
+            free_dynamic_shadow(obj);
+        }
         check_unused_model(obj);
         free(obj->gfx);
     }
@@ -731,10 +735,13 @@ static void update_objects(int updateRate, float updateRateF) {
     DEBUG_GET_TIME_1(PP_PLAYER);
     while (objList) {
         obj = objList->obj;
-        if (obj->dynamicStaleTimer > 0 && obj->dynamicExists) {
-            obj->dynamicStaleTimer -= updateRate;
-            if (obj->dynamicStaleTimer <= 0) {
-                free_dynamic_shadow(obj);
+        if (obj->gfx && obj->gfx->dynamicShadow) {
+            DynamicShadow *d = obj->gfx->dynamicShadow;
+            if (d->staleTimer > 0) {
+                d->staleTimer -= updateRate;
+                if (d->staleTimer <= 0) {
+                    free_dynamic_shadow(obj);
+                }
             }
         }
         obj->cameraDist = DIST3(obj->pos, gCamera->pos);

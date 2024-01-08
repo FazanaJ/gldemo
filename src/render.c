@@ -605,24 +605,55 @@ void render_object_shadows(void) {
     glEnable(GL_TEXTURE_2D);
     while (list) {
         obj = list->obj;
-        if (obj->flags & OBJ_FLAG_SHADOW_DYNAMIC && obj->dynamicExists) {
-            glBindTexture(GL_TEXTURE_2D, obj->dynamicTex);
-            gNumTextureLoads++;
+        if (obj->flags & OBJ_FLAG_SHADOW_DYNAMIC && obj->gfx && obj->gfx->dynamicShadow) {
+            DynamicShadow *d = obj->gfx->dynamicShadow;
+            Matrix matrix;
             glPushMatrix();
-            glTranslatef(obj->pos[0], obj->floorHeight + 0.1f, obj->pos[2]);
-            glScalef(0.5f, 0.5f, 0.5f);
-            glBegin(GL_QUADS);
+            float pos[3] = {obj->pos[0], obj->floorHeight + 0.1f, obj->pos[2]};
+            u_uint16_t angle[3] = {0, 0x4000, 0};
+            set_draw_matrix(&matrix, MTX_TRANSLATE_ROTATE_SCALE, pos, angle, obj->scale);
+            glMultMatrixf((GLfloat *) &matrix.m);
             glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
-            glTexCoord2f(0, 0);        glVertex3f(55.0f, 0.0f, -17.5f);
-            glTexCoord2f(0, 1.024f);             glVertex3f(-17.5f, 0.0f, -17.5f);
-            glTexCoord2f(1.024f, 1.024f);        glVertex3f(-17.5f, 0.0f, 17.5f);
-            glTexCoord2f(1.024f, 0);   glVertex3f(55.0f, 0.0f, 17.5f);
-            glEnd();
+            
+            int w = 0;
+            int h = 0;
+            float frac = (float) d->texW / 64.0f;
+            if (frac <= 1.0f) {
+                w = 1;
+            } else {
+                w = frac;
+            }
+            float width = d->planeW / frac;
+            frac = (float) d->texH / 64.0f;
+            if (frac <= 1.0f) {
+                h = 1;
+            } else {
+                h = frac;
+            }
+            float height = d->planeH / frac;
+            float offset = d->offset;
+            int texLoads = 0;
+            float x;
+            float y = offset;
+            for (int i = 0; i < h; i++) {
+                x = 0.0f - (d->planeW / 2);
+                for (int j = 0; j < w; j++) {
+                    glBindTexture(GL_TEXTURE_2D, d->tex[texLoads++]);
+                    glBegin(GL_QUADS);
+                    glTexCoord2f(0.0f, 1.024f);        glVertex3f(x + width, 0.0f, y);
+                    glTexCoord2f(1.024f, 1.024f);             glVertex3f(x, 0.0f, y);
+                    glTexCoord2f(1.024f, 0.0f);        glVertex3f(x, 0.0f, y + height);
+                    glTexCoord2f(0.0f, 0.0f);   glVertex3f(x + width, 0.0f, y + height);
+                    glEnd();
+                    x += width;
+                }
+                y += height;
+            }
+
             glPopMatrix();
         }
         list = list->next;
     }
-    glDisable(GL_RDPQ_MATERIAL_N64);
     get_time_snapshot(PP_SHADOWS, DEBUG_SNAPSHOT_1_END);
 #ifdef PUPPYPRINT_DEBUG
     if (gDebugData && gDebugData->enabled) {
@@ -712,7 +743,8 @@ void render_objects(void) {
                 gSortPos -= sizeof(RenderNode);
                 RenderNode *entry = (RenderNode *) gSortPos;
                 if (m->matrixBehaviour != MTX_NONE) {
-                    entry->matrix = malloc(sizeof(Matrix));
+                    gSortPos -= sizeof(Matrix);
+                    entry->matrix = (Matrix *) gSortPos;
                     prevMtx = entry->matrix;
                     set_draw_matrix(entry->matrix, m->matrixBehaviour, obj->pos, obj->faceAngle, obj->scale);
                 } else {
@@ -794,23 +826,64 @@ void generate_dynamic_shadows(void) {
     
     while (list) {
         obj = list->obj;
-        if (obj->flags & OBJ_FLAG_SHADOW_DYNAMIC) {
-            if (obj->dynamicExists == false) {
-                obj->dynamic = surface_alloc(FMT_I8, 64, 64);
-                glGenTextures(1, &obj->dynamicTex);
-                glBindTexture(GL_TEXTURE_2D, obj->dynamicTex);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glSurfaceTexImageN64(GL_TEXTURE_2D, 0, &obj->dynamic, &(rdpq_texparms_t){.s.repeats = 0, .t.repeats = 0, .s.mirror = 0, .t.mirror = 0});
-                obj->dynamicExists = true;
-                debugf("Allocating dynamic shadow for [%s] object.\n", sObjectOverlays[obj->objectID]);
+        if (obj->flags & OBJ_FLAG_SHADOW_DYNAMIC && obj->gfx) {
+            if (obj->gfx->dynamicShadow == false) {
+                debugf("Allocating dynamic shadow for [%s] object. ", sObjectOverlays[obj->objectID]);
+                obj->gfx->dynamicShadow = malloc(sizeof(DynamicShadow));
+                DynamicShadow *d = obj->gfx->dynamicShadow;
+                d->texW = 128;
+                d->texH = 192;
+                d->planeW = 20.0f;
+                d->planeH = 45.0f;
+                d->offset = -7;
+                d->staleTimer = 10;
+                float texelCount = (float)(d->texW * d->texH) / 4096.0f;
+                d->texCount = 0;
+                while (texelCount > 0.0f) {
+                    d->texCount++;
+                    texelCount -= 1.0f;
+                }
+                d->surface = surface_alloc(FMT_I8, d->texW, d->texH);
+                debugf("Texture count: %d\n", d->texCount);
+                int w = 0;
+                int h = 0;
+                float frac = (float) d->texW / 64.0f;
+                if (frac <= 1.0f) {
+                    w = 1;
+                } else {
+                    w = frac;
+                }
+                frac = (float) d->texH / 64.0f;
+                if (frac <= 1.0f) {
+                    h = 1;
+                } else {
+                    h = frac;
+                }
+                d->texCount = w * h;
+                // Shadows are bilerp, so we gotta cut some pixels out.
+                int x = 0;
+                int y = 0;
+                int texLoads = d->texCount - 1;
+                for (int i = 0; i < h; i++) {
+                    x = 0;
+                    for (int j = 0; j < w; j++) {
+                        glGenTextures(1, &d->tex[texLoads]);
+                        glBindTexture(GL_TEXTURE_2D, d->tex[texLoads--]);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                        surface_t surf = surface_make_sub(&d->surface, x, y, 64, 64);
+                        glSurfaceTexImageN64(GL_TEXTURE_2D, 0, &surf, &(rdpq_texparms_t){.s.repeats = true, .t.repeats = true});
+                        x += 64;
+                    }
+                    y += 64;
+                }
             }
-            rdpq_attach(&obj->dynamic, NULL);
+            rdpq_attach(&obj->gfx->dynamicShadow->surface, NULL);
             rdpq_clear(RGBA32(0, 0, 0, 0));
             gl_context_begin();
             glPushMatrix();
-            mtx_lookat(-8.0f, 12.0f, 0.0f, 8.0f, 2.5f, 0.0f, 0.0f, 1.0f, 0.0f);
-            obj->dynamicStaleTimer = 10;
+            mtx_lookat(-11.0f, 7.0f, 0.0f, 11.0f, 7.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+            obj->gfx->dynamicShadow->staleTimer = 10;
             ObjectModel *m = obj->gfx->listEntry->entry;
             while (m) {
                 Matrix matrix;
@@ -845,8 +918,7 @@ void clear_dynamic_shadows(void) {
     Object *obj;
     while (objList) {
         obj = objList->obj;
-        if (obj->dynamicExists) {
-            obj->dynamicStaleTimer = 0;
+        if (obj->gfx && obj->gfx->dynamicShadow) {
             free_dynamic_shadow(obj);
         }
         objList = objList->next;
