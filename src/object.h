@@ -43,7 +43,6 @@ enum MatrixTypes {
 };
 
 typedef struct DynamicShadow {
-	GLuint tex[9];
 	surface_t surface;
 	unsigned short texW;
 	unsigned short texH;
@@ -52,6 +51,8 @@ typedef struct DynamicShadow {
 	float offset;
 	unsigned char texCount;
 	signed char staleTimer;
+	u_uint16_t angle[3];
+	GLuint tex[9];
 } DynamicShadow;
 
 typedef struct ObjectModel {

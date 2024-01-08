@@ -610,7 +610,7 @@ void render_object_shadows(void) {
             Matrix matrix;
             glPushMatrix();
             float pos[3] = {obj->pos[0], obj->floorHeight + 0.1f, obj->pos[2]};
-            u_uint16_t angle[3] = {0, 0x4000, 0};
+            u_uint16_t angle[3] = {0, d->angle[1] + 0x4000, 0};
             set_draw_matrix(&matrix, MTX_TRANSLATE_ROTATE_SCALE, pos, angle, obj->scale);
             glMultMatrixf((GLfloat *) &matrix.m);
             glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
@@ -831,11 +831,16 @@ void generate_dynamic_shadows(void) {
                 debugf("Allocating dynamic shadow for [%s] object. ", sObjectOverlays[obj->objectID]);
                 obj->gfx->dynamicShadow = malloc(sizeof(DynamicShadow));
                 DynamicShadow *d = obj->gfx->dynamicShadow;
+                // TODO: move this to a data type set by objects.
                 d->texW = 128;
                 d->texH = 192;
                 d->planeW = 20.0f;
                 d->planeH = 45.0f;
                 d->offset = -7;
+                d->angle[0] = 0;
+                d->angle[1] = 0;
+                d->angle[2] = 0;
+                // -----
                 d->staleTimer = 10;
                 float texelCount = (float)(d->texW * d->texH) / 4096.0f;
                 d->texCount = 0;
@@ -860,7 +865,6 @@ void generate_dynamic_shadows(void) {
                     h = frac;
                 }
                 d->texCount = w * h;
-                // Shadows are bilerp, so we gotta cut some pixels out.
                 int x = 0;
                 int y = 0;
                 int texLoads = d->texCount - 1;
@@ -888,7 +892,8 @@ void generate_dynamic_shadows(void) {
             while (m) {
                 Matrix matrix;
                 if (m->matrixBehaviour != MTX_NONE) {
-                    set_draw_matrix(&matrix, m->matrixBehaviour, pos, obj->faceAngle, scale);
+                    u_uint16_t angle[3] = {obj->faceAngle[0], obj->faceAngle[1] + obj->gfx->dynamicShadow->angle[1], obj->faceAngle[2]};
+                    set_draw_matrix(&matrix, m->matrixBehaviour, pos, angle, scale);
                     glMultMatrixf((GLfloat *) &matrix.m);
                 }
                 glPushMatrix();
