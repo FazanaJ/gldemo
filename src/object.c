@@ -87,6 +87,7 @@ void init_object_behaviour(Object *obj, int objectID) {
 #endif
     }
     ObjectEntry *entry = dlsym(addr, "entry");
+    obj->header = entry;
     obj->loopFunc = entry->loopFunc;
     obj->flags = entry->flags;
     obj->overlay = list;
@@ -102,7 +103,6 @@ void init_object_behaviour(Object *obj, int objectID) {
     if (entry->initFunc) {
         (*entry->initFunc)(obj);
     }
-    //*(volatile int *) 0 = 0;
 }
 
 void check_unused_model(Object *obj) {

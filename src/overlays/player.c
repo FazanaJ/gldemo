@@ -156,12 +156,21 @@ void loop(Object *obj, int updateRate, float updateRateF) {
     get_time_snapshot(PP_PLAYER, DEBUG_SNAPSHOT_1_END);
 }
 
+DynamicShadowData shadow = {
+    128,
+    192,
+    20.0f,
+    45.0f,
+    -7.0f
+};
+
 ObjectEntry entry = {
-    init,
-    loop,
-    sizeof(PlayerData),
-    OBJ_FLAG_MOVE | OBJ_FLAG_GRAVITY | OBJ_FLAG_COLLISION | OBJ_FLAG_SHADOW_DYNAMIC,
-    OBJ_DIST(100),
-    3,
-    5
+    .initFunc = init,
+    .loopFunc = loop,
+    .data = sizeof(PlayerData),
+    .flags = OBJ_FLAG_MOVE | OBJ_FLAG_GRAVITY | OBJ_FLAG_COLLISION | OBJ_FLAG_SHADOW_DYNAMIC,
+    .viewDist = OBJ_DIST(100),
+    .viewWidth = 3,
+    .viewHeight = 5,
+    .dynamicShadow = &shadow,
 };

@@ -42,6 +42,14 @@ enum MatrixTypes {
 	MTX_POP = 0xF0
 };
 
+typedef struct DynamicShadowData {
+	unsigned short texW;
+	unsigned short texH;
+	float planeW;
+	float planeH;
+	float offset;
+} DynamicShadowData;
+
 typedef struct DynamicShadow {
 	surface_t surface;
 	unsigned short texW;
@@ -49,6 +57,8 @@ typedef struct DynamicShadow {
 	float planeW;
 	float planeH;
 	float offset;
+	unsigned char acrossX;
+	unsigned char acrossY;
 	unsigned char texCount;
 	signed char staleTimer;
 	u_uint16_t angle[3];
@@ -75,6 +85,7 @@ typedef struct ObjectGraphics {
 
 typedef struct Object {
 	ObjectGraphics *gfx;
+	struct ObjectEntry *header;
 	struct VoidList *overlay;
 	void (*loopFunc)(struct Object *obj, int updateRate, float updateRateF);
 	struct ObjectList *entry;
@@ -193,6 +204,7 @@ typedef struct ObjectEntry {
 	unsigned char viewWidth;
 	unsigned char viewHeight;
 	unsigned char pad;
+	DynamicShadowData *dynamicShadow;
 } ObjectEntry;
 
 extern char *sObjectOverlays[];

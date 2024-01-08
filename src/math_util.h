@@ -12,6 +12,7 @@ extern float gSineTable[];
 #define DIST2(x, y) (SQR(x[0] - y[0]) + SQR(x[1] - y[1]))
 #define DIST3(x, y) (SQR(fabs(x[0] - y[0])) + SQR(fabs(x[1] - y[1])) + SQR(fabs(x[2] - y[2])))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define CLAMP(x, low, high)  (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 
 int atan2s(float y, float x);

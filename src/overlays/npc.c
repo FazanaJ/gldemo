@@ -21,11 +21,10 @@ void loop(Object *obj, int updateRate, float updateRateF) {
 }
 
 ObjectEntry entry = {
-    NULL,
-    loop,
-    0,
-    OBJ_FLAG_SHADOW,
-    OBJ_DIST(200),
-    3,
-    5
+    .loopFunc = loop,
+    .data = 0,
+    .flags = OBJ_FLAG_SHADOW,
+    .viewDist = OBJ_DIST(200),
+    .viewWidth = 3,
+    .viewHeight = 5,
 };

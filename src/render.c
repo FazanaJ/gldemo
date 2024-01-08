@@ -437,12 +437,6 @@ void apply_render_settings(void) {
     }
 }
 
-#ifdef PUPPYPRINT_DEBUG
-int showAll = 1;
-#else
-#define showAll 1
-#endif
-
 void find_material_list(RenderNode *node) {
     // idk if this section is faster, yet.
     if (gPrevMatList && node->material->textureID == gPrevMatList->entryHead->material->textureID) {
@@ -458,7 +452,6 @@ void find_material_list(RenderNode *node) {
         gPrevMatList = list;
         return;
     }
-    // -----
     RenderList *matList;
     if (gRenderNodeHead == NULL) {
         gRenderNodeHead = node;
@@ -558,13 +551,8 @@ void render_world(void) {
             gSortPos -= sizeof(RenderNode);
             RenderNode *entry = (RenderNode *) gSortPos;
             entry->matrix = NULL;
-            if (showAll) {
-                Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : s->material;
-                add_render_node(entry, s->renderBlock, mat, s->flags);
-            } else {
-                set_material(s->material, s->flags);
-                rspq_block_run(s->renderBlock);
-            }
+            Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : s->material;
+            add_render_node(entry, s->renderBlock, mat, s->flags);
             s = s->next;
         }
     }
@@ -615,29 +603,15 @@ void render_object_shadows(void) {
             glMultMatrixf((GLfloat *) &matrix.m);
             glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
             
-            int w = 0;
-            int h = 0;
-            float frac = (float) d->texW / 64.0f;
-            if (frac <= 1.0f) {
-                w = 1;
-            } else {
-                w = frac;
-            }
-            float width = d->planeW / frac;
-            frac = (float) d->texH / 64.0f;
-            if (frac <= 1.0f) {
-                h = 1;
-            } else {
-                h = frac;
-            }
-            float height = d->planeH / frac;
+            float width = d->planeW / d->acrossX;
+            float height = d->planeH / d->acrossY;
             float offset = d->offset;
             int texLoads = 0;
             float x;
             float y = offset;
-            for (int i = 0; i < h; i++) {
+            for (int i = 0; i < d->acrossY; i++) {
                 x = 0.0f - (d->planeW / 2);
-                for (int j = 0; j < w; j++) {
+                for (int j = 0; j < d->acrossX; j++) {
                     glBindTexture(GL_TEXTURE_2D, d->tex[texLoads++]);
                     glBegin(GL_QUADS);
                     glTexCoord2f(0.0f, 1.024f);        glVertex3f(x + width, 0.0f, y);
@@ -682,32 +656,16 @@ void render_clutter(void) {
             entry->matrix = (Matrix *) gSortPos;
             
             mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
-            if (showAll) {
-                Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[1];
-                add_render_node(entry, sBushBlock, mat, MATERIAL_NULL);
-            } else {
-                glPushMatrix();
-                glMultMatrixf((GLfloat *) entry->matrix->m);
-                set_material(&gTempMaterials[1], MATERIAL_NULL);
-                rspq_block_run(sBushBlock);
-                glPopMatrix();
-            }
+            Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[1];
+            add_render_node(entry, sBushBlock, mat, MATERIAL_NULL);
         } else if (obj->objectID == CLUTTER_ROCK && !(obj->flags & OBJ_FLAG_INVISIBLE)) {
             gSortPos -= sizeof(RenderNode);
             RenderNode *entry = (RenderNode *) gSortPos;
             gSortPos -= sizeof(Matrix);
             entry->matrix = (Matrix *) gSortPos;
             mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
-            if (showAll) {
-                Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[0];
-                add_render_node(entry, sBushBlock, mat, MATERIAL_NULL);
-            } else {
-                glPushMatrix();
-                glMultMatrixf((GLfloat *) entry->matrix->m);
-                set_material(&gTempMaterials[0], MATERIAL_NULL);
-                rspq_block_run(sBushBlock);
-                glPopMatrix();
-            }
+            Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[0];
+            add_render_node(entry, sBushBlock, mat, MATERIAL_NULL);
         }
         list = list->next;
     }
@@ -756,16 +714,8 @@ void render_objects(void) {
                         entry->matrix = NULL;
                     }
                 }
-                if (showAll) {
-                    Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &m->material;
-                    add_render_node(entry, m->block, mat, MATERIAL_NULL);
-                } else {
-                    glPushMatrix();
-                    glMultMatrixf((GLfloat *) entry->matrix->m);
-                    set_material(&m->material, MATERIAL_NULL);
-                    rspq_block_run(m->block);
-                    glPopMatrix();
-                }
+                Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &m->material;
+                add_render_node(entry, m->block, mat, MATERIAL_NULL);
                 m = m->next;
             }
         }
@@ -817,8 +767,6 @@ void generate_dynamic_shadows(void) {
     ObjectList *list = gObjectListHead;
     Object *obj;
 
-    Camera *c = gCamera;
-
     apply_render_settings();
     float pos[3] = {0.0f, 0.0f, 0.0f};
     float scale[3] = {1.0f, 1.0f, 1.0f};
@@ -828,46 +776,58 @@ void generate_dynamic_shadows(void) {
         obj = list->obj;
         if (obj->flags & OBJ_FLAG_SHADOW_DYNAMIC && obj->gfx) {
             if (obj->gfx->dynamicShadow == false) {
-                debugf("Allocating dynamic shadow for [%s] object. ", sObjectOverlays[obj->objectID]);
+                if (obj->header->dynamicShadow == NULL) {
+                    return;
+                }
+                debugf("Allocating dynamic shadow for [%s] object.", sObjectOverlays[obj->objectID]);
                 obj->gfx->dynamicShadow = malloc(sizeof(DynamicShadow));
                 DynamicShadow *d = obj->gfx->dynamicShadow;
                 // TODO: move this to a data type set by objects.
-                d->texW = 128;
-                d->texH = 192;
-                d->planeW = 20.0f;
-                d->planeH = 45.0f;
-                d->offset = -7;
+                d->texW = obj->header->dynamicShadow->texW;
+                d->texH = obj->header->dynamicShadow->texH;
+                d->planeW = obj->header->dynamicShadow->planeW;
+                d->planeH = obj->header->dynamicShadow->planeH;
+                d->offset = obj->header->dynamicShadow->offset;
                 d->angle[0] = 0;
                 d->angle[1] = 0;
                 d->angle[2] = 0;
                 // -----
                 d->staleTimer = 10;
-                float texelCount = (float)(d->texW * d->texH) / 4096.0f;
                 d->texCount = 0;
-                while (texelCount > 0.0f) {
-                    d->texCount++;
-                    texelCount -= 1.0f;
-                }
                 d->surface = surface_alloc(FMT_I8, d->texW, d->texH);
-                debugf("Texture count: %d\n", d->texCount);
                 int w = 0;
                 int h = 0;
                 float frac = (float) d->texW / 64.0f;
                 if (frac <= 1.0f) {
                     w = 1;
                 } else {
+                    float newFrac = frac - (int) frac;
+                    if (newFrac > 0.0f) {
+                        frac = (int) frac + 1;
+                    }
                     w = frac;
                 }
                 frac = (float) d->texH / 64.0f;
                 if (frac <= 1.0f) {
                     h = 1;
                 } else {
+                    float newFrac = frac - (int) frac;
+                    if (newFrac > 0.0f) {
+                        frac = (int) frac + 1;
+                    }
                     h = frac;
                 }
+                d->acrossX = w;
+                d->acrossY = h;
                 d->texCount = w * h;
+                debugf("Texture count: %d\n", d->texCount);
                 int x = 0;
                 int y = 0;
                 int texLoads = d->texCount - 1;
+                int stepW = MIN(MIN(d->texW, 64), d->texW / w);
+                int stepH = MIN(MIN(d->texH, 64), d->texH / h);
+
+                debugf("%d %d %d\n", stepW, stepH, texLoads);
                 for (int i = 0; i < h; i++) {
                     x = 0;
                     for (int j = 0; j < w; j++) {
@@ -875,11 +835,11 @@ void generate_dynamic_shadows(void) {
                         glBindTexture(GL_TEXTURE_2D, d->tex[texLoads--]);
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                        surface_t surf = surface_make_sub(&d->surface, x, y, 64, 64);
+                        surface_t surf = surface_make_sub(&d->surface, x, y, stepW, stepH);
                         glSurfaceTexImageN64(GL_TEXTURE_2D, 0, &surf, &(rdpq_texparms_t){.s.repeats = true, .t.repeats = true});
-                        x += 64;
+                        x += stepW;
                     }
-                    y += 64;
+                    y += stepH;
                 }
             }
             rdpq_attach(&obj->gfx->dynamicShadow->surface, NULL);
@@ -977,9 +937,6 @@ void render_game(int updateRate, float updateRateF) {
         render_menus(updateRate, updateRateF);
     }
 #ifdef PUPPYPRINT_DEBUG
-    if (get_input_pressed(INPUT_CRIGHT, 0)) {
-        showAll ^= 1;
-    }
     offset = gDebugData->timer[PP_HALT][gDebugData->iteration] - offset;
     add_time_offset(PP_RENDER, offset);
 #endif

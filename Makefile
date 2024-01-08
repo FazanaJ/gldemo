@@ -46,7 +46,7 @@ filesystem/%.font64: assets/archives/%.ttf
 filesystem/%.sprite: assets/textures/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 1 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) --compress 3 -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/icons/%.png
 	@mkdir -p $(dir $@)
