@@ -125,22 +125,22 @@ void loop(Object *obj, int updateRate, float updateRateF) {
             }
         }
         if (obj->animID != 2) {
-            //model64_anim_play(obj->gfx->listEntry->model64, "Run", MODEL64_ANIM_SLOT_0, false, 0.0f);
-            //model64_anim_set_loop(obj->gfx->listEntry->model64, MODEL64_ANIM_SLOT_0, true);
+            model64_anim_play(obj->gfx->listEntry->model64, "Run", MODEL64_ANIM_SLOT_0, false, 0.0f);
+            model64_anim_set_loop(obj->gfx->listEntry->model64, MODEL64_ANIM_SLOT_0, true);
             obj->animID = 2;
         }
-        //model64_anim_set_speed(obj->gfx->listEntry->model64, MODEL64_ANIM_SLOT_0, (updateRateF * obj->forwardVel) * 0.5f);
+        model64_anim_set_speed(obj->gfx->listEntry->model64, MODEL64_ANIM_SLOT_0, (updateRateF * obj->forwardVel) * 0.5f);
     } else {
         DECREASE_VAR(c->moveTimer, updateRate * 2, 0);
         intendedMag = 0.0f;
         if (obj->animID != 1) {
-            //model64_anim_play(obj->gfx->listEntry->model64, "Idle", MODEL64_ANIM_SLOT_0, false, 0.0f);
-            //model64_anim_set_loop(obj->gfx->listEntry->model64, MODEL64_ANIM_SLOT_0, true);
+            model64_anim_play(obj->gfx->listEntry->model64, "Idle", MODEL64_ANIM_SLOT_0, false, 0.0f);
+            model64_anim_set_loop(obj->gfx->listEntry->model64, MODEL64_ANIM_SLOT_0, true);
             obj->animID = 1;
         }
-        //model64_anim_set_speed(obj->gfx->listEntry->model64, MODEL64_ANIM_SLOT_0, updateRateF);
+        model64_anim_set_speed(obj->gfx->listEntry->model64, MODEL64_ANIM_SLOT_0, updateRateF);
     }
-    //model64_update(obj->gfx->listEntry->model64, 1.0f / 60.0f);
+    model64_update(obj->gfx->listEntry->model64, 1.0f / 60.0f);
 
     if (obj->forwardVel < 8.0f * intendedMag) {
         obj->forwardVel += (updateRateF * 1.0f) * intendedMag;

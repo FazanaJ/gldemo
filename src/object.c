@@ -400,7 +400,7 @@ void load_object_model(Object *obj, int objectID) {
             }
             rspq_block_begin();
             //glScalef(10.0f, 9.0f, 10.0f);
-            glScalef(1.0f, 1.33f, 1.33f);
+            glScalef(0.95f, 1.33f, 1.33f);
             model64_draw_primitive(prim);
             m->block = rspq_block_end();
 
