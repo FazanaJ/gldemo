@@ -208,11 +208,13 @@ void menu_reset_display(void) {
     gResetDisplay = true;
 }
 
+extern int __boot_tvtype;
+
 void menu_change_pal60(void) {
     if (gConfig.regionMode == PAL60) {
         gConfig.regionMode = NTSC60;
     }
-    *(uint32_t*) 0x80000300 = gConfig.regionMode; // Writes to osTvType
+    __boot_tvtype = gConfig.regionMode; // Writes to osTvType
     gResetDisplay = true;
 }
 
@@ -223,8 +225,7 @@ void menu_set_sound(void) {
 }
 
 static MenuOption sMenuOptions[] = {
-    {"Anti Aliasing", &gConfig.antiAliasing, -1, 1, OPTION_WRAP | OPTION_STRING, NULL, 0},
-    {"Dedither", &gConfig.dedither, 0, 1, OPTION_WRAP | OPTION_STRING, NULL, 3},
+    {"Graphics", &gConfig.graphics, -1, 1, OPTION_WRAP | OPTION_STRING, NULL, 0},
     {"Screen Mode", &gConfig.screenMode, 0, 2, OPTION_WRAP | OPTION_STRING | OPTION_STUB, menu_reset_display, 5},
     {"PAL", &gConfig.regionMode, 0, 1, OPTION_WRAP | OPTION_PAL_ONLY | OPTION_STRING, menu_change_pal60, 8},
     {"Sound Mode", &gConfig.soundMode, 0, 2, OPTION_WRAP | OPTION_STRING, NULL, 10},
@@ -236,9 +237,9 @@ static MenuOption sMenuOptions[] = {
 };
 
 static char *sMenuOptionStrings[] = {
-    "Off",
-    "Fast",
-    "Fancy",
+    "Performance",
+    "Default",
+    "Beautiful",
     "Off",
     "On",
     "4:3",
@@ -428,6 +429,7 @@ void process_options_menu(int updateRate) {
             break;
         case 1:
             menu_set_forward(MENU_CONFIG);
+            screenshot_clear();
             break;
         case 2:
             menu_set_reset(MENU_TITLE);
@@ -500,6 +502,9 @@ void process_menus(int updateRate, float updateRateF) {
             clear_input(INPUT_START);
             clear_input(INPUT_B);
             menu_set_backward(MENU_PREV);
+            if (gMenuStatus == MENU_OPTIONS) {
+                gScreenshotStatus = SCREENSHOT_GENERATE;
+            }
             write_config();
         }
         return;
@@ -512,6 +517,10 @@ void render_menus(int updateRate, float updateRateF) {
     switch (gMenuStatus) {
     case MENU_CLOSED:
         return;
+    case MENU_CONFIG:
+        rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, 255, 255, 255),});
+        rdpq_text_printf(NULL, FONT_MVBOLI, display_get_width() - 80, 16, "FPS: %2.2f", (double) display_get_fps());
+        break;
     }
     render_menu_list();
     get_time_snapshot(PP_MENU, DEBUG_SNAPSHOT_1_END);

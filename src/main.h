@@ -7,10 +7,10 @@ enum LogicRates {
     LOGIC_15FPS
 };
 
-enum AntiAliasing {
-    AA_OFF = -1,
-    AA_FAST,
-    AA_FANCY
+enum GraphicsSetting {
+    G_PERFORMANCE = -1,
+    G_DEFAULT,
+    G_BEAUTIFUL
 };
 
 enum AntiAliasingNames {
@@ -38,8 +38,7 @@ enum SoundMode {
 };
 
 typedef struct Config {
-    char antiAliasing;
-    char dedither;
+    char graphics;
     char regionMode;
     char screenMode;
     char soundMode;
@@ -52,8 +51,7 @@ typedef struct Config {
 } Config;
 
 typedef struct ConfigBits {
-    signed antiAliasing : 2;
-    unsigned dedither : 1;
+    signed graphics : 2;
     unsigned regionMode : 2;
     unsigned screenMode : 2;
     signed soundMode : 2;

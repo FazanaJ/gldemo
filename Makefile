@@ -46,7 +46,7 @@ filesystem/%.font64: assets/archives/%.ttf
 filesystem/%.sprite: assets/textures/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 3 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/icons/%.png
 	@mkdir -p $(dir $@)
@@ -66,7 +66,7 @@ filesystem/%.wav64: assets/sounds/%.wav
 filesystem/%.wav64: assets/opus/%.wav
 	@mkdir -p $(dir $@)
 	@echo "    [AUDIO] $@"
-	@$(N64_AUDIOCONV) --wav-compress 3 -o filesystem $<
+	@$(N64_AUDIOCONV) --wav-compress 3 --wav-resample 16025 -o filesystem $<
 
 filesystem/%.xm64: assets/xm/%.xm
 	@mkdir -p $(dir $@)

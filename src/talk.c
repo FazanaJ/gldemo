@@ -15,6 +15,8 @@
 #include "hud.h"
 
 TalkControl *gTalkControl;
+unsigned char sConversationHistory[32];
+unsigned char sConversationPos;
 
 TalkOptions sTestConvoOption1[] = {
     {"", 5},
@@ -66,6 +68,7 @@ void talk_open(int convoID) {
         voice_play(curText[gTalkControl->curLine].soundID, false);
     }
     gScreenshotStatus = SCREENSHOT_GENERATE;
+    sConversationPos = 0;
 }
 
 void talk_close(void) {
@@ -86,6 +89,23 @@ void talk_update(int updateRate) {
         return;
     }
     TalkControl *t = gTalkControl;
+    
+    if (t->curChar == t->endChar && get_input_pressed(INPUT_B, 3) && t->curLine != 0) {
+        TalkText *curText = t->curText;
+        if (t->optionsVisible) {
+            t->optionsVisible = false;
+            t->curOption = 0;
+        } else {
+            t->curLine = sConversationHistory[--sConversationPos];
+        }
+        t->curChar = 0;
+        if (curText[t->curLine].soundID != VOICE_NULL) {
+            voice_play(curText[t->curLine].soundID, false);
+        }
+        play_sound_global(SOUND_MENU_CLICK);
+        clear_input(INPUT_B);
+        return;
+    }
     if (t->optionsVisible == false) {
         if (t->curChar < t->endChar) {
             TalkText *curText = t->curText;
@@ -122,6 +142,7 @@ void talk_update(int updateRate) {
         if (t->curChar < t->endChar) {
             t->curChar = t->endChar;
         } else {
+            int prevLine = t->curLine;
             TalkText *curText = t->curText;
             play_sound_global(SOUND_MENU_CLICK);
             if (curText[t->curLine].opt != NULL) {
@@ -147,6 +168,9 @@ void talk_update(int updateRate) {
                 voice_play(curText[t->curLine].soundID, false);
             } else {
                 voice_stop();
+            }
+            if (t->curLine != prevLine) {
+                sConversationHistory[sConversationPos++] = prevLine;
             }
         }
             

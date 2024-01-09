@@ -14,8 +14,7 @@ const eepfs_entry_t eeprom_16k_files[1] = {
 
 void write_config(void) {
     ConfigBits config;
-    config.antiAliasing = gConfig.antiAliasing;
-    config.dedither = gConfig.dedither;
+    config.graphics = gConfig.graphics;
     config.regionMode = gConfig.regionMode;
     config.screenMode = gConfig.screenMode;
     config.frameCap = gConfig.frameCap;

@@ -12,6 +12,7 @@
 
 SceneBlock *sCurrentScene;
 Environment *gEnvironment;
+char gSceneUpdate;
 
 char *sSceneTable[] = {
     "intro",
@@ -58,7 +59,6 @@ void setup_fog(SceneHeader *header) {
 
 static void clear_scene(void) {
     SceneMesh *curMesh = sCurrentScene->meshList;
-    rspq_wait();
     clear_objects();
     if (sRenderSkyBlock) {
         rspq_block_free(sRenderSkyBlock);
@@ -91,6 +91,7 @@ static void clear_scene(void) {
 
 void load_scene(int sceneID) {
     DEBUG_SNAPSHOT_1();
+    rspq_wait();
     if (gScreenshotStatus == -1) {
         screenshot_clear();
     }
@@ -162,6 +163,7 @@ void load_scene(int sceneID) {
     }
     setup_fog(header);
     camera_init();
+    gSceneUpdate = 0;
 #ifdef PUPPYPRINT_DEBUG
     debugf("Scene [%s] loaded in %2.3fs.\n", sSceneTable[sceneID], ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
 #endif

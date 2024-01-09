@@ -352,7 +352,18 @@ void render_sky(void) {
         glEnd();
         sRenderSkyBlock = rspq_block_end();
     }
-    rspq_block_run(sRenderSkyBlock);
+    if (gConfig.graphics != G_PERFORMANCE) {
+        rspq_block_run(sRenderSkyBlock);
+    } else {
+        int width = display_get_width();
+        int height = display_get_height();
+        rdpq_set_mode_fill(RGBA32((e->skyColourTop[0] + e->skyColourBottom[0]) * 127.0f,
+                                  (e->skyColourTop[1] + e->skyColourBottom[1]) * 127.0f,
+                                  (e->skyColourTop[2] + e->skyColourBottom[2]) * 127.0f,
+                                   255));
+        rdpq_fill_rectangle(0, 0, width, height);
+        rdpq_set_mode_standard();
+    }
 }
 
 void render_bush(void) {
@@ -399,12 +410,12 @@ void render_shadow(float pos[3]) {
 }
 
 void apply_anti_aliasing(int mode) {
-    switch (gConfig.antiAliasing) {
-    case AA_OFF:
+    switch (gConfig.graphics) {
+    case G_PERFORMANCE:
         glDisable(GL_MULTISAMPLE_ARB);
         rdpq_mode_antialias(AA_NONE);
         break;
-    case AA_FAST:
+    case G_DEFAULT:
         if (mode == AA_ACTOR) {
             goto mrFancyPants;
         }
@@ -412,7 +423,7 @@ void apply_anti_aliasing(int mode) {
         glHint(GL_MULTISAMPLE_HINT_N64, GL_FASTEST);
         rdpq_mode_antialias(AA_REDUCED);
         break;
-    case AA_FANCY:
+    case G_BEAUTIFUL:
         mrFancyPants:
         glEnable(GL_MULTISAMPLE_ARB);
         glHint(GL_MULTISAMPLE_HINT_N64, GL_NICEST);
@@ -430,7 +441,7 @@ void apply_render_settings(void) {
         targetPos = gZTargetTimer * 1.5f;
     }
     glScissor(0, targetPos, display_get_width(), display_get_height() - (targetPos * 2));
-    if (gConfig.dedither) {
+    if (gConfig.graphics == G_BEAUTIFUL) {
         *(volatile uint32_t*)0xA4400000 |= 0x10000;
     } else {
         *(volatile uint32_t*)0xA4400000 &= ~0x10000;
@@ -582,10 +593,22 @@ void render_object_shadows(void) {
     set_material(&gTempMaterials[2], MATERIAL_DECAL);
     while (list) {
         obj = list->obj;
-        if (obj->flags & OBJ_FLAG_SHADOW) { 
+        if (obj->flags & OBJ_FLAG_IN_VIEW && (obj->flags & OBJ_FLAG_SHADOW || (gConfig.graphics == G_PERFORMANCE && obj->flags & OBJ_FLAG_SHADOW_DYNAMIC))) { 
             render_shadow(obj->pos);
         }
         list = list->next;
+    }
+
+    if (gConfig.graphics == G_PERFORMANCE) {
+    get_time_snapshot(PP_SHADOWS, DEBUG_SNAPSHOT_1_END);
+#ifdef PUPPYPRINT_DEBUG
+    if (gDebugData && gDebugData->enabled) {
+        DEBUG_SNAPSHOT_3();
+        rspq_wait();
+        get_time_snapshot(PP_HALT, DEBUG_SNAPSHOT_3_END);
+    }
+#endif
+        return;
     }
 
     list = gObjectListHead;
@@ -593,7 +616,7 @@ void render_object_shadows(void) {
     glEnable(GL_TEXTURE_2D);
     while (list) {
         obj = list->obj;
-        if (obj->flags & OBJ_FLAG_SHADOW_DYNAMIC && obj->gfx && obj->gfx->dynamicShadow) {
+        if (obj->flags & OBJ_FLAG_SHADOW_DYNAMIC && obj->flags & OBJ_FLAG_IN_VIEW && obj->gfx && obj->gfx->dynamicShadow) {
             DynamicShadow *d = obj->gfx->dynamicShadow;
             Matrix matrix;
             glPushMatrix();
@@ -639,6 +662,9 @@ void render_object_shadows(void) {
 }
 
 void render_clutter(void) {
+    if (gConfig.graphics == G_PERFORMANCE) {
+        return;
+    }
     DEBUG_SNAPSHOT_1();
     ClutterList *list = gClutterListHead;
     Clutter *obj; 
@@ -649,23 +675,25 @@ void render_clutter(void) {
     }
     while (list) {
         obj = list->clutter;
-        if (obj->objectID == CLUTTER_BUSH && !(obj->flags & OBJ_FLAG_INVISIBLE)) {
-            gSortPos -= sizeof(RenderNode);
-            RenderNode *entry = (RenderNode *) gSortPos;
-            gSortPos -= sizeof(Matrix);
-            entry->matrix = (Matrix *) gSortPos;
-            
-            mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
-            Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[1];
-            add_render_node(entry, sBushBlock, mat, MATERIAL_NULL);
-        } else if (obj->objectID == CLUTTER_ROCK && !(obj->flags & OBJ_FLAG_INVISIBLE)) {
-            gSortPos -= sizeof(RenderNode);
-            RenderNode *entry = (RenderNode *) gSortPos;
-            gSortPos -= sizeof(Matrix);
-            entry->matrix = (Matrix *) gSortPos;
-            mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
-            Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[0];
-            add_render_node(entry, sBushBlock, mat, MATERIAL_NULL);
+        if (obj->flags & OBJ_FLAG_IN_VIEW && !(obj->flags & OBJ_FLAG_INVISIBLE)) {
+            if (obj->objectID == CLUTTER_BUSH) {
+                gSortPos -= sizeof(RenderNode);
+                RenderNode *entry = (RenderNode *) gSortPos;
+                gSortPos -= sizeof(Matrix);
+                entry->matrix = (Matrix *) gSortPos;
+                
+                mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
+                Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[1];
+                add_render_node(entry, sBushBlock, mat, MATERIAL_NULL);
+            } else if (obj->objectID == CLUTTER_ROCK) {
+                gSortPos -= sizeof(RenderNode);
+                RenderNode *entry = (RenderNode *) gSortPos;
+                gSortPos -= sizeof(Matrix);
+                entry->matrix = (Matrix *) gSortPos;
+                mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
+                Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[0];
+                add_render_node(entry, sBushBlock, mat, MATERIAL_NULL);
+            }
         }
         list = list->next;
     }
@@ -694,7 +722,7 @@ void render_objects(void) {
     
     while (list) {
         obj = list->obj;
-        if (obj->gfx) {
+        if (obj->flags & OBJ_FLAG_IN_VIEW && !(obj->flags & OBJ_FLAG_INVISIBLE) && obj->gfx) {
             ObjectModel *m = obj->gfx->listEntry->entry;
             Matrix *prevMtx = NULL;
             while (m) {                
@@ -774,7 +802,7 @@ void generate_dynamic_shadows(void) {
     
     while (list) {
         obj = list->obj;
-        if (obj->flags & OBJ_FLAG_SHADOW_DYNAMIC && obj->gfx) {
+        if (obj->flags & OBJ_FLAG_SHADOW_DYNAMIC && obj->flags & OBJ_FLAG_IN_VIEW && !(obj->flags & OBJ_FLAG_INVISIBLE) && obj->gfx) {
             if (obj->gfx->dynamicShadow == false) {
                 if (obj->header->dynamicShadow == NULL) {
                     return;
@@ -826,8 +854,6 @@ void generate_dynamic_shadows(void) {
                 int texLoads = d->texCount - 1;
                 int stepW = MIN(MIN(d->texW, 64), d->texW / w);
                 int stepH = MIN(MIN(d->texH, 64), d->texH / h);
-
-                debugf("%d %d %d\n", stepW, stepH, texLoads);
                 for (int i = 0; i < h; i++) {
                     x = 0;
                     for (int j = 0; j < w; j++) {
@@ -890,12 +916,30 @@ void clear_dynamic_shadows(void) {
     }
 }
 
+void render_determine_visible(void) {
+    ObjectList *list = gObjectListHead;
+    Object *obj;
+    while (list) {
+        obj = list->obj;
+        obj->flags |= OBJ_FLAG_IN_VIEW;
+        list = list->next;
+    }
+
+    ClutterList *cList = gClutterListHead;
+    Clutter *clu; 
+    while (cList) {
+        clu = cList->clutter;
+        clu->flags |= OBJ_FLAG_IN_VIEW;
+        cList = cList->next;
+    }
+}
+
 void render_game(int updateRate, float updateRateF) {
 #ifdef PUPPYPRINT_DEBUG
     DEBUG_SNAPSHOT_1();
     unsigned int offset = gDebugData->timer[PP_HALT][gDebugData->iteration];
 #endif
-    if (gScreenshotStatus != SCREENSHOT_SHOW) {
+    if (gScreenshotStatus != SCREENSHOT_SHOW && gConfig.graphics != G_PERFORMANCE) {
         generate_dynamic_shadows();
     }
     if (gScreenshotStatus > SCREENSHOT_NONE) {
@@ -911,8 +955,11 @@ void render_game(int updateRate, float updateRateF) {
         project_camera();
         apply_render_settings();
         set_light(lightNeutral);
+        render_determine_visible();
         render_world();
+        apply_anti_aliasing(AA_NONE);
         render_object_shadows();
+        apply_anti_aliasing(AA_GEO);
         render_clutter();
         apply_anti_aliasing(AA_ACTOR);
         render_objects();

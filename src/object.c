@@ -11,6 +11,7 @@
 #include "menu.h"
 #include "collision.h"
 #include "talk.h"
+#include "scene.h"
 
 ObjectList *gObjectListHead = NULL;
 ObjectList *gObjectListTail = NULL;
@@ -96,6 +97,7 @@ void init_object_behaviour(Object *obj, int objectID) {
     } else {
         obj->viewDist = 500.0f;
     }
+    obj->viewDist *= obj->viewDist;
     if (entry->data) {
         obj->data = malloc(entry->data);
         bzero(obj->data, entry->data);
@@ -745,7 +747,7 @@ static void update_objects(int updateRate, float updateRateF) {
             }
         }
         obj->cameraDist = DIST3(obj->pos, gCamera->pos);
-        if (obj->cameraDist < obj->viewDist) {
+        if (obj->cameraDist <= obj->viewDist) {
             obj->flags &= ~OBJ_FLAG_INVISIBLE;
         } else {
             obj->flags |= OBJ_FLAG_INVISIBLE;
@@ -839,7 +841,9 @@ static void update_particles(int updateRate, float updateRateF) {
 }
 
 void update_game_entities(int updateRate, float updateRateF) {
-    if (gMenuStatus == MENU_CLOSED) {
+    if (gSceneUpdate == 0) {
+        gSceneUpdate = 1;
+    } else if (gMenuStatus == MENU_CLOSED) {
         update_objects(updateRate, updateRateF);
         update_clutter(updateRate, updateRateF);
         update_particles(updateRate, updateRateF);

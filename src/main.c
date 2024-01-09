@@ -35,13 +35,9 @@ static const resolution_t sVideoModes[] = {
 
 Config gConfig;
 
-char sFirstBoot = 0;
-
 void reset_display(void) {
-    if (sFirstBoot) {
-        gl_close();
-        rdpq_close();
-    }
+    gl_close();
+    rdpq_close();
     display_close();
     display_init(sVideoModes[(int) gConfig.screenMode], DEPTH_16_BPP, 3, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
     //gZBuffer = surface_alloc(FMT_RGBA16, display_get_width(), display_get_height());
@@ -50,7 +46,6 @@ void reset_display(void) {
     gZBuffer.height = display_get_height();
     gZBuffer.stride = TEX_FORMAT_PIX2BYTES(FMT_RGBA16, display_get_width());
     gZBuffer.buffer = (void *) ((0x80800000 - 0x10000) - ((display_get_width() * display_get_height()) * 2));
-    sFirstBoot = true;
     gl_init();
     init_renderer();
 }
@@ -145,11 +140,5 @@ int main(void) {
 
         gGlobalTimer++;
         gGameTimer += updateRate;
-#ifdef PUPPYPRINT_DEBUG
-    if (gDebugData && gDebugData->enabled) {
-        //rspq_wait();
     }
-#endif
-    }
-
 }

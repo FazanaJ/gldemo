@@ -47,11 +47,10 @@ void read_config(void) {
         gConfig.musicVolume = config.musicVolume;
         gConfig.soundVolume = config.soundVolume;
         gConfig.soundMode = config.soundMode;
-        gConfig.subtitles = true;//config.subtitles;
+        gConfig.subtitles = config.subtitles;
         debugf("Config loaded.\n");
     }
-    gConfig.antiAliasing = config.antiAliasing;
-    gConfig.dedither = config.dedither;
+    gConfig.graphics = config.graphics;
     gConfig.screenMode = config.screenMode;
     gConfig.frameCap = config.frameCap;
     gMusicVolume = (float) gConfig.musicVolume / (float) 9.0f;
@@ -118,11 +117,13 @@ void init_debug(void) {
 }
 #endif
 
+extern int __boot_tvtype;
+
 void set_region_type(int region) {
     if (region == PAL60) {
         region = NTSC60;
     }
-    *(uint32_t*) 0x80000300 = region; // Writes to osTvType
+    __boot_tvtype = region; // Writes to osTvType
     display_init(sVideoModes[(unsigned) gConfig.screenMode], DEPTH_16_BPP, 3, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
     //gZBuffer = surface_alloc(FMT_RGBA16, display_get_width(), display_get_height());
     gZBuffer.flags = FMT_RGBA16 | SURFACE_FLAGS_OWNEDBUFFER;

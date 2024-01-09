@@ -15,6 +15,7 @@ enum ObjectFlags {
 	OBJ_FLAG_COLLISION = 		(1 << 4),
 	OBJ_FLAG_SHADOW = 			(1 << 5),
 	OBJ_FLAG_SHADOW_DYNAMIC =	(1 << 6),
+	OBJ_FLAG_IN_VIEW =			(1 << 7),
 };
 
 enum ObjectIDs {
