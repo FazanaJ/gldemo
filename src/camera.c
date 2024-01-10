@@ -132,12 +132,66 @@ void camera_update_target(Camera *c, int updateRate, float updateRateF) {
     c->pos[1] = intendedFocus[1] + 10.0f + (11.5f * sins(c->viewPitch + 0x4000));
 }
 
+void camera_update_photo(Camera *c, int updateRate, float updateRateF) {
+    float stickMag = get_stick_mag(STICK_LEFT);
+    u_uint16_t stickAngle = get_stick_angle(STICK_LEFT) - 0x4000;
+    
+    c->pos[0] += ((stickMag * sins(-c->yaw + stickAngle)) / 2.0f) * updateRateF;
+    c->pos[2] += ((stickMag * coss(-c->yaw + stickAngle)) / 2.0f) * updateRateF;
+
+    if (get_input_held(INPUT_CLEFT)) {
+        c->yaw -= 0x100 * updateRate;
+    } else if (get_input_held(INPUT_CRIGHT)) {
+        c->yaw += 0x100 * updateRate;
+    }
+
+    if (get_input_held(INPUT_CUP)) {
+        c->pitch += 0x100 * updateRate;
+        if (c->pitch > 0x3F00) {
+            c->pitch = 0x3F00;
+        }
+    } else if (get_input_held(INPUT_CDOWN)) {
+        c->pitch -= 0x100 * updateRate;
+        if (c->pitch < -0x3F00) {
+            c->pitch = -0x3F00;
+        }
+    }
+
+    if (get_input_held(INPUT_DUP)) {
+        c->fov -= 0.5f * updateRateF;
+        if (c->fov < 30.0f) {
+            c->fov = 30.0f;
+        }
+    } else if (get_input_held(INPUT_DDOWN)) {
+        c->fov += 0.5f * updateRateF;
+        if (c->fov > 80.0f) {
+            c->fov = 80.0f;
+        }
+    }
+
+    if (get_input_held(INPUT_Z) || get_input_held(INPUT_L)) {
+        c->pos[1] -= 0.5f * updateRateF;
+    } else if (get_input_held(INPUT_R)) {
+        c->pos[1] += 0.5f * updateRateF;
+    }
+
+    c->focus[0] = c->pos[0] + coss(c->yaw);
+    c->focus[1] = c->pos[1] + sins(c->pitch);
+    c->focus[2] = c->pos[2] + sins(c->yaw);
+}
+
 void camera_loop(int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
     Camera *c = gCamera;
 
-    if (c->mode == CAMERA_TARGET) {
+    switch (c->mode) {
+    case CAMERA_TARGET:
         camera_update_target(c, updateRate, updateRateF);
+        break;
+    case CAMERA_PHOTO:
+        camera_update_photo(c, updateRate, updateRateF);
+        break;
+    
     }
     get_time_snapshot(PP_CAMERA, DEBUG_SNAPSHOT_1_END);
 }

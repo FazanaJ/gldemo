@@ -841,9 +841,9 @@ static void update_particles(int updateRate, float updateRateF) {
 }
 
 void update_game_entities(int updateRate, float updateRateF) {
-    if (gSceneUpdate == 0) {
+    if (gSceneUpdate == 0 || gMenuStatus != MENU_CLOSED || gCamera->mode == CAMERA_PHOTO) {
         gSceneUpdate = 1;
-    } else if (gMenuStatus == MENU_CLOSED) {
+    } else {
         update_objects(updateRate, updateRateF);
         update_clutter(updateRate, updateRateF);
         update_particles(updateRate, updateRateF);

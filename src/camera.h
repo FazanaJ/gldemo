@@ -8,6 +8,7 @@ typedef struct Camera {
 	float pos[3];
 	float focus[3];
 	float lookFocus[3];
+	float fov;
 	short pan;
 	short zoom;
 	short intendedZoom;
@@ -27,6 +28,7 @@ typedef struct Camera {
 
 #define CAMERA_CUTSCENE 0
 #define CAMERA_TARGET 1
+#define CAMERA_PHOTO 2
 
 extern Camera *gCamera;
 

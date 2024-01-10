@@ -636,6 +636,7 @@ void render_object_shadows(void) {
                 x = 0.0f - (d->planeW / 2);
                 for (int j = 0; j < d->acrossX; j++) {
                     glBindTexture(GL_TEXTURE_2D, d->tex[texLoads++]);
+                    gNumTextureLoads++;
                     glBegin(GL_QUADS);
                     glTexCoord2f(0.0f, 1.024f);        glVertex3f(x + width, 0.0f, y);
                     glTexCoord2f(1.024f, 1.024f);             glVertex3f(x, 0.0f, y);
@@ -974,9 +975,23 @@ void render_game(int updateRate, float updateRateF) {
     } else if (gScreenshotStatus == SCREENSHOT_SHOW) {
         render_end();
         gl_context_end();
-        rdpq_set_mode_copy(false);
+        static int y = 0;
+        if (gScreenshotType == FMT_RGBA16) {
+            rdpq_set_mode_copy(false);
+        } else {
+            int sineTime = 16 * sins(gGlobalTimer * 0x2000);
+            rdpq_set_mode_fill(RGBA32(0x97, 0x64, 0x3C, 255));
+            rdpq_fill_rectangle(0, 0, display_get_width(), display_get_height());
+            rdpq_set_mode_standard();
+            rdpq_set_prim_color(RGBA32(0xEA, 0xDB,  0xCB, 239 + sineTime));
+            rdpq_mode_combiner(RDPQ_COMBINER_TEX_FLAT);
+            rdpq_mode_dithering(DITHER_NOISE_NOISE);
+            rdpq_set_combiner_raw(RDPQ_COMBINER_TEX_FLAT);
+            rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+        }
         rdpq_tex_blit(&gScreenshot, 0, 0, NULL);
         rdpq_set_mode_standard();
+        rdpq_mode_dithering(DITHER_NONE_NONE);
     }
     get_time_snapshot(PP_RENDER, DEBUG_SNAPSHOT_1_END);
     if (gScreenshotStatus <= SCREENSHOT_NONE) {

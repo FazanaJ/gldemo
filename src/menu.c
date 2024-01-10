@@ -14,6 +14,7 @@
 #include "debug.h"
 #include "talk.h"
 #include "hud.h"
+#include "camera.h"
 
 #define NUM_MENU_PREVS 4
 
@@ -46,7 +47,7 @@ void free_menu_display(void) {
     }
 
     if (gMenuStatus == MENU_CLOSED) {
-        if (gScreenshotStatus == -1) {
+        if (gScreenshotStatus == SCREENSHOT_SHOW) {
             screenshot_clear();
         }
     }
@@ -415,10 +416,11 @@ void process_options_menu(int updateRate) {
         init_menu_display(32, display_get_height() - 80);
         add_menu_text("Continue", 0, 0xFFFFFFFF, 0);
         add_menu_text("Options", 1, 0xFFFFFFFF, 0);
-        add_menu_text("Quit", 2, 0xFFFFFFFF, 0);
+        add_menu_text("Photo Mode", 2, 0xFFFFFFFF, 0);
+        add_menu_text("Quit", 3, 0xFFFFFFFF, 0);
     }
 
-    handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &sMenuSelection[1], 0, 0, 0, 3);
+    handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &sMenuSelection[1], 0, 0, 0, 4);
 
     if (get_input_pressed(INPUT_A, 5)) {
         play_sound_global(SOUND_MENU_CLICK);
@@ -432,6 +434,13 @@ void process_options_menu(int updateRate) {
             screenshot_clear();
             break;
         case 2:
+            menu_set_backward(MENU_PREV);
+            gCamera->mode = CAMERA_PHOTO;
+            gCamera->pitch = -0xA00;
+            gCamera->yaw -= 0x4000;
+            screenshot_clear();
+            break;
+        case 3:
             menu_set_reset(MENU_TITLE);
             transition_into_scene(SCENE_INTRO, TRANSITION_FULLSCREEN_IN, 30, TRANSITION_FULLSCREEN_OUT);
             set_background_music(1, 30);
@@ -483,10 +492,17 @@ void process_menus(int updateRate, float updateRateF) {
     switch (gMenuStatus) {
     case MENU_CLOSED:
         if (sMenuSwapTimer == 0 && gTalkControl == NULL && get_input_pressed(INPUT_START, 3)) {
+            if (gCamera->mode == CAMERA_PHOTO) {
+                gCamera->mode = CAMERA_TARGET;
+                gCamera->fov = 50.0f;
+                gCamera->pitch = 0x3400;
+                gCamera->yaw = gCamera->yawTarget;
+            } else {
+                menu_set_forward(MENU_OPTIONS);
+                screenshot_on(FMT_I8);
+            }
             play_sound_global(SOUND_MENU_CLICK);
             clear_input(INPUT_START);
-            menu_set_forward(MENU_OPTIONS);
-            gScreenshotStatus = SCREENSHOT_GENERATE;
         }
         return;
     case MENU_TITLE:
@@ -503,7 +519,7 @@ void process_menus(int updateRate, float updateRateF) {
             clear_input(INPUT_B);
             menu_set_backward(MENU_PREV);
             if (gMenuStatus == MENU_OPTIONS) {
-                gScreenshotStatus = SCREENSHOT_GENERATE;
+                screenshot_on(FMT_I8);
             }
             write_config();
         }

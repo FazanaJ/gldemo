@@ -67,7 +67,7 @@ void talk_open(int convoID) {
     if (curText[gTalkControl->curLine].soundID != VOICE_NULL) {
         voice_play(curText[gTalkControl->curLine].soundID, false);
     }
-    gScreenshotStatus = SCREENSHOT_GENERATE;
+    screenshot_on(FMT_RGBA16);
     sConversationPos = 0;
 }
 

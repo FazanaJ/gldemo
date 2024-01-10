@@ -14,6 +14,7 @@
 #include "debug.h"
 #include "talk.h"
 #include "scene.h"
+#include "camera.h"
 
 static sprite_t *sHealthSprite;
 static rspq_block_t *sHealthBlock;
@@ -27,6 +28,7 @@ char gTransitionTimer;
 char gTransitionTarget;
 char gTransitionType;
 char gTransitionSceneOut;
+char gScreenshotType;
 int gTransitionScene;
 surface_t gScreenshot;
 sprite_t *gScreenshotSprite;
@@ -497,11 +499,16 @@ void process_hud(int updateRate, float updateRateF) {
     talk_update(updateRate);
 }
 
+void screenshot_on(int type) {
+    gScreenshotStatus = SCREENSHOT_GENERATE;
+    gScreenshotType = type;
+}
+
 void screenshot_generate(void) {
     if (gScreenshot.buffer) {
         surface_free(&gScreenshot);
     }
-    gScreenshot = surface_alloc(FMT_RGBA16, display_get_width(), display_get_height());
+    gScreenshot = surface_alloc(gScreenshotType, display_get_width(), display_get_height());
     rdpq_attach_clear(&gScreenshot, &gZBuffer);
     
 }
@@ -536,7 +543,15 @@ void transition_render(void) {
     }
 }
 
+void render_camera_hud(void) {
+    
+}
+
 void render_hud(int updateRate, float updateRateF) {
+    if (gCamera->mode == CAMERA_PHOTO) {
+        render_camera_hud();
+        return;
+    }
     DEBUG_SNAPSHOT_1();
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();

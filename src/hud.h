@@ -3,6 +3,7 @@
 extern char gScreenshotStatus;
 extern surface_t gScreenshot;
 extern sprite_t *gScreenshotSprite;
+extern char gScreenshotType;
 
 #define SCREENSHOT_SHOW -1
 #define SCREENSHOT_NONE 0
@@ -25,3 +26,4 @@ void screenshot_clear(void);
 void transition_clear(void);
 void transition_set(int type, int timer);
 void transition_into_scene(int sceneID, int transitionType, int timer, int transitionOut);
+void screenshot_on(int type);
