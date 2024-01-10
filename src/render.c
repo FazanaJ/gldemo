@@ -27,6 +27,7 @@ RenderList *gMateriallistTail = NULL;
 RenderList *gPrevMatList = NULL;
 Matrix gBillboardMatrix;
 Matrix gScaleMatrix;
+Matrix gViewMatrix;
 char gZTargetTimer = 0;
 char gUseOverrideMaterial = false;
 static rspq_block_t *sRenderEndBlock;
@@ -37,6 +38,8 @@ Material gOverrideMaterial;
 Material gBlankMaterial = {NULL, -1, MATERIAL_NULL};
 void *gSortHeap;
 unsigned int gSortPos;
+float gHalfFovHor;
+float gHalfFovVert;
 
 Material gTempMaterials[] = {
     {NULL, 0, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL},
@@ -189,6 +192,20 @@ void mtx_lookat(float eyex, float eyey, float eyez, float centerx, float centery
     }
     gBillboardMatrix.m[3][3] = 1.0f;
 
+    memcpy(&gViewMatrix, &m, sizeof(Matrix));
+
+    float aspect = display_get_width() / display_get_height();
+
+    gHalfFovVert = (gCamera->fov + 2.0f) * 180.0f + 0.5f;
+    gHalfFovHor = aspect * gHalfFovVert;
+    float cx, sx;
+    sx = sins(gHalfFovVert);
+    cx = coss(gHalfFovVert);
+    gHalfFovVert = sx / cx;
+    sx = sins(gHalfFovHor);
+    cx = coss(gHalfFovHor);
+    gHalfFovHor = sx / cx;
+
     glMultMatrixf(&m[0][0]);
 };
 
@@ -316,11 +333,12 @@ void project_camera(void) {
     Camera *c = gCamera;
     float nearClip = 5.0f;
     float farClip = 500.0f;
+    float fov = gCamera->fov / 50.0f;
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gAspectRatio = (float) display_get_width() / (float) (display_get_height());
-    set_frustrum(-nearClip * gAspectRatio, nearClip * gAspectRatio, -nearClip, nearClip, nearClip, farClip);
+    gAspectRatio = (float) display_get_width() / (float) (display_get_height()) * fov;
+    set_frustrum(-nearClip * gAspectRatio, nearClip * gAspectRatio, -nearClip * fov, nearClip * fov, nearClip, farClip);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     mtx_lookat(c->pos[0], c->pos[1], c->pos[2], c->focus[0], c->focus[1], c->focus[2], 0.0f, 1.0f, 0.0f);
@@ -771,7 +789,7 @@ void reset_shadow_perspective(void) {
         rspq_block_begin();
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        set_frustrum(-nearClip * 1.0f, nearClip * 1.0f, -nearClip, nearClip, nearClip, farClip);
+        set_frustrum(-nearClip, nearClip, -nearClip, nearClip, nearClip, farClip);
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
         set_material(&gBlankMaterial, MATERIAL_CAM_ONLY);
@@ -917,12 +935,47 @@ void clear_dynamic_shadows(void) {
     }
 }
 
+#define VALIDDEPTHMIDDLE (-19920.0f / 2.0f)
+#define VALIDDEPTHRANGE (19900.0f / 2.0f)
+
+int render_inside_view(float width, float height, float screenPos[3]) {
+    float cullingRadius = 2.0f;
+
+    float hScreenEdge = -screenPos[2] * gHalfFovHor;
+    if (fabs(screenPos[0]) > hScreenEdge + cullingRadius) {
+        return false;
+    }
+    float vScreenEdge = -screenPos[2] * gHalfFovVert;
+    if (fabs(screenPos[1]) > vScreenEdge + cullingRadius) {
+        return false;
+    }
+    if (fabs(screenPos[2] - VALIDDEPTHMIDDLE) >= VALIDDEPTHRANGE + cullingRadius) {
+        return false;
+    }
+    return true;
+}
+
+static inline void linear_mtxf_mul_vec3f_and_translate(Matrix m, float dst[3], float v[3]) {
+    for (int i = 0; i < 3; i++) {
+        dst[i] = ((m.m[0][i] * v[0]) + (m.m[1][i] * v[1]) + (m.m[2][i] * v[2]) +  m.m[3][i]);
+    }
+}
+
 void render_determine_visible(void) {
     ObjectList *list = gObjectListHead;
     Object *obj;
+
     while (list) {
         obj = list->obj;
-        obj->flags |= OBJ_FLAG_IN_VIEW;
+        if (!(obj->flags & OBJ_FLAG_INVISIBLE)) {
+            float screenPos[3];
+            linear_mtxf_mul_vec3f_and_translate(gViewMatrix, screenPos, obj->pos);
+            if (render_inside_view(2.0f, 2.0f, screenPos)) {
+                obj->flags |= OBJ_FLAG_IN_VIEW;
+            } else {
+                obj->flags &= ~OBJ_FLAG_IN_VIEW;
+            }
+        }
         list = list->next;
     }
 
@@ -930,7 +983,15 @@ void render_determine_visible(void) {
     Clutter *clu; 
     while (cList) {
         clu = cList->clutter;
-        clu->flags |= OBJ_FLAG_IN_VIEW;
+        if (!(clu->flags & OBJ_FLAG_INVISIBLE)) {
+            float screenPos[3];
+            linear_mtxf_mul_vec3f_and_translate(gViewMatrix, screenPos, clu->pos);
+            if (render_inside_view(2.0f, 2.0f, screenPos)) {
+                clu->flags |= OBJ_FLAG_IN_VIEW;
+            } else {
+                clu->flags &= ~OBJ_FLAG_IN_VIEW;
+            }
+        }
         cList = cList->next;
     }
 }
@@ -975,7 +1036,6 @@ void render_game(int updateRate, float updateRateF) {
     } else if (gScreenshotStatus == SCREENSHOT_SHOW) {
         render_end();
         gl_context_end();
-        static int y = 0;
         if (gScreenshotType == FMT_RGBA16) {
             rdpq_set_mode_copy(false);
         } else {

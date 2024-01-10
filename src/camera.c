@@ -24,6 +24,7 @@ void camera_init(void) {
     gCamera->intendedZoom = 275;
     gCamera->yawTarget = 0x8000;
     gCamera->yaw = 0x8000;
+    gCamera->fov = 50.0f;
     if (gPlayer) {
         gCamera->parent = gPlayer;
         gCamera->mode = CAMERA_TARGET;
