@@ -9,6 +9,7 @@
 #include "render.h"
 #include "debug.h"
 #include "hud.h"
+#include "screenshot.h"
 
 SceneBlock *sCurrentScene;
 Environment *gEnvironment;

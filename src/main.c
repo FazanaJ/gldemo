@@ -16,6 +16,7 @@
 #include "scene.h"
 #include "save.h"
 #include "talk.h"
+#include "screenshot.h"
 
 surface_t gZBuffer;
 surface_t *gFrameBuffers;

@@ -23,15 +23,11 @@ static unsigned short sPrevHealth;
 static unsigned short sPrevHealthMax;
 static short sHealthPosX;
 static short sHealthPosY;
-char gScreenshotStatus;
 char gTransitionTimer;
 char gTransitionTarget;
 char gTransitionType;
 char gTransitionSceneOut;
-char gScreenshotType;
 int gTransitionScene;
-surface_t gScreenshot;
-sprite_t *gScreenshotSprite;
 
 sprite_t *gPanelSprite[4];
 rspq_block_t *gPanelBlock;
@@ -497,25 +493,6 @@ void process_hud(int updateRate, float updateRateF) {
     transition_timer(updateRate);
     process_subtitle_timers(updateRate, updateRateF);
     talk_update(updateRate);
-}
-
-void screenshot_on(int type) {
-    gScreenshotStatus = SCREENSHOT_GENERATE;
-    gScreenshotType = type;
-}
-
-void screenshot_generate(void) {
-    if (gScreenshot.buffer) {
-        surface_free(&gScreenshot);
-    }
-    gScreenshot = surface_alloc(gScreenshotType, display_get_width(), display_get_height());
-    rdpq_attach_clear(&gScreenshot, &gZBuffer);
-    
-}
-
-void screenshot_clear(void) {
-    surface_free(&gScreenshot);
-    gScreenshotStatus = SCREENSHOT_NONE;
 }
 
 static void transition_render_fullscreen(void) {

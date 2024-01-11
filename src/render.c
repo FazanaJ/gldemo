@@ -18,6 +18,7 @@
 #include "scene.h"
 #include "input.h"
 #include "talk.h"
+#include "screenshot.h"
 
 float gAspectRatio = 1.0f;
 RenderNode *gRenderNodeHead = NULL;
@@ -942,14 +943,14 @@ void clear_dynamic_shadows(void) {
 
 static inline int render_inside_view(float width, float height, float screenPos[3]) {
     float hScreenEdge = -screenPos[2] * gHalfFovHor;
-    if (absf(screenPos[0]) > hScreenEdge + width) {
+    if (fabsf(screenPos[0]) > hScreenEdge + width) {
         return false;
     }
     float vScreenEdge = -screenPos[2] * gHalfFovVert;
-    if (absf(screenPos[1]) > vScreenEdge + height) {
+    if (fabsf(screenPos[1]) > vScreenEdge + height) {
         return false;
     }
-    if (absf(screenPos[2] - VALIDDEPTHMIDDLE) >= VALIDDEPTHRANGE + width) {
+    if (fabsf(screenPos[2] - VALIDDEPTHMIDDLE) >= VALIDDEPTHRANGE + width) {
         return false;
     }
     return true;

@@ -13,6 +13,7 @@
 #include "audio.h"
 #include "menu.h"
 #include "hud.h"
+#include "screenshot.h"
 
 TalkControl *gTalkControl;
 unsigned char sConversationHistory[32];

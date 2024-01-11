@@ -15,6 +15,7 @@
 #include "talk.h"
 #include "hud.h"
 #include "camera.h"
+#include "screenshot.h"
 
 #define NUM_MENU_PREVS 4
 
