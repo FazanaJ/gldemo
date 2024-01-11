@@ -37,11 +37,4 @@ typedef struct RenderList {
 extern rspq_block_t *sRenderSkyBlock;
 
 void init_renderer(void);
-void setup_light(light_t light);
-void set_light(light_t light);
-void project_camera(void);
-void render_sky(void);
-void render_end();
 void render_game(int updateRate, float updateRateF);
-
-void render_bush(void);

@@ -114,6 +114,7 @@ void init_debug(void) {
     gDebugData = malloc(sizeof(DebugData));
     bzero(gDebugData, sizeof(DebugData));
     gDebugData->enabled = false;
+    gDebugData->debugMeshes[0] = model64_load(asset_dir("debugcylinder", DFS_MODEL64));
 }
 #endif
 

@@ -71,6 +71,18 @@ static void init_particles(void) {
     sParticleBlock = rspq_block_end();
 }
 
+static inline void setup_light(light_t light) {
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, light.color);
+    glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
+
+    glEnable(GL_LIGHT0);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, light.diffuse);
+    glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 2.0f/light.radius);
+    glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 1.0f/(light.radius*light.radius));
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, light.diffuse);
+}
+
 void init_renderer(void) {
     setup_light(lightNeutral);
     init_materials();
@@ -109,19 +121,8 @@ void init_renderer(void) {
     }
 }
 
-void setup_light(light_t light) {
-    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, light.color);
-    glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
-
-    glEnable(GL_LIGHT0);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, light.diffuse);
-    glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 2.0f/light.radius);
-    glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 1.0f/(light.radius*light.radius));
-
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, light.diffuse);
-}
-
-void set_frustrum(float l, float r, float b, float t, float n, float f) {
+static inline void set_frustrum(float l, float r, float b, float t, float n, float f) {
+    DEBUG_SNAPSHOT_1();
     DEBUG_MATRIX_OP();
     Matrix frustum = (Matrix) { .m={
         {(2*n)/(r-l), 0.f, 0.f, 0.f},
@@ -130,26 +131,28 @@ void set_frustrum(float l, float r, float b, float t, float n, float f) {
         {0.f, 0.f, -(2*f*n)/(f-n), 0.f},
     }};
     glMultMatrixf(frustum.m[0]);
+    get_time_snapshot(PP_MATRIX, DEBUG_SNAPSHOT_1_END);
 }
 
-void lookat_normalise(GLfloat *d, const GLfloat *v) {
+static void lookat_normalise(GLfloat *d, const GLfloat *v) {
     float inv_mag = 1.0f / sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
     d[0] = v[0] * inv_mag;
     d[1] = v[1] * inv_mag;
     d[2] = v[2] * inv_mag;
 }
 
-void lookat_cross(GLfloat* p, const GLfloat* a, const GLfloat* b) {
+static void lookat_cross(GLfloat* p, const GLfloat* a, const GLfloat* b) {
     p[0] = (a[1] * b[2] - a[2] * b[1]);
     p[1] = (a[2] * b[0] - a[0] * b[2]);
     p[2] = (a[0] * b[1] - a[1] * b[0]);
 };
 
-float lookat_dot(const float *a, const float *b) {
+static float lookat_dot(const float *a, const float *b) {
     return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
 
-void mtx_lookat(float eyex, float eyey, float eyez, float centerx, float centery, float centerz, float upx, float upy, float upz) {
+static void mtx_lookat(float eyex, float eyey, float eyez, float centerx, float centery, float centerz, float upx, float upy, float upz) {
+    DEBUG_SNAPSHOT_1();
     DEBUG_MATRIX_OP();
     GLfloat eye[3] = {eyex, eyey, eyez};
     GLfloat f[3] = {centerx - eyex, centery - eyey, centerz - eyez};
@@ -207,9 +210,10 @@ void mtx_lookat(float eyex, float eyey, float eyez, float centerx, float centery
     gHalfFovHor = sx / cx;
 
     glMultMatrixf(&m[0][0]);
+    get_time_snapshot(PP_MATRIX, DEBUG_SNAPSHOT_1_END);
 };
 
-void mtx_translate_rotate(Matrix *mtx, short angleX, short angleY, short angleZ, GLfloat x, GLfloat y, GLfloat z) {
+static void mtx_translate_rotate(Matrix *mtx, short angleX, short angleY, short angleZ, GLfloat x, GLfloat y, GLfloat z) {
     DEBUG_MATRIX_OP();
     float sx = sins(angleX);
     float cx = coss(angleX);
@@ -238,7 +242,7 @@ void mtx_translate_rotate(Matrix *mtx, short angleX, short angleY, short angleZ,
     mtx->m[3][3] = 1.0f;
 }
 
-void mtx_translate(Matrix *mtx, float x, float y, float z) {
+static void mtx_translate(Matrix *mtx, float x, float y, float z) {
     DEBUG_MATRIX_OP();
     bzero(mtx, sizeof(Matrix));
 
@@ -248,7 +252,7 @@ void mtx_translate(Matrix *mtx, float x, float y, float z) {
     mtx->m[3][3] = 1.0f;
 }
 
-void mtx_rotate(Matrix *mtx, short angleX, short angleY, short angleZ) {
+static void mtx_rotate(Matrix *mtx, short angleX, short angleY, short angleZ) {
     DEBUG_MATRIX_OP();
     float sx = sins(angleX);
     float cx = coss(angleX);
@@ -277,7 +281,7 @@ void mtx_rotate(Matrix *mtx, short angleX, short angleY, short angleZ) {
     mtx->m[3][3] = 1.0f;
 }
 
-void mtx_billboard(Matrix *mtx, float x, float y, float z) {
+static void mtx_billboard(Matrix *mtx, float x, float y, float z) {
     DEBUG_MATRIX_OP();
     gBillboardMatrix.m[3][0] = x;
     gBillboardMatrix.m[3][1] = y;
@@ -286,7 +290,7 @@ void mtx_billboard(Matrix *mtx, float x, float y, float z) {
     memcpy(mtx, &gBillboardMatrix, sizeof(Matrix));
 }
 
-void mtx_scale(Matrix *mtx, float scaleX, float scaleY, float scaleZ) {
+static void mtx_scale(Matrix *mtx, float scaleX, float scaleY, float scaleZ) {
     DEBUG_MATRIX_OP();
     float s[3] = {scaleX, scaleY, scaleZ};
     for (int i = 0; i < 3; i++) {
@@ -296,7 +300,7 @@ void mtx_scale(Matrix *mtx, float scaleX, float scaleY, float scaleZ) {
     }
 }
 
-void set_draw_matrix(Matrix *mtx, int matrixType, float *pos, u_uint16_t *angle, float *scale) {
+static void set_draw_matrix(Matrix *mtx, int matrixType, float *pos, u_uint16_t *angle, float *scale) {
     DEBUG_SNAPSHOT_1();
     switch (matrixType) {
     case MTX_TRANSLATE:
@@ -320,7 +324,7 @@ void set_draw_matrix(Matrix *mtx, int matrixType, float *pos, u_uint16_t *angle,
     get_time_snapshot(PP_MATRIX, DEBUG_SNAPSHOT_1_END);
 }
 
-void set_light(light_t light) {
+static void set_light(light_t light) {
     glPushMatrix();
     Matrix mtx;
     mtx_rotate(&mtx, light.direction[0], light.direction[1], light.direction[2]);
@@ -329,7 +333,7 @@ void set_light(light_t light) {
     glPopMatrix();
 }
 
-void project_camera(void) {
+static void project_camera(void) {
     Camera *c = gCamera;
     float nearClip = 5.0f;
     float farClip = 500.0f;
@@ -344,7 +348,7 @@ void project_camera(void) {
     mtx_lookat(c->pos[0], c->pos[1], c->pos[2], c->focus[0], c->focus[1], c->focus[2], 0.0f, 1.0f, 0.0f);
 }
 
-void render_sky(void) {
+static void render_sky(void) {
     Environment *e = gEnvironment;
     if (sRenderSkyBlock == NULL) {
         int width = display_get_width();
@@ -384,7 +388,7 @@ void render_sky(void) {
     }
 }
 
-void render_bush(void) {
+static void render_bush(void) {
     Environment *e = gEnvironment;
     glBegin(GL_QUADS);
     glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
@@ -401,14 +405,14 @@ void render_bush(void) {
     glEnd();
 }
 
-void render_end(void) {
+static inline void render_end(void) {
     rspq_block_run(sRenderEndBlock);
 }
 
 rspq_block_t *sBushBlock;
 rspq_block_t *sShadowBlock;
 
-void render_shadow(float pos[3]) {
+static void render_shadow(float pos[3]) {
     glPushMatrix();
     glTranslatef(pos[0], pos[1] + 0.1f, pos[2]);
     if (sShadowBlock == NULL) {
@@ -427,7 +431,7 @@ void render_shadow(float pos[3]) {
     glPopMatrix();
 }
 
-void apply_anti_aliasing(int mode) {
+static void apply_anti_aliasing(int mode) {
     switch (gConfig.graphics) {
     case G_PERFORMANCE:
         glDisable(GL_MULTISAMPLE_ARB);
@@ -450,7 +454,7 @@ void apply_anti_aliasing(int mode) {
     }
 }
 
-void apply_render_settings(void) {
+static void apply_render_settings(void) {
     int targetPos;
     rspq_block_run(sBeginModeBlock);
     if (gConfig.regionMode == TV_PAL) {
@@ -466,7 +470,7 @@ void apply_render_settings(void) {
     }
 }
 
-void find_material_list(RenderNode *node) {
+static inline void find_material_list(RenderNode *node) {
     // idk if this section is faster, yet.
     if (gPrevMatList && node->material->textureID == gPrevMatList->entryHead->material->textureID) {
         RenderList *list = gPrevMatList;
@@ -518,7 +522,7 @@ void find_material_list(RenderNode *node) {
     gPrevMatList = matList;
 }
 
-void add_render_node(RenderNode *entry, rspq_block_t *block, Material *material, int flags) {
+static void add_render_node(RenderNode *entry, rspq_block_t *block, Material *material, int flags) {
     DEBUG_SNAPSHOT_1();
     entry->block = block;
     entry->material = material;
@@ -527,7 +531,7 @@ void add_render_node(RenderNode *entry, rspq_block_t *block, Material *material,
     get_time_snapshot(PP_BATCH, DEBUG_SNAPSHOT_1_END);
 }
 
-void pop_render_list(void) {
+static void pop_render_list(void) {
     RenderNode *renderList = gRenderNodeHead;
     while (renderList) {
         glPushMatrix();
@@ -549,7 +553,7 @@ void pop_render_list(void) {
     gSortPos = ((unsigned int) gSortHeap) + 0x4000;
 }
 
-void render_particles(void) {
+static void render_particles(void) {
     DEBUG_SNAPSHOT_1();
     ParticleList *list = gParticleListHead;
     Particle *particle;
@@ -571,7 +575,7 @@ void render_particles(void) {
     get_time_snapshot(PP_RENDERPARTICLES, DEBUG_SNAPSHOT_1_END);
 }
 
-void render_world(void) {
+static void render_world(void) {
     DEBUG_SNAPSHOT_1();
     if (sCurrentScene && sCurrentScene->model) {
         SceneMesh *s = sCurrentScene->meshList;
@@ -596,7 +600,7 @@ void render_world(void) {
 #endif
 }
 
-void render_object_shadows(void) {
+static void render_object_shadows(void) {
 #ifdef PUPPYPRINT_DEBUG
     if (gDebugData && gDebugData->enabled) {
         DEBUG_SNAPSHOT_3();
@@ -680,7 +684,7 @@ void render_object_shadows(void) {
 #endif
 }
 
-void render_clutter(void) {
+static void render_clutter(void) {
     if (gConfig.graphics == G_PERFORMANCE) {
         return;
     }
@@ -727,7 +731,7 @@ void render_clutter(void) {
 #endif
 }
 
-void render_objects(void) {
+static void render_objects(void) {
 #ifdef PUPPYPRINT_DEBUG
     if (gDebugData && gDebugData->enabled) {
         DEBUG_SNAPSHOT_3();
@@ -782,7 +786,7 @@ void render_objects(void) {
 
 rspq_block_t *sDynamicShadowBlock;
 
-void reset_shadow_perspective(void) {
+static void reset_shadow_perspective(void) {
     if (sDynamicShadowBlock == NULL) {
         float nearClip = 5.0f;
         float farClip = 500.0f;
@@ -802,7 +806,7 @@ void reset_shadow_perspective(void) {
     rspq_block_run(sDynamicShadowBlock);
 }
 
-void generate_dynamic_shadows(void) {
+static void generate_dynamic_shadows(void) {
 #ifdef PUPPYPRINT_DEBUG
     if (gDebugData && gDebugData->enabled) {
         DEBUG_SNAPSHOT_3();
@@ -829,7 +833,6 @@ void generate_dynamic_shadows(void) {
                 debugf("Allocating dynamic shadow for [%s] object.", sObjectOverlays[obj->objectID]);
                 obj->gfx->dynamicShadow = malloc(sizeof(DynamicShadow));
                 DynamicShadow *d = obj->gfx->dynamicShadow;
-                // TODO: move this to a data type set by objects.
                 d->texW = obj->header->dynamicShadow->texW;
                 d->texH = obj->header->dynamicShadow->texH;
                 d->planeW = obj->header->dynamicShadow->planeW;
@@ -838,7 +841,6 @@ void generate_dynamic_shadows(void) {
                 d->angle[0] = 0;
                 d->angle[1] = 0;
                 d->angle[2] = 0;
-                // -----
                 d->staleTimer = 10;
                 d->texCount = 0;
                 d->surface = surface_alloc(FMT_I8, d->texW, d->texH);
@@ -938,18 +940,16 @@ void clear_dynamic_shadows(void) {
 #define VALIDDEPTHMIDDLE (-19920.0f / 2.0f)
 #define VALIDDEPTHRANGE (19900.0f / 2.0f)
 
-int render_inside_view(float width, float height, float screenPos[3]) {
-    float cullingRadius = 2.0f;
-
+static inline int render_inside_view(float width, float height, float screenPos[3]) {
     float hScreenEdge = -screenPos[2] * gHalfFovHor;
-    if (fabs(screenPos[0]) > hScreenEdge + cullingRadius) {
+    if (absf(screenPos[0]) > hScreenEdge + width) {
         return false;
     }
     float vScreenEdge = -screenPos[2] * gHalfFovVert;
-    if (fabs(screenPos[1]) > vScreenEdge + cullingRadius) {
+    if (absf(screenPos[1]) > vScreenEdge + height) {
         return false;
     }
-    if (fabs(screenPos[2] - VALIDDEPTHMIDDLE) >= VALIDDEPTHRANGE + cullingRadius) {
+    if (absf(screenPos[2] - VALIDDEPTHMIDDLE) >= VALIDDEPTHRANGE + width) {
         return false;
     }
     return true;
@@ -961,7 +961,8 @@ static inline void linear_mtxf_mul_vec3f_and_translate(Matrix m, float dst[3], f
     }
 }
 
-void render_determine_visible(void) {
+static void render_determine_visible(void) {
+    DEBUG_SNAPSHOT_1();
     ObjectList *list = gObjectListHead;
     Object *obj;
 
@@ -969,7 +970,8 @@ void render_determine_visible(void) {
         obj = list->obj;
         if (!(obj->flags & OBJ_FLAG_INVISIBLE)) {
             float screenPos[3];
-            linear_mtxf_mul_vec3f_and_translate(gViewMatrix, screenPos, obj->pos);
+            float pos[3] = {obj->pos[0], obj->pos[1] + 2.0f, obj->pos[2]};
+            linear_mtxf_mul_vec3f_and_translate(gViewMatrix, screenPos, pos);
             if (render_inside_view(2.0f, 2.0f, screenPos)) {
                 obj->flags |= OBJ_FLAG_IN_VIEW;
             } else {
@@ -994,6 +996,7 @@ void render_determine_visible(void) {
         }
         cList = cList->next;
     }
+    get_time_snapshot(PP_CULLING, DEBUG_SNAPSHOT_1_END);
 }
 
 void render_game(int updateRate, float updateRateF) {

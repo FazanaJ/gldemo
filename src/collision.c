@@ -14,13 +14,13 @@ typedef struct CollisionInfo {
     int flags;
 } CollisionInfo;
 
-void vec3f_cross(float dest[3], float a[3], float b[3]) {
+static void vec3f_cross(float dest[3], float a[3], float b[3]) {
     dest[0] = a[1] * b[2] - b[1] * a[2];
     dest[1] = a[2] * b[0] - b[2] * a[0];
     dest[2] = a[0] * b[1] - b[0] * a[1];
 }
 
-void vec3f_normalize(float dest[3]) {
+static void vec3f_normalize(float dest[3]) {
     float size = (dest[0] * dest[0] + dest[1] * dest[1] + dest[2] * dest[2]);
     float invsqrt;
     if (size > 0.01f) {
@@ -42,30 +42,30 @@ void vec3f_normalize(float dest[3]) {
  **************************************************/
 
  /// Multiply vector 'dest' by a
-void vec3f_mul(float dest[3], float a) {
+static void vec3f_mul(float dest[3], float a) {
     dest[0] *= a;
     dest[1] *= a;
     dest[2] *= a;
 }
 
-void vec3f_sum(float dest[3], float a[3], float b[3]) {
+static void vec3f_sum(float dest[3], float a[3], float b[3]) {
     dest[0] = a[0] + b[0];
     dest[1] = a[1] + b[1];
     dest[2] = a[2] + b[2];
 }
 
 /// Make 'dest' the difference of vectors a and b.
-void vec3f_diff(float dest[3], float a[3], float b[3]) {
+static void vec3f_diff(float dest[3], float a[3], float b[3]) {
     dest[0] = a[0] - b[0];
     dest[1] = a[1] - b[1];
     dest[2] = a[2] - b[2];
 }
 
-float vec3f_dot(float a[3], float b[3]) {
+static float vec3f_dot(float a[3], float b[3]) {
     return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
 
-int ray_surface_intersect(float orig[3], float dir[3], float dir_length, float *hit_pos, float *length, float v0[3], float v1[3], float v2[3]) {
+static int ray_surface_intersect(float orig[3], float dir[3], float dir_length, float *hit_pos, float *length, float v0[3], float v1[3], float v2[3]) {
     float e1[3];
     vec3f_diff(e1, v1, v0);
     float e2[3];

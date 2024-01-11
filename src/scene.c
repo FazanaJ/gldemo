@@ -14,7 +14,7 @@ SceneBlock *sCurrentScene;
 Environment *gEnvironment;
 char gSceneUpdate;
 
-char *sSceneTable[] = {
+char *sSceneTable[2] = {
     "intro",
     "testarea",
 };
@@ -33,7 +33,7 @@ int sSceneMeshFlags[][4] = {
     MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_XLU},
 };
 
-void setup_fog(SceneHeader *header) {
+static void setup_fog(SceneHeader *header) {
     if (gEnvironment == NULL) {
         gEnvironment = malloc(sizeof(Environment));
     }

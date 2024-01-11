@@ -30,7 +30,7 @@ static char sMenuSelectionType[2] = {0, 0};
 static unsigned char sMenuStackPos = 0;
 static MenuListRoot *sMenuDisplay = NULL;
 
-void free_menu_display(void) {
+static void free_menu_display(void) {
     if (sMenuDisplay) {
         if (sMenuDisplay->list) {
             MenuListEntry *curList = sMenuDisplay->tail;
@@ -53,7 +53,7 @@ void free_menu_display(void) {
     }
 }
 
-void init_menu_display(int x, int y) {
+static void init_menu_display(int x, int y) {
     if (sMenuDisplay == NULL) {
         sMenuDisplay = malloc(sizeof(MenuListRoot));
     }
@@ -65,7 +65,7 @@ void init_menu_display(int x, int y) {
     sMenuDisplay->listCount = 0;
 }
 
-void add_menu_text(char *text, int index, unsigned int colour, int flags) {
+static void add_menu_text(char *text, int index, unsigned int colour, int flags) {
     MenuListEntry *newList;
     newList = malloc(sizeof(MenuListEntry));
     if (sMenuDisplay->list != NULL) {
@@ -110,7 +110,7 @@ void add_menu_text(char *text, int index, unsigned int colour, int flags) {
     sMenuDisplay->listCount++;
 }
 
-void edit_menu_text(char *text, int index) {
+static void edit_menu_text(char *text, int index) {
     MenuListEntry *list = sMenuDisplay->list;
     while (index > 0 && list) {
         list = list->next;
@@ -122,7 +122,7 @@ void edit_menu_text(char *text, int index) {
     strcpy(list->text, text);
 }
 
-void edit_menu_style(int index, unsigned int colour, int flagsOn, int flagsOff) {
+static void edit_menu_style(int index, unsigned int colour, int flagsOn, int flagsOff) {
     MenuListEntry *list = sMenuDisplay->list;
     while (index > 0 && list) {
         list = list->next;
@@ -136,7 +136,7 @@ void edit_menu_style(int index, unsigned int colour, int flagsOn, int flagsOff) 
     list->flags &= flagsOff;
 }
 
-void render_menu_list(void) {
+static void render_menu_list(void) {
     if (sMenuDisplay == NULL) {
         return;
     }
@@ -159,7 +159,7 @@ void render_menu_list(void) {
     }
 }
 
-void menu_set_forward(int menuID) {
+static void menu_set_forward(int menuID) {
     sMenuSelectionPrev[sMenuStackPos][0] = sMenuSelection[0];
     sMenuSelectionPrev[sMenuStackPos][1] = sMenuSelection[1];
     sMenuSelection[0] = 0;
@@ -175,7 +175,7 @@ void menu_set_forward(int menuID) {
     free_menu_display();
 }
 
-void menu_set_reset(int menuID) {
+static void menu_set_reset(int menuID) {
     sMenuSelection[0] = 0;
     sMenuSelection[1] = 0;
     sMenuSelectionTimer[0] = 0;
@@ -188,7 +188,7 @@ void menu_set_reset(int menuID) {
     free_menu_display();
 }
 
-void menu_set_backward(int menuID) {
+static void menu_set_backward(int menuID) {
     sMenuStackPos--;
     sMenuSelection[0] = sMenuSelectionPrev[sMenuStackPos][0];
     sMenuSelection[1] = sMenuSelectionPrev[sMenuStackPos][1];
@@ -359,7 +359,7 @@ char *set_option_text(int optID) {
     return sMenuTextStack;
 }
 
-void process_config_menu(int updateRate) {
+static void process_config_menu(int updateRate) {
     int xWrap = 0;
     MenuOption *m = &sMenuOptions[sMenuSelection[1]];
     if (m->flags & OPTION_WRAP) {
@@ -411,7 +411,7 @@ void process_config_menu(int updateRate) {
     }
 }
 
-void process_options_menu(int updateRate) {
+static void process_options_menu(int updateRate) {
     if (sMenuDisplay == NULL) {
         init_menu_display(32, display_get_height() - 80);
         add_menu_text("Continue", 0, 0xFFFFFFFF, 0);
@@ -456,7 +456,37 @@ void process_options_menu(int updateRate) {
     }
 }
 
-void process_title_menu(int updateRate) {
+#ifdef PUPPYPRINT_DEBUG
+static void process_sceneselect_menu(int updateRate) {
+    if (sMenuDisplay == NULL) {
+        init_menu_display(32, 32);
+        for (int i = 0; i < sizeof(sSceneTable) / sizeof(char *); i++) {
+            add_menu_text(sSceneTable[i], i, 0xFFFFFFFF, 0);
+        }
+        add_menu_text("Back", sMenuDisplay->listCount, 0xFFFFFFFF, 0);
+    }
+
+    handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &sMenuSelection[1], 0, 0, 0, sMenuDisplay->listCount);
+
+    if (get_input_pressed(INPUT_A, 3) && sMenuSwapTimer == 0) {
+        if (sMenuSelection[1] == sMenuDisplay->listCount - 1) {
+            goto goback;
+        }
+        play_sound_global(SOUND_MENU_CLICK);
+        clear_input(INPUT_A);
+        menu_set_reset(MENU_CLOSED);
+        transition_into_scene(sMenuSelection[1], TRANSITION_FULLSCREEN_IN, 30, TRANSITION_FULLSCREEN_OUT);
+        set_background_music(0, 30);
+    } else if (get_input_pressed(INPUT_B, 3) && sMenuSwapTimer == 0) {
+        goback:
+        play_sound_global(SOUND_MENU_CLICK);
+        clear_input(INPUT_B);
+        menu_set_backward(MENU_PREV);
+    }
+}
+#endif
+
+static void process_title_menu(int updateRate) {
     if (gCurrentController == -1) {
         return;
     }
@@ -465,9 +495,12 @@ void process_title_menu(int updateRate) {
         init_menu_display(32, display_get_height() - 80);
         add_menu_text("Play", 0, 0xFFFFFFFF, 0);
         add_menu_text("Options", 1, 0xFFFFFFFF, 0);
+#ifdef PUPPYPRINT_DEBUG
+        add_menu_text("Scene Select", 2, 0xFFFFFFFF, 0);
+#endif
     }
 
-    handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &sMenuSelection[1], 0, 0, 0, 2);
+    handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &sMenuSelection[1], 0, 0, 0, sMenuDisplay->listCount);
 
     if (get_input_pressed(INPUT_A, 3) && sMenuSwapTimer == 0) {
         play_sound_global(SOUND_MENU_CLICK);
@@ -482,6 +515,12 @@ void process_title_menu(int updateRate) {
             menu_set_forward(MENU_CONFIG);
             sMenuSwapTimer = 30;
             break;
+#ifdef PUPPYPRINT_DEBUG
+        case 2:
+            menu_set_forward(MENU_SCENESELECT);
+            sMenuSwapTimer = 30;
+            break;
+#endif
         }
     }
 }
@@ -493,7 +532,11 @@ void process_menus(int updateRate, float updateRateF) {
     case MENU_CLOSED:
         if (sMenuSwapTimer == 0 && gTalkControl == NULL && get_input_pressed(INPUT_START, 3)) {
             if (gCamera->mode == CAMERA_PHOTO) {
-                gCamera->mode = CAMERA_TARGET;
+                if (gPlayer) {
+                    gCamera->mode = CAMERA_TARGET;
+                } else {
+                    gCamera->mode = CAMERA_CUTSCENE;
+                }
                 gCamera->fov = 50.0f;
                 gCamera->pitch = 0x3400;
                 gCamera->yaw = gCamera->yawTarget;
@@ -524,6 +567,11 @@ void process_menus(int updateRate, float updateRateF) {
             write_config();
         }
         return;
+#ifdef PUPPYPRINT_DEBUG
+    case MENU_SCENESELECT:
+        process_sceneselect_menu(updateRate);
+        return;
+#endif
     }
     get_time_snapshot(PP_MENU, DEBUG_SNAPSHOT_1_END);
 }

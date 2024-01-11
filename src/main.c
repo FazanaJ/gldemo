@@ -55,7 +55,7 @@ void reset_display(void) {
  * Use a while loop with a frame debt system to generate accurate integer delta, with just a regular comparison for floats.
  * Multiply the float value by 1.2 for PAL users. For integer, use timer_int(int timer) to set a region corrected timer instead.
 */
-void update_game_time(int *updateRate, float *updateRateF) {
+static inline void update_game_time(int *updateRate, float *updateRateF) {
     static unsigned int prevTime = 0;
     static unsigned int deltaTime = 0;
     static unsigned int curTime;
@@ -88,6 +88,7 @@ void boot_game(void) {
     void (*func)() = dlsym(bootOvl, "init_game");
     (*func)();
     dlclose(bootOvl);
+    debugf("Game booted in %2.3fs.\n", ((float) TIMER_MICROS(timer_ticks())) / 1000000.0f);
 }
 
 int main(void) {

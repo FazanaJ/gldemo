@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../include/global.h"
+
 enum OptionFlags {
     OPTION_NULL,
     OPTION_WRAP = (1 << 0),
@@ -43,6 +45,9 @@ enum MenuStatus {
     MENU_TITLE,
     MENU_OPTIONS,
     MENU_CONFIG,
+#ifdef PUPPYPRINT_DEBUG
+    MENU_SCENESELECT,
+#endif
 
     MENU_TOTAL
 };

@@ -40,7 +40,7 @@ void camera_init(void) {
     gCamera->pos[1] = 1.0f;
 }
 
-void camera_update_target(Camera *c, int updateRate, float updateRateF) {
+static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
     float zoom;
     float stickX = get_stick_x(STICK_LEFT);
     float stickY = get_stick_y(STICK_LEFT);
@@ -133,7 +133,7 @@ void camera_update_target(Camera *c, int updateRate, float updateRateF) {
     c->pos[1] = intendedFocus[1] + 10.0f + (11.5f * sins(c->viewPitch + 0x4000));
 }
 
-void camera_update_photo(Camera *c, int updateRate, float updateRateF) {
+static void camera_update_photo(Camera *c, int updateRate, float updateRateF) {
     float stickMag = get_stick_mag(STICK_LEFT);
     u_uint16_t stickAngle = get_stick_angle(STICK_LEFT) - 0x4000;
     

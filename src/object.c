@@ -53,7 +53,7 @@ short gObjectModels[] = {
     1,
 };
 
-void init_object_behaviour(Object *obj, int objectID) {
+static void init_object_behaviour(Object *obj, int objectID) {
     void *addr = NULL;
     VoidList *list = gOverlayListHead;
     if (gOverlayListHead) {
@@ -107,7 +107,7 @@ void init_object_behaviour(Object *obj, int objectID) {
     }
 }
 
-void check_unused_model(Object *obj) {
+static void check_unused_model(Object *obj) {
     ObjectList *objList = gObjectListHead;
     Object *listObj;
 
@@ -151,7 +151,7 @@ void check_unused_model(Object *obj) {
 #endif
 }
 
-void check_unused_overlay(Object *obj, VoidList *overlay) {
+static void check_unused_overlay(Object *obj, VoidList *overlay) {
     ObjectList *objList = gObjectListHead;
     Object *listObj;
 
@@ -191,7 +191,7 @@ void check_unused_overlay(Object *obj, VoidList *overlay) {
  * Check if gObjectListHead is null first.
  * If it is, set that as the new list element, otherwise, make a new element and join it onto the tail.
 */
-Object *allocate_object(void) {
+static Object *allocate_object(void) {
     Object *newObj = malloc(sizeof(Object));
     bzero(newObj, sizeof(Object));
     newObj->entry = malloc(sizeof(ObjectList));
@@ -222,7 +222,7 @@ Object *allocate_object(void) {
     return newObj;
 }
 
-Clutter *allocate_clutter(void) {
+static Clutter *allocate_clutter(void) {
     Clutter *newClutter = malloc(sizeof(Clutter));
     bzero(newClutter, sizeof(Clutter));
     newClutter->entry = malloc(sizeof(ClutterList));
@@ -250,7 +250,7 @@ Clutter *allocate_clutter(void) {
     return newClutter;
 }
 
-Particle *allocate_particle(void) {
+static Particle *allocate_particle(void) {
     Particle *newParticle = malloc(sizeof(Particle));
     bzero(newParticle, sizeof(Particle));
     newParticle->entry = malloc(sizeof(ParticleList));
@@ -277,14 +277,14 @@ Particle *allocate_particle(void) {
     return newParticle;
 }
 
-void object_move(Object *obj, float updateRateF) {
+static void object_move(Object *obj, float updateRateF) {
     if (obj->forwardVel != 0.0f) {
         obj->pos[0] += ((obj->forwardVel * sins(obj->moveAngle[1])) / 20.0f) * updateRateF;
         obj->pos[2] += ((obj->forwardVel * coss(obj->moveAngle[1])) / 20.0f) * updateRateF;
     }
 }
 
-void object_gravity(Object *obj, float updateRateF) {
+static void object_gravity(Object *obj, float updateRateF) {
     return;
     float weightMax = -(obj->weight * 10.0f);
     if (obj->yVel > weightMax) {
@@ -339,7 +339,7 @@ short playerModelFlags[][9] = {
     {0, 0, 0, 0 | 0, 0, 0, 0, 0, 0},
 };
 
-void load_object_model(Object *obj, int objectID) {
+static void load_object_model(Object *obj, int objectID) {
     obj->gfx = malloc(sizeof(ObjectGraphics));
     bzero(obj->gfx, sizeof(ObjectGraphics));
     obj->gfx->envColour[0] = 0xFF;

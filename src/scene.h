@@ -64,5 +64,6 @@ typedef struct Environment {
 extern SceneBlock *sCurrentScene;
 extern Environment *gEnvironment;
 extern char gSceneUpdate;
+extern char *sSceneTable[2];
 
 void load_scene(int sceneID);

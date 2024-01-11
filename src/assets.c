@@ -121,7 +121,7 @@ void free_font(int fontID) {
     }
 }
 
-int load_texture(Material *material) {
+static int load_texture(Material *material) {
     MaterialList *list = gMaterialListHead;
     // Check if the texture is already loaded, and bind it to the index.
     while (list) {
@@ -158,7 +158,7 @@ int load_texture(Material *material) {
     return 0;
 }
 
-void free_material(MaterialList *material) {
+static void free_material(MaterialList *material) {
     if (material == gMaterialListHead) {
         if (gMaterialListHead->next) {
             gMaterialListHead = gMaterialListHead->next;
@@ -236,7 +236,7 @@ void set_particle_render_settings(void) {
     }
 }
 
-void set_render_settings(int flags) {
+static void set_render_settings(int flags) {
     if (flags & MATERIAL_CUTOUT) {
         if (!sRenderSettings.cutout) {
             glEnable(GL_ALPHA_TEST);

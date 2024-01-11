@@ -61,7 +61,7 @@ void sound_channel_on(int channel) {
     sChannelMask &= ~(1 << channel);
 }
 
-void update_sequence(int updateRate) {
+static void update_sequence(int updateRate) {
     if (sNextSequenceID != sCurrentSequenceID) {
         sSequenceFadeTimer -= updateRate;
         if (sSequenceFadeTimer < 0) {
@@ -89,7 +89,7 @@ void update_sequence(int updateRate) {
     }
 }
 
-void update_sound(float updateRateF) {
+static void update_sound(float updateRateF) {
     for (int i = 0; i < gSoundChannelNum; i++) {
         if (sChannelMask & (1 << i)) {
             if (gChannelVol[i] > 0.0f) {
@@ -174,7 +174,7 @@ void play_sound_global_pitch(int soundID, float pitch) {
     mixer_ch_set_freq(CHANNEL_GLOBAL, (32000 / 2) * pitch);
 }
 
-int get_sound_pan(int channel, float pos[3]) {
+static int get_sound_pan(int channel, float pos[3]) {
     float volume = 1.0f;
     float pan;
     float dist = SQR(100.0f);

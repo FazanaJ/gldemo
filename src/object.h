@@ -222,8 +222,6 @@ extern short gNumParticles;
 extern short gNumModels;
 extern short gNumOverlays;
 
-Object *allocate_object(void);
-Clutter *allocate_clutter(void);
 Object *spawn_object_pos(int objectID, float x, float y, float z);
 Object *spawn_object_pos_angle(int objectID, float x, float y, float z, short pitch, short roll, short yaw);
 Object *spawn_object_pos_angle_scale(int objectID, float x, float y, float z, short pitch, short roll, short yaw, float scaleX, float scaleY, float scaleZ);
@@ -235,6 +233,5 @@ void delete_clutter(Clutter *clutter);
 void update_game_entities(int updateRate, float updateRateF);
 Object *find_nearest_object(Object *obj, int objectID, float baseDist);
 Object *find_nearest_object_facing(Object *obj, int objectID, float baseDist, int range, int angle);
-void object_move(Object *obj, float updateRateF);
 void clear_objects(void);
 void free_dynamic_shadow(Object *obj);

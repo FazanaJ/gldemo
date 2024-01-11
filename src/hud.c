@@ -36,7 +36,7 @@ sprite_t *gScreenshotSprite;
 sprite_t *gPanelSprite[4];
 rspq_block_t *gPanelBlock;
 
-void generate_health_block(int hpMin, int hpMax, int hpBase) {
+static void generate_health_block(int hpMin, int hpMax, int hpBase) {
     int x = 0;
     int y = 0;
     int i;
@@ -138,7 +138,7 @@ void generate_health_block(int hpMin, int hpMax, int hpBase) {
     sPrevHealthMax = hpMax;
 }
 
-void render_health_bg(int numHealth, int hpMax) {
+static void render_health_bg(int numHealth, int hpMax) {
     PlayerData *data = (PlayerData *) gPlayer->data;
     int heartSpeed = (gGameTimer * 0x200);
     if (data->health <= data->healthMax / 4) {
@@ -191,7 +191,7 @@ void render_health_bg(int numHealth, int hpMax) {
     }    
 }
 
-void render_health(float updateRateF) {
+static void render_health(float updateRateF) {
     if (gPlayer && gPlayer->data) {
         PlayerData *data = (PlayerData *) gPlayer->data;
 
@@ -248,7 +248,7 @@ void render_health(float updateRateF) {
     rspq_block_run(sHealthEmptyBlock);
 }
 
-void render_ztarget(void) {
+static void render_ztarget(void) {
     int targetPos;
     if (gConfig.regionMode == TV_PAL) {
         targetPos = gZTargetTimer * (1.5f * 1.2f);
@@ -352,7 +352,7 @@ void clear_subtitle(SubtitleData *subtitle) {
     free(subtitle);
 }
 
-void process_subtitle_timers(int updateRate, float updateRateF) {
+static void process_subtitle_timers(int updateRate, float updateRateF) {
     if (sSubtitleHead == NULL) {
         return;
     }
@@ -387,7 +387,7 @@ void process_subtitle_timers(int updateRate, float updateRateF) {
     }
 }
 
-void render_hud_subtitles(void) {
+static void render_hud_subtitles(void) {
     if (sSubtitleHead == NULL) {
         return;
     }
@@ -462,7 +462,7 @@ void transition_into_scene(int sceneID, int transitionType, int timer, int trans
     gTransitionSceneOut = transitionOut;
 }
 
-void transition_timer(int updateRate) {
+static void transition_timer(int updateRate) {
     if (gTransitionType != TRANSITION_NONE) {
         gTransitionTimer += updateRate;
         if (gTransitionTimer > gTransitionTarget) {
@@ -518,7 +518,7 @@ void screenshot_clear(void) {
     gScreenshotStatus = SCREENSHOT_NONE;
 }
 
-void transition_render_fullscreen(void) {
+static void transition_render_fullscreen(void) {
     int offset;
     if (gTransitionType == TRANSITION_FULLSCREEN_OUT) {
         offset = gTransitionTarget - gTransitionTimer;
@@ -532,7 +532,7 @@ void transition_render_fullscreen(void) {
     rdpq_fill_rectangle(0, 0, display_get_width(), display_get_height());
 }
 
-void transition_render(void) {
+static void transition_render(void) {
     switch (gTransitionType) {
     case TRANSITION_NONE:
         return;
@@ -543,7 +543,7 @@ void transition_render(void) {
     }
 }
 
-void render_camera_hud(void) {
+static void render_camera_hud(void) {
     
 }
 

@@ -30,7 +30,8 @@
     "RenderList", \
     "Matrix", \
     "Menu", \
-    ""
+    "", \
+    "Culling"
 
 
 enum ProfileTimers {
@@ -57,6 +58,7 @@ enum ProfileTimers {
     PP_MATRIX,
     PP_MENU,
     PP_HALT,
+    PP_CULLING,
 
     PP_TOTAL
 };
@@ -68,8 +70,10 @@ typedef struct DebugData {
     unsigned int rspTime[TIME_TOTAL + 1];
     unsigned int rdpTime[TIME_TOTAL + 1];
     unsigned char iteration : 8;
-    char enabled : 1;
+    unsigned enabled : 1;
+    unsigned viewHitbox : 1;
     unsigned short matrixOps;
+    model64_t *debugMeshes[2];
 } DebugData;
 
 extern DebugData *gDebugData;

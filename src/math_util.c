@@ -7,6 +7,14 @@
 
 #include "main.h"
 
+float absf(float x) {
+    if (x < 0.0f) {
+        return -x;
+    } else {
+        return x;
+    }
+}
+
 int lerp(int current, int target, float factor) {
     return current + ((float) (target - current) * factor);
 }

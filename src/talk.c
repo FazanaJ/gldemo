@@ -178,7 +178,7 @@ void talk_update(int updateRate) {
     }
 }
 
-void talk_generate_bubble(void) {
+static void talk_generate_bubble(void) {
     TalkControl *t = gTalkControl;
     int w = display_get_width();
     int h = display_get_height();
@@ -193,7 +193,7 @@ void talk_generate_bubble(void) {
     glEnd();
 }
 
-void talk_render_text(void) {
+static void talk_render_text(void) {
     TalkControl *t = gTalkControl;
     TalkText *curText = t->curText;
     t->endChar = strlen(curText[t->curLine].string);
@@ -239,7 +239,7 @@ TalkSpriteFrame sTestSprite = {
     {SPRITE_NONE, 0, 0},
 };
 
-void talksprite_render(void) {
+static void talksprite_render(void) {
 
 }
 

@@ -24,3 +24,4 @@ float lerpf(float current, float target, float factor);
 int approach(int current, int target, int inc);
 float approachf(float current, float target, float inc);
 float random_float(void);
+float absf(float x);
