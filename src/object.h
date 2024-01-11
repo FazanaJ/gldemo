@@ -16,6 +16,8 @@ enum ObjectFlags {
 	OBJ_FLAG_SHADOW = 			(1 << 5),
 	OBJ_FLAG_SHADOW_DYNAMIC =	(1 << 6),
 	OBJ_FLAG_IN_VIEW =			(1 << 7),
+	OBJ_FLAG_TANGIBLE =			(1 << 8),
+	OBJ_FLAG_INACTIVE =			(1 << 9),
 };
 
 enum ObjectIDs {
@@ -42,6 +44,19 @@ enum MatrixTypes {
 	MTX_PUSH = 0xE0,
 	MTX_POP = 0xF0
 };
+
+enum HitboxTypes {
+	HITBOX_BLOCK,
+	HITBOX_SPHERE,
+	HITBOX_CYLINDER
+};
+
+typedef struct Hitbox {
+	char type;
+	float offsetY;
+	float width;
+	float height;
+} Hitbox;
 
 typedef struct DynamicShadowData {
 	unsigned short texW;
@@ -80,8 +95,13 @@ typedef struct ObjectGraphics {
 	char envColour[3];
 	char primColour[3];
 	char opacity;
+	char pad;
 	short modelID;
+	short pad2;
 	DynamicShadow *dynamicShadow;
+	float width;
+	float height;
+	float yOffset;
 } ObjectGraphics;
 
 typedef struct Object {
@@ -91,6 +111,7 @@ typedef struct Object {
 	void (*loopFunc)(struct Object *obj, int updateRate, float updateRateF);
 	struct ObjectList *entry;
 	struct Object *parent;
+	Hitbox *hitbox;
 	float cameraDist;
 	float viewDist;
 	float pos[3];
@@ -100,9 +121,9 @@ typedef struct Object {
 	float scale[3];
 	float forwardVel;
 	u_uint32_t flags;
+	void *data;
 	uint16_t faceAngle[3];
 	uint16_t moveAngle[3];
-	void *data;
 	short objectID;
 	short floorHeight;
 	unsigned char animID;

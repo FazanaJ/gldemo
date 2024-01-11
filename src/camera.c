@@ -59,6 +59,7 @@ static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
 
         if (get_controller_type() == CONTROLLER_N64) {
             if (get_input_held(INPUT_L)) {
+                letMeUseL:
                 float intendedPitch = stickY * 100.0f;
                 c->yawTarget -= (float) (stickX * ((8.0f * updateRateF)));
                 c->pan = lerp(c->pan, 0.0f, 0.025f * updateRateF);
@@ -70,6 +71,7 @@ static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
                 c->lookPitch = lerp(c->lookPitch, 0.0f, 0.1f * updateRateF);
             }
         } else {
+            letMeUseC:
             float stickRX = get_stick_x(STICK_RIGHT);
             float stickRY = get_stick_y(STICK_RIGHT);
             float intendedPitch = stickRY * 100.0f;
@@ -77,6 +79,14 @@ static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
             c->pan = lerp(c->pan, -stickX, 0.025f * updateRateF);
             c->zoomAdd = lerp(c->zoomAdd, stickY, 0.05f * updateRateF);
             c->lookPitch = lerp(c->lookPitch, intendedPitch, 0.1f * updateRateF);
+        }
+    } else if (gMenuStatus == MENU_CONFIG) {
+        if (get_controller_type() == CONTROLLER_N64) {
+            if (get_input_held(INPUT_L)) {
+                goto letMeUseL;
+            }
+        } else {
+            goto letMeUseC;
         }
     }
 

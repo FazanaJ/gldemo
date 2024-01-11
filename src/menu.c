@@ -146,6 +146,8 @@ static void render_menu_list(void) {
     int x = sMenuDisplay->x;
     int y = sMenuDisplay->y;
     while (list != NULL) {
+        rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(0, 0, 0, 255),});
+        rdpq_text_printf(NULL, FONT_MVBOLI, x + 1, y + 1, list->text);
         if (i == sMenuSelection[1]) {
             int sineCol = 128 + (32 * sins(gGameTimer * 0x400));
             rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, sineCol, sineCol, 255),});
@@ -382,6 +384,10 @@ static void process_config_menu(int updateRate) {
         }
     }
 
+    if (get_input_held(INPUT_L)) {
+        return;
+    }
+
     short tempVar = *m->valuePtr;
     int prevMenuSelection = sMenuSelection[1];
     handle_menu_stick_input(updateRate, MENUSTICK_STICKX | MENUSTICK_STICKY | MENUSTICK_WRAPY | xWrap, &tempVar, &sMenuSelection[1], m->minValue, -1, m->maxValue, sizeof(sMenuOptions) / sizeof(MenuOption));
@@ -493,11 +499,12 @@ static void process_title_menu(int updateRate) {
 
     if (sMenuDisplay == NULL) {
         init_menu_display(32, display_get_height() - 80);
-        add_menu_text("Play", 0, 0xFFFFFFFF, 0);
-        add_menu_text("Options", 1, 0xFFFFFFFF, 0);
+        add_menu_text("Play", sMenuDisplay->listCount, 0xFFFFFFFF, 0);
+        add_menu_text("Options", sMenuDisplay->listCount, 0xFFFFFFFF, 0);
 #ifdef PUPPYPRINT_DEBUG
-        add_menu_text("Scene Select", 2, 0xFFFFFFFF, 0);
+        add_menu_text("Scene Select", sMenuDisplay->listCount, 0xFFFFFFFF, 0);
 #endif
+        add_menu_text("Controls", sMenuDisplay->listCount, 0xFFFFFFFF, 0);
     }
 
     handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &sMenuSelection[1], 0, 0, 0, sMenuDisplay->listCount);
@@ -521,6 +528,10 @@ static void process_title_menu(int updateRate) {
             sMenuSwapTimer = 30;
             break;
 #endif
+        case 3:
+            menu_set_forward(MENU_CONTROLS);
+            sMenuSwapTimer = 30;
+            break;
         }
     }
 }
@@ -554,6 +565,12 @@ void process_menus(int updateRate, float updateRateF) {
     case MENU_OPTIONS:
         process_options_menu(updateRate);
         return;
+    case MENU_CONTROLS:
+        if (get_input_pressed(INPUT_B, 3)) {
+            clear_input(INPUT_B);
+            menu_set_backward(MENU_PREV);
+        }
+        return;
     case MENU_CONFIG:
         process_config_menu(updateRate);
         if ((get_input_pressed(INPUT_START, 3) || get_input_pressed(INPUT_B, 3)) && sMenuSwapTimer == 0) {
@@ -581,7 +598,15 @@ void render_menus(int updateRate, float updateRateF) {
     switch (gMenuStatus) {
     case MENU_CLOSED:
         return;
+    case MENU_CONTROLS:
+        rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(0, 0, 0, 255),});
+        rdpq_text_print(NULL, FONT_MVBOLI, 33, 33, "Controls:\nA: Interact\nZ: Target\nL: Move Camera\n\n\nB: Back");
+        rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, 255, 255, 255),});
+        rdpq_text_print(NULL, FONT_MVBOLI, 32, 32, "Controls:\nA: Interact\nZ: Target\nL: Move Camera\n\n\nB: Back");
+        break;
     case MENU_CONFIG:
+        rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(0, 0, 0, 255),});
+        rdpq_text_printf(NULL, FONT_MVBOLI, display_get_width() - 79, 17, "FPS: %2.2f", (double) display_get_fps());
         rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, 255, 255, 255),});
         rdpq_text_printf(NULL, FONT_MVBOLI, display_get_width() - 80, 16, "FPS: %2.2f", (double) display_get_fps());
         break;

@@ -182,3 +182,19 @@ void object_collide(Object *obj) {
 
     get_time_snapshot(PP_COLLISION, DEBUG_SNAPSHOT_1_END);
 }
+
+void object_group_collisions(void) {
+    DEBUG_SNAPSHOT_1();
+    ObjectList *objList = gObjectListHead;
+    Object *obj;
+
+    while (objList) {
+        obj = objList->obj;
+        if (!(obj->flags & OBJ_FLAG_INACTIVE) && obj->hitbox) {
+
+        }
+        objList = objList->next;
+    }
+    
+    get_time_snapshot(PP_COLLISION, DEBUG_SNAPSHOT_1_END);
+}
