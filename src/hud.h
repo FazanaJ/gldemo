@@ -1,9 +1,6 @@
 #pragma once
 
-extern char gScreenshotStatus;
-extern surface_t gScreenshot;
-extern sprite_t *gScreenshotSprite;
-extern char gScreenshotType;
+extern char gCameraHudToggle;
 
 enum TransitionType {
     TRANSITION_NONE,

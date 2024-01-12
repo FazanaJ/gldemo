@@ -155,5 +155,5 @@ int random_u16(void) {
 // Generate a pseudorandom float in the range [0, 1).
 float random_float(void) {
     float rnd = random_u16();
-    return rnd / (float) 0x10000;
+    return rnd / (float) 65536.0f;
 }

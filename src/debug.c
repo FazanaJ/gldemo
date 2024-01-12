@@ -12,7 +12,6 @@
 
 #ifdef PUPPYPRINT_DEBUG
 
-float gFPS = 0.0f;
 DebugData *gDebugData = NULL;
 char *sDebugText[] = {
     PROFILE_NAMES
@@ -79,22 +78,7 @@ void get_rdp_time(int diff) {
     gDebugData->rdpTime[TIME_AGGREGATE] += time;
 }
 
-static void calculate_framerate(void) {
-    static unsigned int curFrameTimeIndex = 0;
-    static unsigned int frameTimes[30];
-    unsigned int newTime = timer_ticks();
-    unsigned int oldTime = frameTimes[curFrameTimeIndex];
-    frameTimes[curFrameTimeIndex] = newTime;
-
-    curFrameTimeIndex++;
-    if (curFrameTimeIndex >= 30) {
-        curFrameTimeIndex = 0;
-    }
-    gFPS = (30.0f * 1000000.0f) / TIMER_MICROS(newTime - oldTime);
-}
-
 void process_profiler(void) {
-    calculate_framerate();
 
     if ((gGlobalTimer % 8) == 0) {
         rspq_profile_get_data(&gDebugData->rspData);
@@ -124,7 +108,7 @@ void process_profiler(void) {
 
     if ((gGlobalTimer % 120) == 0) {
         debugf("FPS: %2.2f | CPU: %dus (%d%%) | RSP: %dus (%d%%) | RDP: %dus (%d%%)\n", 
-        gFPS, gDebugData->cpuTime[TIME_TOTAL], gDebugData->cpuTime[TIME_TOTAL] / 333,
+        display_get_fps(), gDebugData->cpuTime[TIME_TOTAL], gDebugData->cpuTime[TIME_TOTAL] / 333,
         gDebugData->rspTime[TIME_TOTAL], gDebugData->rspTime[TIME_TOTAL] / 333, gDebugData->rdpTime[TIME_TOTAL], gDebugData->rdpTime[TIME_TOTAL] / 333);
     }
 }
@@ -154,7 +138,7 @@ void render_profiler(void) {
     }
     rdpq_fill_rectangle(width - 104, 0, width, boxHeight);
     rdpq_mode_blender(0);
-    rdpq_text_printf(NULL, FONT_ARIAL, 8, 16, "FPS: %2.2f", gFPS);
+    rdpq_text_printf(NULL, FONT_ARIAL, 8, 16, "FPS: %2.2f", display_get_fps());
     rdpq_text_printf(NULL, FONT_ARIAL, 8, 26, "CPU: %dus (%d%%)", gDebugData->cpuTime[TIME_TOTAL], gDebugData->cpuTime[TIME_TOTAL] / 333);
     boxHeight = 0;
     if (gDebugData->rspTime[TIME_TOTAL] > 10) {

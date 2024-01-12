@@ -12,6 +12,7 @@
 #include "main.h"
 #include "debug.h"
 #include "menu.h"
+#include "hud.h"
 
 Camera *gCamera;
 
@@ -151,18 +152,18 @@ static void camera_update_photo(Camera *c, int updateRate, float updateRateF) {
     c->pos[2] += ((stickMag * coss(-c->yaw + stickAngle)) / 2.0f) * updateRateF;
 
     if (get_input_held(INPUT_CLEFT)) {
-        c->yaw -= 0x100 * updateRate;
+        c->yawTarget -= 0x100 * updateRate;
     } else if (get_input_held(INPUT_CRIGHT)) {
-        c->yaw += 0x100 * updateRate;
+        c->yawTarget += 0x100 * updateRate;
     }
 
     if (get_input_held(INPUT_CUP)) {
-        c->pitch += 0x100 * updateRate;
+        c->pitch += 0x80 * updateRate;
         if (c->pitch > 0x3F00) {
             c->pitch = 0x3F00;
         }
     } else if (get_input_held(INPUT_CDOWN)) {
-        c->pitch -= 0x100 * updateRate;
+        c->pitch -= 0x80 * updateRate;
         if (c->pitch < -0x3F00) {
             c->pitch = -0x3F00;
         }
@@ -170,13 +171,13 @@ static void camera_update_photo(Camera *c, int updateRate, float updateRateF) {
 
     if (get_input_held(INPUT_DUP)) {
         c->fov -= 0.5f * updateRateF;
-        if (c->fov < 30.0f) {
-            c->fov = 30.0f;
+        if (c->fov < 15.0f) {
+            c->fov = 15.0f;
         }
     } else if (get_input_held(INPUT_DDOWN)) {
         c->fov += 0.5f * updateRateF;
-        if (c->fov > 80.0f) {
-            c->fov = 80.0f;
+        if (c->fov > 90.0f) {
+            c->fov = 90.0f;
         }
     }
 
@@ -186,9 +187,17 @@ static void camera_update_photo(Camera *c, int updateRate, float updateRateF) {
         c->pos[1] += 0.5f * updateRateF;
     }
 
-    c->focus[0] = c->pos[0] + coss(c->yaw);
-    c->focus[1] = c->pos[1] + sins(c->pitch);
-    c->focus[2] = c->pos[2] + sins(c->yaw);
+    if (get_input_pressed(INPUT_A, 3)) {
+        gCameraHudToggle ^= 1;
+        clear_input(INPUT_A);
+    }
+
+    
+    c->yaw = lerp_short(c->yaw, c->yawTarget, 0.25f * updateRateF);
+
+    c->focus[0] = c->pos[0] + (coss(c->yaw) * coss(c->pitch));
+    c->focus[1] = c->pos[1] + (sins(c->pitch));
+    c->focus[2] = c->pos[2] + (sins(c->yaw) * coss(c->pitch));
 }
 
 void camera_loop(int updateRate, float updateRateF) {

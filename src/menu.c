@@ -445,6 +445,7 @@ static void process_options_menu(int updateRate) {
             gCamera->mode = CAMERA_PHOTO;
             gCamera->pitch = -0xA00;
             gCamera->yaw -= 0x4000;
+            gCameraHudToggle = true;
             screenshot_clear();
             break;
         case 3:

@@ -27,6 +27,7 @@ char gTransitionTimer;
 char gTransitionTarget;
 char gTransitionType;
 char gTransitionSceneOut;
+char gCameraHudToggle;
 int gTransitionScene;
 
 sprite_t *gPanelSprite[4];
@@ -413,7 +414,7 @@ static void render_hud_subtitles(void) {
     rdpq_fill_rectangle(screenMid - sBoxWidth, screenBottom - 32 - sBoxHeight, screenMid + sBoxWidth, screenBottom - 32 - s->y + s->height);
     while (s) {        
         rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, 255, 255, s->opacity),});
-        rdpq_text_printf(&parms, FONT_MVBOLI, 0, screenBottom - 32 - s->y, s->text);
+        rdpq_text_print(&parms, FONT_MVBOLI, 0, screenBottom - 32 - s->y, s->text);
         s = s->next;
     }
 }
@@ -521,7 +522,14 @@ static void transition_render(void) {
 }
 
 static void render_camera_hud(void) {
-    
+    if (gCameraHudToggle == 0) {
+        return;
+    }
+    char *text = "A: Toggle text\nL/Z: Down\nR: Up\nC: Look\nStick: Move\nDpad Up/Down: FoV";
+    rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(0, 0, 0, 255),});
+    rdpq_text_print(NULL, FONT_MVBOLI, 33, 33, text);
+    rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, 255, 255, 255),});
+    rdpq_text_print(NULL, FONT_MVBOLI, 32, 32, text);
 }
 
 void render_hud(int updateRate, float updateRateF) {
