@@ -127,13 +127,13 @@ static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
         c->lookFocus[1] = lerpf(c->lookFocus[1], (tar->pos[1] - intendedFocus[1]) * targetMag, 0.035f * updateRateF);
         c->lookFocus[2] = lerpf(c->lookFocus[2], (tar->pos[2] - intendedFocus[2]) * targetMag, 0.035f * updateRateF);
     } else {
-        if (fabs(c->lookFocus[0]) > 0.01f) {
+        if (fabsf(c->lookFocus[0]) > 0.01f) {
             c->lookFocus[0] = lerpf(c->lookFocus[0], 0.0f, 0.05f * updateRateF);
         }
-        if (fabs(c->lookFocus[1]) > 0.01f) {
+        if (fabsf(c->lookFocus[1]) > 0.01f) {
             c->lookFocus[1] = lerpf(c->lookFocus[1], 0.0f, 0.05f * updateRateF);
         }
-        if (fabs(c->lookFocus[2]) > 0.01f) {
+        if (fabsf(c->lookFocus[2]) > 0.01f) {
             c->lookFocus[2] = lerpf(c->lookFocus[2], 0.0f, 0.05f * updateRateF);
         }
     }

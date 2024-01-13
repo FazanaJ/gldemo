@@ -10,7 +10,7 @@ extern float gSineTable[];
 #define DECREASE_VAR(x, amt, min) {if (x - amt > min) x -= amt; else x = min;}
 #define SQR(x) (x * x)
 #define DIST2(x, y) (SQR(x[0] - y[0]) + SQR(x[1] - y[1]))
-#define DIST3(x, y) (SQR(fabs(x[0] - y[0])) + SQR(fabs(x[1] - y[1])) + SQR(fabs(x[2] - y[2])))
+#define DIST3(x, y) (SQR(fabsf(x[0] - y[0])) + SQR(fabsf(x[1] - y[1])) + SQR(fabsf(x[2] - y[2])))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define CLAMP(x, low, high)  (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))

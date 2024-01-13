@@ -182,15 +182,11 @@ static int get_sound_pan(int channel, float pos[3]) {
     if (gConfig.soundMode == SOUND_MONO) {
         pan = 0.5f;
     } else {
-        float absX;
-        float absZ;
-
-        absX = (pos[0] < 0 ? -pos[0] : pos[0]);
+        float absX = fabsf(pos[0]);
+        float absZ = fabsf(pos[2]);
         if (absX > dist) {
             absX = dist;
         }
-
-        absZ = (pos[2] < 0 ? -pos[2] : pos[2]);
         if (absZ > dist) {
             absZ = dist;
         }

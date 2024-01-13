@@ -353,6 +353,7 @@ static void project_camera(void) {
 }
 
 static void render_sky_gradient(Environment *e) {
+    DEBUG_SNAPSHOT_1();
     if (sRenderSkyBlock == NULL) {
         int width = display_get_width();
         int height = display_get_height();
@@ -389,11 +390,13 @@ static void render_sky_gradient(Environment *e) {
         rdpq_fill_rectangle(0, 0, width, height);
         rdpq_set_mode_standard();
     }
+    get_time_snapshot(PP_BG, DEBUG_SNAPSHOT_1_END);
 }
 
 extern const TextureInfo sTextureIDs[];
 
 static void render_sky_texture(Environment *e) {
+    DEBUG_SNAPSHOT_1();
     if (e->texGen == false) {
         e->skySprite = sprite_load(asset_dir(sTextureIDs[e->skyboxTextureID].file, DFS_SPRITE));
         surface_t surf = sprite_get_pixels(e->skySprite);
@@ -470,6 +473,7 @@ static void render_sky_texture(Environment *e) {
         gNumTextureLoads += 32;
         glPopMatrix();
     }
+    get_time_snapshot(PP_BG, DEBUG_SNAPSHOT_1_END);
 }
 
 static void render_bush(void) {
@@ -1099,11 +1103,11 @@ void render_game(int updateRate, float updateRateF) {
     gl_context_begin();
     glClear(GL_DEPTH_BUFFER_BIT);
     if (gScreenshotStatus != SCREENSHOT_SHOW) {
-        if (gEnvironment->skyboxTextureID == -1) {
+        if (gEnvironment->skyboxTextureID == -1 || gConfig.graphics == G_PERFORMANCE) {
             render_sky_gradient(gEnvironment);
         }
         project_camera();
-        if (gEnvironment->skyboxTextureID != -1) {
+        if (gEnvironment->skyboxTextureID != -1 && gConfig.graphics != G_PERFORMANCE) {
             render_sky_texture(gEnvironment);
         }
         apply_anti_aliasing(AA_GEO);

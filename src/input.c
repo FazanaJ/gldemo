@@ -143,7 +143,7 @@ void update_inputs(int updateRate) {
         }
     }
     controller->type = CONTROLLER_N64;
-    controller->stickMag[0] = fabs(sqrtf((controller->stickX[0] * controller->stickX[0]) + (controller->stickY[0] * controller->stickY[0]))) / 75.0f;
+    controller->stickMag[0] = fabsf(sqrtf((controller->stickX[0] * controller->stickX[0]) + (controller->stickY[0] * controller->stickY[0]))) / 75.0f;
     controller->stickAngle[0] = atan2s(-controller->stickY[0], controller->stickX[0]);
 
     //Temp

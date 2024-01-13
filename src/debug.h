@@ -31,7 +31,8 @@
     "Matrix", \
     "Menu", \
     "", \
-    "Culling"
+    "Culling", \
+    "Background"
 
 
 enum ProfileTimers {
@@ -59,6 +60,7 @@ enum ProfileTimers {
     PP_MENU,
     PP_HALT,
     PP_CULLING,
+    PP_BG,
 
     PP_TOTAL
 };
