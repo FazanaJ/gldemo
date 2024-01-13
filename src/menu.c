@@ -443,7 +443,7 @@ static void process_options_menu(int updateRate) {
         case 2:
             menu_set_backward(MENU_PREV);
             gCamera->mode = CAMERA_PHOTO;
-            gCamera->yaw = atan2s(gCamera->pos[0] - gCamera->focus[0], gCamera->pos[2] - gCamera->focus[2]) + 0x8000;
+            gCamera->yaw = atan2s(gCamera->pos[0] - gCamera->focus[0], gCamera->pos[2] - gCamera->focus[2]) - 0x4000;
             gCamera->yawTarget = gCamera->yaw;
             gCamera->pitch = 0;
             gCameraHudToggle = true;

@@ -339,7 +339,7 @@ static void set_light(light_t light) {
 
 static void project_camera(void) {
     Camera *c = gCamera;
-    float nearClip = 1.0f;
+    float nearClip = 2.5f;
     float farClip = 400.0f;
     float fov = gCamera->fov / 50.0f;
 

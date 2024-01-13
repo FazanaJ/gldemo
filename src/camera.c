@@ -149,15 +149,15 @@ static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
 
 static void camera_update_photo(Camera *c, int updateRate, float updateRateF) {
     float stickMag = get_stick_mag(STICK_LEFT);
-    u_uint16_t stickAngle = get_stick_angle(STICK_LEFT) - 0x4000;
+    u_uint16_t stickAngle = get_stick_angle(STICK_LEFT);
     
-    c->pos[0] += ((stickMag * sins(-c->yaw + stickAngle)) / 2.0f) * updateRateF;
-    c->pos[2] += ((stickMag * coss(-c->yaw + stickAngle)) / 2.0f) * updateRateF;
+    c->pos[0] += ((stickMag * sins(c->yaw + stickAngle)) / 2.0f) * updateRateF;
+    c->pos[2] += ((stickMag * coss(c->yaw + stickAngle)) / 2.0f) * updateRateF;
 
     if (get_input_held(INPUT_CLEFT)) {
-        c->yawTarget -= 0x100 * updateRate;
-    } else if (get_input_held(INPUT_CRIGHT)) {
         c->yawTarget += 0x100 * updateRate;
+    } else if (get_input_held(INPUT_CRIGHT)) {
+        c->yawTarget -= 0x100 * updateRate;
     }
 
     if (get_input_held(INPUT_CUP)) {
@@ -198,9 +198,9 @@ static void camera_update_photo(Camera *c, int updateRate, float updateRateF) {
     
     c->yaw = lerp_short(c->yaw, c->yawTarget, 0.25f * updateRateF);
 
-    c->focus[0] = c->pos[0] + (coss(c->yaw) * coss(c->pitch));
+    c->focus[0] = c->pos[0] + (coss(-c->yaw - 0x4000) * coss(c->pitch));
     c->focus[1] = c->pos[1] + (sins(c->pitch));
-    c->focus[2] = c->pos[2] + (sins(c->yaw) * coss(c->pitch));
+    c->focus[2] = c->pos[2] + (sins(-c->yaw - 0x4000) * coss(c->pitch));
 }
 
 void camera_loop(int updateRate, float updateRateF) {
