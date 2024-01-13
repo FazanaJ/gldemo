@@ -16,5 +16,6 @@ SceneHeader header = {
     /*Light Ambient*/   {0xFF, 0xFF, 0xFF},
     /*Sky Top*/         {0, 0, 0},
     /*Sky Bottom*/      {0xFF, 0xFF, 0xFF},
-    /*Flags*/           ENV_NONE
+    /*Flags*/           ENV_NONE,
+    /*Sky Texture*/     -1,
 };

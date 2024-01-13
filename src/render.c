@@ -247,6 +247,9 @@ static void mtx_translate(Matrix *mtx, float x, float y, float z) {
     DEBUG_MATRIX_OP();
     bzero(mtx, sizeof(Matrix));
 
+    mtx->m[0][0] = 1.0f;
+    mtx->m[1][1] = 1.0f;
+    mtx->m[2][2] = 1.0f;
     mtx->m[3][0] = x;
     mtx->m[3][1] = y;
     mtx->m[3][2] = z;
@@ -336,8 +339,8 @@ static void set_light(light_t light) {
 
 static void project_camera(void) {
     Camera *c = gCamera;
-    float nearClip = 5.0f;
-    float farClip = 500.0f;
+    float nearClip = 1.0f;
+    float farClip = 400.0f;
     float fov = gCamera->fov / 50.0f;
 
     glMatrixMode(GL_PROJECTION);
@@ -349,8 +352,7 @@ static void project_camera(void) {
     mtx_lookat(c->pos[0], c->pos[1], c->pos[2], c->focus[0], c->focus[1], c->focus[2], 0.0f, 1.0f, 0.0f);
 }
 
-static void render_sky(void) {
-    Environment *e = gEnvironment;
+static void render_sky_gradient(Environment *e) {
     if (sRenderSkyBlock == NULL) {
         int width = display_get_width();
         int height = display_get_height();
@@ -386,6 +388,87 @@ static void render_sky(void) {
                                    255));
         rdpq_fill_rectangle(0, 0, width, height);
         rdpq_set_mode_standard();
+    }
+}
+
+extern const TextureInfo sTextureIDs[];
+
+static void render_sky_texture(Environment *e) {
+    if (e->texGen == false) {
+        e->skySprite = sprite_load(asset_dir(sTextureIDs[e->skyboxTextureID].file, DFS_SPRITE));
+        surface_t surf = sprite_get_pixels(e->skySprite);
+        int x = 0;
+        int y = 0;
+        for (int i = 0; i < 32; i++) {
+            if (i == 16) {
+                y += 64;
+                x = 0;
+            }
+            glGenTextures(1, &e->textureSegments[i]);
+            glBindTexture(GL_TEXTURE_2D, e->textureSegments[i]);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            surface_t surfPiece = surface_make_sub(&surf, x, y, 32, 64);
+            glSurfaceTexImageN64(GL_TEXTURE_2D, 0, &surfPiece, &(rdpq_texparms_t){.s.repeats = false, .t.repeats = false});
+            x += 32;
+
+        }
+        e->texGen = true;
+    } else {
+        Matrix mtx;
+        glPushMatrix();
+        mtx_translate(&mtx, gCamera->pos[0], gCamera->pos[1] + 50.0f, gCamera->pos[2]);
+        glMultMatrixf((GLfloat *) mtx.m);
+        glEnable(GL_TEXTURE_2D);
+        glDisable(GL_CULL_FACE);
+        glColor3f(1, 1, 1);
+        for (int i = 0; i < 16; i++) {
+            short rot = (((gCamera->yaw) % 0xFFFF - 0x8000) - ((((0x10000 / 16) * i) + 0x8000)) % 0xFFFF - 0x8000);
+            if (fabs(rot) >= 0x4000) {
+                continue;
+            }
+            glBindTexture(GL_TEXTURE_2D, e->textureSegments[15 - i]);
+            float pX = 100.0f * sins((0x10000 / 16) * i);
+            float pZ = 100.0f * coss((0x10000 / 16) * i);
+            glBegin(GL_QUADS);
+            glTexCoord2f(1.024f, 0.0f);
+            glVertex3f(pX * 0.66f, 75, pZ * 0.66f);
+            glTexCoord2f(1.024f, 1.024f);
+            glVertex3f(pX, 0.0f, pZ);
+            pX = 100.0f * sins((0x10000 / 16) * (i + 1));
+            pZ = 100.0f * coss((0x10000 / 16) * (i + 1));
+            glTexCoord2f(0.0f, 1.024f);
+            glVertex3f(pX, 0.0f, pZ);
+            glTexCoord2f(0.0f, 0.0f);
+            glVertex3f(pX * 0.66f, 75, pZ * 0.66f);
+            glEnd();
+            gNumTextureLoads++;
+        }
+        
+        for (int i = 0; i < 16; i++) {
+            short rot = (((gCamera->yaw) % 0xFFFF - 0x8000) - ((((0x10000 / 16) * i) + 0x8000)) % 0xFFFF - 0x8000);
+            if (fabs(rot) >= 0x4000) {
+                continue;
+            }
+            glBindTexture(GL_TEXTURE_2D, e->textureSegments[31 - i]);
+            float pX = 100.0f * sins((0x10000 / 16) * i);
+            float pZ = 100.0f * coss((0x10000 / 16) * i);
+            glBegin(GL_QUADS);
+            glTexCoord2f(1.024f, 0.0f);
+            glVertex3f(pX, 0.0f, pZ);
+            glTexCoord2f(1.024f, 1.024f);
+            glVertex3f(pX * 0.66f, -75, pZ * 0.66f);
+            pX = 100.0f * sins((0x10000 / 16) * (i + 1));
+            pZ = 100.0f * coss((0x10000 / 16) * (i + 1));
+            glTexCoord2f(0.0f, 1.024f);
+            glVertex3f(pX * 0.66f, -75, pZ * 0.66f);
+            glTexCoord2f(0.0f, 0.0f);
+            glVertex3f(pX, 0.0f, pZ);
+            glEnd();
+            gNumTextureLoads++;
+        }
+        gNumTextureLoads += 32;
+        glPopMatrix();
     }
 }
 
@@ -950,7 +1033,7 @@ static inline int render_inside_view(float width, float height, float screenPos[
     if (fabsf(screenPos[1]) > vScreenEdge + height) {
         return false;
     }
-    if (fabsf(screenPos[2] - VALIDDEPTHMIDDLE) >= VALIDDEPTHRANGE + width) {
+    if (fabsf(screenPos[2] - VALIDDEPTHMIDDLE) >= VALIDDEPTHRANGE + (width)) {
         return false;
     }
     return true;
@@ -973,7 +1056,7 @@ static void render_determine_visible(void) {
             float screenPos[3];
             float pos[3] = {obj->pos[0], obj->pos[1] + 2.0f, obj->pos[2]};
             linear_mtxf_mul_vec3f_and_translate(gViewMatrix, screenPos, pos);
-            if (render_inside_view(2.0f, 2.0f, screenPos)) {
+            if (render_inside_view(2.0f, 10.0f, screenPos)) {
                 obj->flags |= OBJ_FLAG_IN_VIEW;
             } else {
                 obj->flags &= ~OBJ_FLAG_IN_VIEW;
@@ -1011,14 +1094,19 @@ void render_game(int updateRate, float updateRateF) {
     if (gScreenshotStatus > SCREENSHOT_NONE) {
         screenshot_generate();
     } else {
-        rdpq_attach_clear(gFrameBuffers, &gZBuffer);
+        rdpq_attach(gFrameBuffers, &gZBuffer);
     }
     gl_context_begin();
     glClear(GL_DEPTH_BUFFER_BIT);
     if (gScreenshotStatus != SCREENSHOT_SHOW) {
-        render_sky();
-        apply_anti_aliasing(AA_GEO);
+        if (gEnvironment->skyboxTextureID == -1) {
+            render_sky_gradient(gEnvironment);
+        }
         project_camera();
+        if (gEnvironment->skyboxTextureID != -1) {
+            render_sky_texture(gEnvironment);
+        }
+        apply_anti_aliasing(AA_GEO);
         apply_render_settings();
         set_light(lightNeutral);
         render_determine_visible();

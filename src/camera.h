@@ -33,4 +33,5 @@ typedef struct Camera {
 extern Camera *gCamera;
 
 void camera_init(void);
+void camera_reset(void);
 void camera_loop(int updateRate, float updateRateF);

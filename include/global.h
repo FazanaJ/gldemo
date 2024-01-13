@@ -10,3 +10,5 @@
 #define SCREEN_WIDTH_16_10 384
 #define SCREEN_WIDTH_16_9 424
 #define SCREEN_HEIGHT 240
+
+typedef short Texture;

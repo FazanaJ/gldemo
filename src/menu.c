@@ -443,8 +443,9 @@ static void process_options_menu(int updateRate) {
         case 2:
             menu_set_backward(MENU_PREV);
             gCamera->mode = CAMERA_PHOTO;
-            gCamera->pitch = -0xA00;
-            gCamera->yaw -= 0x4000;
+            gCamera->yaw = atan2s(gCamera->pos[0] - gCamera->focus[0], gCamera->pos[2] - gCamera->focus[2]) + 0x8000;
+            gCamera->yawTarget = gCamera->yaw;
+            gCamera->pitch = 0;
             gCameraHudToggle = true;
             screenshot_clear();
             break;
@@ -545,14 +546,7 @@ void process_menus(int updateRate, float updateRateF) {
     case MENU_CLOSED:
         if (sMenuSwapTimer == 0 && gTalkControl == NULL && get_input_pressed(INPUT_START, 3)) {
             if (gCamera->mode == CAMERA_PHOTO) {
-                if (gPlayer) {
-                    gCamera->mode = CAMERA_TARGET;
-                } else {
-                    gCamera->mode = CAMERA_CUTSCENE;
-                }
-                gCamera->fov = 50.0f;
-                gCamera->pitch = 0x3400;
-                gCamera->yaw = gCamera->yawTarget;
+                camera_reset();
             } else {
                 menu_set_forward(MENU_OPTIONS);
                 screenshot_on(FMT_I8);

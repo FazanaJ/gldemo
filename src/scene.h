@@ -1,6 +1,7 @@
 #pragma once
 
 #include "assets.h"
+#include "../include/global.h"
 
 #define MAP_OBJ 0
 #define MAP_CLU 1
@@ -13,6 +14,8 @@ enum SceneNames {
 enum EnvironmentFlags {
     ENV_NONE,
     ENV_FOG = (1 << 0),
+    ENV_SKYBOX_TOP = (1 << 1),
+    ENV_SKYBOX_BOTTOM = (1 << 2),
 };
 
 typedef struct SceneMesh {
@@ -43,6 +46,7 @@ typedef struct SceneHeader {
     unsigned char skyTop[3];
     unsigned char skyBottom[3];
     int flags;
+    Texture skyTexture;
 } SceneHeader;
 
 typedef struct SceneBlock {
@@ -59,6 +63,10 @@ typedef struct Environment {
     GLfloat fogNear;
     GLfloat fogFar;
     int flags;
+    sprite_t *skySprite;
+    Texture skyboxTextureID;
+    unsigned char texGen;
+    GLuint textureSegments[32];
 } Environment;
 
 extern SceneBlock *sCurrentScene;

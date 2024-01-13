@@ -22,4 +22,5 @@ const TextureInfo sTextureIDs[] = {
 {"rocksurface4.ci4", 0},
 {"mountainsidebottom.ci4", 0},
 {"broijustwantcolour.ci4", 0},
+{"skybox1.rgba16", 0},
 };

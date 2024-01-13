@@ -38,6 +38,7 @@ static void setup_fog(SceneHeader *header) {
     if (gEnvironment == NULL) {
         gEnvironment = malloc(sizeof(Environment));
     }
+    bzero(gEnvironment, sizeof(Environment));
     gEnvironment->fogColour[0] = ((float) header->fogColour[0]) / 255.0f;
     gEnvironment->fogColour[1] = ((float) header->fogColour[1]) / 255.0f;
     gEnvironment->fogColour[2] = ((float) header->fogColour[2]) / 255.0f;
@@ -53,6 +54,7 @@ static void setup_fog(SceneHeader *header) {
     gEnvironment->flags = header->flags;
     gEnvironment->fogNear = header->fogNear;
     gEnvironment->fogFar = header->fogFar;
+    gEnvironment->skyboxTextureID = header->skyTexture;
     glFogf(GL_FOG_START, gEnvironment->fogNear);
     glFogf(GL_FOG_END, gEnvironment->fogFar);
     glFogfv(GL_FOG_COLOR, gEnvironment->fogColour);
@@ -79,6 +81,12 @@ static void clear_scene(void) {
         free(gCamera);
     }
     if (gEnvironment) {
+        if (gEnvironment->texGen) {
+            for (int i = 0; i < 32; i++) {
+                glDeleteTextures(1, &gEnvironment->textureSegments[i]);
+            }
+            sprite_free(gEnvironment->skySprite);
+        }
         //free(gEnvironment);
     }
     if (sCurrentScene->model) {

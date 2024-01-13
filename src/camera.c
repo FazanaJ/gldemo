@@ -14,12 +14,9 @@
 #include "menu.h"
 #include "hud.h"
 
-Camera *gCamera;
+Camera *gCamera = NULL;
 
-void camera_init(void) {
-    gCamera = malloc(sizeof(Camera));
-    bzero(gCamera, sizeof(Camera));
-    
+void camera_reset(void) {
     gCamera->pitch = 0x3400;
     gCamera->zoom = 275;
     gCamera->intendedZoom = 275;
@@ -39,6 +36,12 @@ void camera_init(void) {
     gCamera->pos[0] = 5.0f;
     gCamera->pos[2] = 0.0f;
     gCamera->pos[1] = 1.0f;
+}
+
+void camera_init(void) {
+    gCamera = malloc(sizeof(Camera));
+    bzero(gCamera, sizeof(Camera));
+    camera_reset();
 }
 
 static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
