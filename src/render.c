@@ -506,8 +506,8 @@ static void render_shadow(float pos[3]) {
     if (sShadowBlock == NULL) {
         rspq_block_begin();
         glScalef(0.5f, 0.5f, 0.5f);
+        glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
         glBegin(GL_QUADS);
-        glColor3f(0, 0, 0);
         glTexCoord2f(2.048f, 0);        glVertex3f(5.0f, 0.0f, -5.0f);
         glTexCoord2f(0, 0);             glVertex3f(-5.0f, 0.0f, -5.0f);
         glTexCoord2f(0, 2.048f);        glVertex3f(-5.0f, 0.0f, 5.0f);

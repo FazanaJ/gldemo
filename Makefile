@@ -6,9 +6,9 @@ src += $(wildcard assets/*.c)
 overlay = $(wildcard src/overlays/*.c)
 scene = $(wildcard src/scenes/*.c)
 assets_ttf = $(wildcard assets/fonts/*.ttf) $(wildcard assets/archives/*.ttf)
-assets_png = $(wildcard assets/textures/character/*.png) $(wildcard assets/textures/environment/*.png) $(wildcard assets/archives/*.png)
-assets_png += $(wildcard assets/textures/hud/*.png) $(wildcard assets/textures/icons/*.png) $(wildcard assets/textures/misc/*.png)
-assets_png += $(wildcard assets/textures/props/*.png) $(wildcard assets/textures/skyboxes/*.png) $(wildcard assets/textures/talksprites/*.png)
+assets_png = $(wildcard assets/textures/character/*.png) $(wildcard assets/textures/environment/*.png) $(wildcard assets/archives/*.png) \
+			 $(wildcard assets/textures/hud/*.png) $(wildcard assets/textures/icons/*.png) $(wildcard assets/textures/misc/*.png) \
+			 $(wildcard assets/textures/props/*.png) $(wildcard assets/textures/skyboxes/*.png) $(wildcard assets/textures/talksprites/*.png)
 assets_wav = $(wildcard assets/sounds/*.wav)
 assets_gltf = $(wildcard assets/models/*.glb) $(wildcard assets/archives/*.glb)
 assets_xm1 = $(wildcard assets/xm/*.xm)
@@ -68,7 +68,7 @@ filesystem/%.sprite: assets/textures/icons/%.png
 filesystem/%.sprite: assets/textures/misc/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 3 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/textures/props/%.png
 	@mkdir -p $(dir $@)

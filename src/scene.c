@@ -20,13 +20,14 @@ char *sSceneTable[2] = {
     "testarea",
 };
 
-char sSceneTexIDs[][4] = {
+char sSceneTexIDs[][3] = {
     {TEXTURE_INTROSIGN, TEXTURE_KITCHENTILE, TEXTURE_INTEROSIGN2},
     {TEXTURE_STONE, TEXTURE_GRASS0, TEXTURE_WATER},
 };
 
-int sSceneMeshFlags[][4] = {
+int sSceneMeshFlags[][3] = {
     {MATERIAL_DEPTH_READ, 
+    MATERIAL_DEPTH_READ,
     MATERIAL_DEPTH_READ},
 
     {MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL, 

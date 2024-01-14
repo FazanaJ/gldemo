@@ -27,7 +27,7 @@ SceneHeader header = {
     /*Objects*/         objects, 
     /*Fog Near*/        150, 
     /*Fog Far*/         400, 
-    /*Fog Colour*/      {127, 220, 160},
+    /*Fog Colour*/      {125, 78, 37},
     /*Light Colour*/    {0xFF, 0xFF, 0xFF},
     /*Light Ambient*/   {0xFF, 0xFF, 0xFF},
     /*Sky Top*/         {108, 60, 24},
