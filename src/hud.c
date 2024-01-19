@@ -533,11 +533,11 @@ static void render_camera_hud(void) {
 }
 
 void render_hud(int updateRate, float updateRateF) {
+    DEBUG_SNAPSHOT_1();
     if (gCamera->mode == CAMERA_PHOTO) {
         render_camera_hud();
         return;
     }
-    DEBUG_SNAPSHOT_1();
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(0.0f, display_get_width(), display_get_height(), 0.0f, -1.0f, 1.0f);

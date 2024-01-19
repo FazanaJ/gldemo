@@ -118,7 +118,7 @@ void init_renderer(void) {
 
     if (gSortHeap == NULL) {
         gSortHeap = malloc(0x4000);
-        gSortPos = ((unsigned int) gSortHeap) + 0x3F80;
+        gSortPos = ((unsigned int) gSortHeap) + 0x3FF0;
     }
 }
 
@@ -425,27 +425,29 @@ static void render_sky_texture(Environment *e) {
         glEnable(GL_TEXTURE_2D);
         glDisable(GL_CULL_FACE);
         glColor3f(1, 1, 1);
-        for (int i = 0; i < 16; i++) {
-            short rot = (((gCamera->yaw) % 0xFFFF - 0x8000) - ((((0x10000 / 16) * i) + 0x8000)) % 0xFFFF - 0x8000);
-            if (fabs(rot) >= 0x4000) {
-                continue;
+        if (gCamera->viewPitch >= 0x2C00 || gCamera->mode == CAMERA_PHOTO) {
+            for (int i = 0; i < 16; i++) {
+                short rot = (((gCamera->yaw) % 0xFFFF - 0x8000) - ((((0x10000 / 16) * i) + 0x8000)) % 0xFFFF - 0x8000);
+                if (fabs(rot) >= 0x4000) {
+                    continue;
+                }
+                glBindTexture(GL_TEXTURE_2D, e->textureSegments[15 - i]);
+                float pX = 100.0f * sins((0x10000 / 16) * i);
+                float pZ = 100.0f * coss((0x10000 / 16) * i);
+                glBegin(GL_QUADS);
+                glTexCoord2f(1.024f, 0.0f);
+                glVertex3f(pX * 0.66f, 75, pZ * 0.66f);
+                glTexCoord2f(1.024f, 1.024f);
+                glVertex3f(pX, 0.0f, pZ);
+                pX = 100.0f * sins((0x10000 / 16) * (i + 1));
+                pZ = 100.0f * coss((0x10000 / 16) * (i + 1));
+                glTexCoord2f(0.0f, 1.024f);
+                glVertex3f(pX, 0.0f, pZ);
+                glTexCoord2f(0.0f, 0.0f);
+                glVertex3f(pX * 0.66f, 75, pZ * 0.66f);
+                glEnd();
+                gNumTextureLoads++;
             }
-            glBindTexture(GL_TEXTURE_2D, e->textureSegments[15 - i]);
-            float pX = 100.0f * sins((0x10000 / 16) * i);
-            float pZ = 100.0f * coss((0x10000 / 16) * i);
-            glBegin(GL_QUADS);
-            glTexCoord2f(1.024f, 0.0f);
-            glVertex3f(pX * 0.66f, 75, pZ * 0.66f);
-            glTexCoord2f(1.024f, 1.024f);
-            glVertex3f(pX, 0.0f, pZ);
-            pX = 100.0f * sins((0x10000 / 16) * (i + 1));
-            pZ = 100.0f * coss((0x10000 / 16) * (i + 1));
-            glTexCoord2f(0.0f, 1.024f);
-            glVertex3f(pX, 0.0f, pZ);
-            glTexCoord2f(0.0f, 0.0f);
-            glVertex3f(pX * 0.66f, 75, pZ * 0.66f);
-            glEnd();
-            gNumTextureLoads++;
         }
         
         for (int i = 0; i < 16; i++) {
@@ -627,7 +629,7 @@ static void pop_render_list(void) {
             glMultMatrixf((GLfloat *) renderList->matrix->m);
         }
         if (renderList->material) {
-            set_material(renderList->material, renderList->flags);
+            set_material(renderList->material, renderList->flags, 0);
         }
         rspq_block_run(renderList->block);
         glPopMatrix();
@@ -700,7 +702,7 @@ static void render_object_shadows(void) {
     ObjectList *list = gObjectListHead;
     Object *obj;
     
-    set_material(&gTempMaterials[2], MATERIAL_DECAL);
+    set_material(&gTempMaterials[2], MATERIAL_DECAL, 0);
     while (list) {
         obj = list->obj;
         if (obj->flags & OBJ_FLAG_IN_VIEW && (obj->flags & OBJ_FLAG_SHADOW || (gConfig.graphics == G_PERFORMANCE && obj->flags & OBJ_FLAG_SHADOW_DYNAMIC))) { 
@@ -722,7 +724,7 @@ static void render_object_shadows(void) {
     }
 
     list = gObjectListHead;
-    set_material(&gBlankMaterial, MATERIAL_DECAL | MATERIAL_XLU | MATERIAL_DEPTH_READ);
+    set_material(&gBlankMaterial, MATERIAL_DECAL | MATERIAL_XLU | MATERIAL_DEPTH_READ, 0);
     glEnable(GL_TEXTURE_2D);
     while (list) {
         obj = list->obj;
@@ -884,7 +886,7 @@ static void reset_shadow_perspective(void) {
         set_frustrum(-nearClip, nearClip, -nearClip, nearClip, nearClip, farClip);
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
-        set_material(&gBlankMaterial, MATERIAL_CAM_ONLY);
+        set_material(&gBlankMaterial, MATERIAL_CAM_ONLY, 0);
         glEnable(GL_RDPQ_MATERIAL_N64);
         rdpq_mode_antialias(AA_NONE);
         rdpq_mode_combiner(RDPQ_COMBINER_FLAT);

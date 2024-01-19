@@ -48,7 +48,7 @@ filesystem/%.font64: assets/archives/%.ttf
 filesystem/%.sprite: assets/textures/character/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) --compress 3 -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/textures/environment/%.png
 	@mkdir -p $(dir $@)
@@ -68,12 +68,12 @@ filesystem/%.sprite: assets/textures/icons/%.png
 filesystem/%.sprite: assets/textures/misc/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) --compress 3 -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/textures/props/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) --compress 3 -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/textures/skyboxes/%.png
 	@mkdir -p $(dir $@)
@@ -98,7 +98,7 @@ filesystem/%.wav64: assets/sounds/%.wav
 filesystem/%.wav64: assets/opus/%.wav
 	@mkdir -p $(dir $@)
 	@echo "    [AUDIO] $@"
-	@$(N64_AUDIOCONV) --wav-compress 3 --wav-resample 16025 -o filesystem $<
+	@$(N64_AUDIOCONV) --wav-compress 3 --wav-resample 12000 -o filesystem $<
 
 filesystem/%.xm64: assets/xm/%.xm
 	@mkdir -p $(dir $@)

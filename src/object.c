@@ -390,9 +390,11 @@ static void load_object_model(Object *obj, int objectID) {
             if (modelID == 1) {
                 m->material.flags = playerModelFlags[i][j] | MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_LIGHTING;
                 m->material.textureID = playerModelTextures[i][j];
+                m->material.combiner = 0;
             } else {
                 m->material.flags = MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_LIGHTING | MATERIAL_VTXCOL;
                 m->material.textureID = -1;
+                m->material.combiner = 0;
             }
             m->material.index = NULL;
             m->next = NULL;

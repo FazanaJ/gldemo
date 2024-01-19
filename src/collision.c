@@ -119,6 +119,8 @@ typedef struct ModelPrim {
 
 void object_collide(Object *obj) {
     DEBUG_SNAPSHOT_1();
+    return;
+    // FIXME
 
     SceneMesh *mesh = sCurrentScene->meshList;
     float peakY = 0;

@@ -91,7 +91,7 @@ void talk_update(int updateRate) {
     }
     TalkControl *t = gTalkControl;
     
-    if (t->curChar == t->endChar && get_input_pressed(INPUT_B, 3) && t->curLine != 0) {
+    if (t->curChar == t->endChar && get_input_pressed(INPUT_B, 5) && t->curLine != 0) {
         TalkText *curText = t->curText;
         if (t->optionsVisible) {
             t->optionsVisible = false;
@@ -139,7 +139,7 @@ void talk_update(int updateRate) {
         int optCount = opt[0].nextID;
         handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &t->curOption, 0, 0, 0, optCount);
     }
-    if (get_input_pressed(INPUT_A, 3)) {
+    if (get_input_pressed(INPUT_A, 5)) {
         if (t->curChar < t->endChar) {
             t->curChar = t->endChar;
         } else {
