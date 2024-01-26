@@ -44,6 +44,18 @@ void camera_init(void) {
     camera_reset();
 }
 
+void camera_shake(Camera *c, int updateRate, float updateRateF) {
+    if (c->shakeTimer > 0) {
+        c->shakeTimer -= updateRate;
+        float strength = (float) c->shakeTimer / (float) c->shakeLength;
+        float shakeSine = ((float) c->shakeStrength * 0.025f) * sins(gGlobalTimer * (0x400 * c->shakeSpeed));
+
+        c->shakePos = shakeSine * strength;
+    } else {
+        c->shakePos = 0.0f;
+    }
+}
+
 static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
     float zoom;
     float stickX = get_stick_x(STICK_LEFT);
@@ -52,6 +64,7 @@ static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
     PlayerData *data = (PlayerData *) c->parent->data;
 
     if (gMenuStatus == MENU_CLOSED) {
+        camera_shake(c, updateRate, updateRateF);
         if (get_input_held(INPUT_Z)) {
             c->yawTarget = data->cameraAngle + 0x8000;
             INCREASE_VAR(gZTargetTimer, updateRate * 4, timer_int(20));
@@ -140,11 +153,19 @@ static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
 
     c->focus[0] = intendedFocus[0] + c->lookFocus[0];
     c->focus[2] = intendedFocus[2] + c->lookFocus[2];
-    c->focus[1] = intendedFocus[1] + c->lookFocus[1] + 10.0f;
+    c->focus[1] = intendedFocus[1] + c->lookFocus[1] + 10.0f + c->shakePos;
 
     c->pos[0] = intendedFocus[0] + ((zoom) * coss(c->yaw - 0x4000));
     c->pos[2] = intendedFocus[2] - ((zoom) * sins(c->yaw - 0x4000));
-    c->pos[1] = intendedFocus[1] + 10.0f + (11.5f * sins(c->viewPitch + 0x4000));
+    c->pos[1] = intendedFocus[1] + 10.0f + (11.5f * sins(c->viewPitch + 0x4000)) + (c->shakePos * 1.25f);
+
+    if (get_input_held(INPUT_R)) {
+        clear_input(INPUT_R);
+        c->shakeSpeed = 15;
+        c->shakeStrength = 10;
+        c->shakeTimer = 90;
+        c->shakeLength = 90;
+    }
 }
 
 static void camera_update_photo(Camera *c, int updateRate, float updateRateF) {

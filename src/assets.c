@@ -45,13 +45,12 @@ void init_materials(void) {
 #endif
     rspq_block_begin();
     glDisable(GL_ALPHA_TEST);
-    glEnable(GL_BLEND);
+    glDisable(GL_BLEND);
     glDepthMask(GL_FALSE);
-    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_DEPTH_TEST);
     glDisable(GL_COLOR_MATERIAL);
     glDepthFunc(GL_LESS);
     glEnable(GL_CULL_FACE);
-    glEnable(GL_TEXTURE_2D);
     sParticleMaterialBlock = rspq_block_end();
 }
 
@@ -234,7 +233,7 @@ void set_particle_render_settings(void) {
     }
 }
 
-static void set_render_settings(int flags) {
+static void material_mode(int flags) {
     if (flags & MATERIAL_CUTOUT) {
         if (!sRenderSettings.cutout) {
             glEnable(GL_ALPHA_TEST);
@@ -318,10 +317,12 @@ static void set_render_settings(int flags) {
         if (!sRenderSettings.decal) {
             glDepthFunc(GL_EQUAL);
             sRenderSettings.decal = true;
+            sRenderSettings.inter = false;
         }
     } else if (flags & MATERIAL_INTER) {
         if (!sRenderSettings.inter) {
             glDepthFunc(GL_LESS_INTERPENETRATING_N64);
+            sRenderSettings.decal = false;
             sRenderSettings.inter = true;
         }
     } else {
@@ -334,7 +335,7 @@ static void set_render_settings(int flags) {
     sPrevRenderFlags = flags;
 }
 
-static void texture_load(Material *m) {
+static void material_texture(Material *m) {
     if (m->textureID != -1) {
         if (load_texture(m) == -1) {
             return;
@@ -358,39 +359,23 @@ static void texture_load(Material *m) {
     }
 }
 
-static void combiner_set(int combiner) {
+static void material_combiner(int combiner) {
     rdpq_set_combiner_raw(combiner);
     sPrevCombiner = combiner;
 }
 
-void set_material(Material *material, int flags, int combiner) {
+void material_set(Material *material, int flags, int combiner) {
     DEBUG_SNAPSHOT_1();
     flags |= material->flags;
     combiner |= material->combiner;
     if (sPrevTextureID != material->textureID) {
-        texture_load(material);
+        material_texture(material);
     }
     if (sPrevRenderFlags != flags) {
-        set_render_settings(flags);
+        material_mode(flags);
     }
     if (sPrevCombiner != combiner) {
-        combiner_set(combiner);
-    }
-    get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
-}
-
-void set_texture(Material *material) {
-    DEBUG_SNAPSHOT_1();
-    if (material->textureID != -1 && sPrevTextureID != material->textureID) {
-        //if (material->index == NULL) {
-            if (load_texture(material) == -1) {
-                get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
-                return;
-            }
-        //}
-        material->index->loadTimer = 10;
-        sPrevTextureID = material->textureID;
-        glBindTexture(GL_TEXTURE_2D, material->index->texture);
+        material_combiner(combiner);
     }
     get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
 }

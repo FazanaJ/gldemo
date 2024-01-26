@@ -15,6 +15,7 @@
 #include "talk.h"
 #include "scene.h"
 #include "camera.h"
+#include "render.h"
 
 static sprite_t *sHealthSprite;
 static rspq_block_t *sHealthBlock;
@@ -538,11 +539,7 @@ void render_hud(int updateRate, float updateRateF) {
         render_camera_hud();
         return;
     }
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0.0f, display_get_width(), display_get_height(), 0.0f, -1.0f, 1.0f);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    matrix_ortho();
     if (gPlayer) {
         render_ztarget();
         render_health(updateRateF);

@@ -38,3 +38,4 @@ extern rspq_block_t *sRenderSkyBlock;
 
 void init_renderer(void);
 void render_game(int updateRate, float updateRateF);
+void matrix_ortho(void);

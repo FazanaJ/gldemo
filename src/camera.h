@@ -8,6 +8,7 @@ typedef struct Camera {
 	float pos[3];
 	float focus[3];
 	float lookFocus[3];
+	float shakePos;
 	float fov;
 	short pan;
 	short zoom;
@@ -24,6 +25,10 @@ typedef struct Camera {
 	short flags;
 	char mode;
 	char moveTimer;
+	char shakeTimer;
+	char shakeLength;
+	unsigned char shakeSpeed;
+	unsigned char shakeStrength;
 } Camera;
 
 #define CAMERA_CUTSCENE 0

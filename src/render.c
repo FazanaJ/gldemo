@@ -42,10 +42,11 @@ unsigned int gSortPos;
 float gHalfFovHor;
 float gHalfFovVert;
 
+Material gBlobShadowMat = {NULL, TEXTURE_SHADOW, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_XLU, 0};
+
 Material gTempMaterials[] = {
-    {NULL, 0, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL},
-    {NULL, 2, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_VTXCOL},
-    {NULL, 3, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_XLU | MATERIAL_VTXCOL},
+    {NULL, 0, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL, 0},
+    {NULL, 2, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_VTXCOL, 0},
 };
 
 light_t lightNeutral = {
@@ -352,6 +353,14 @@ static void project_camera(void) {
     mtx_lookat(c->pos[0], c->pos[1], c->pos[2], c->focus[0], c->focus[1], c->focus[2], 0.0f, 1.0f, 0.0f);
 }
 
+void matrix_ortho(void) {
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0.0f, display_get_width(), display_get_height(), 0.0f, -1.0f, 1.0f);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+
 static void render_sky_gradient(Environment *e) {
     DEBUG_SNAPSHOT_1();
     if (sRenderSkyBlock == NULL) {
@@ -359,13 +368,8 @@ static void render_sky_gradient(Environment *e) {
         int height = display_get_height();
         rspq_block_begin();
         glDisable(GL_DEPTH_TEST);
-        glMatrixMode(GL_PROJECTION);
         glDisable(GL_MULTISAMPLE_ARB);
-        glLoadIdentity();
-        glOrtho(0.0f, width, height, 0.0f, -1.0f, 1.0f);
-
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
+        matrix_ortho();
         glBegin(GL_QUADS);
         glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
         glVertex2i(0, 0);
@@ -472,7 +476,6 @@ static void render_sky_texture(Environment *e) {
             glEnd();
             gNumTextureLoads++;
         }
-        gNumTextureLoads += 32;
         glPopMatrix();
     }
     get_time_snapshot(PP_BG, DEBUG_SNAPSHOT_1_END);
@@ -629,7 +632,7 @@ static void pop_render_list(void) {
             glMultMatrixf((GLfloat *) renderList->matrix->m);
         }
         if (renderList->material) {
-            set_material(renderList->material, renderList->flags, 0);
+            material_set(renderList->material, renderList->flags, 0);
         }
         rspq_block_run(renderList->block);
         glPopMatrix();
@@ -647,12 +650,14 @@ static void render_particles(void) {
     DEBUG_SNAPSHOT_1();
     ParticleList *list = gParticleListHead;
     Particle *particle;
+
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
     
     while (list) {
         particle = list->particle;
         glPushMatrix();
         if (particle->material) {
-            set_texture(particle->material);
+            material_set(particle->material, 0, 0);
         }
         Matrix mtx;
         mtx_billboard(&mtx, particle->pos[0], particle->pos[1], particle->pos[2]);
@@ -702,7 +707,7 @@ static void render_object_shadows(void) {
     ObjectList *list = gObjectListHead;
     Object *obj;
     
-    set_material(&gTempMaterials[2], MATERIAL_DECAL, 0);
+    material_set(&gBlobShadowMat, MATERIAL_DECAL, 0);
     while (list) {
         obj = list->obj;
         if (obj->flags & OBJ_FLAG_IN_VIEW && (obj->flags & OBJ_FLAG_SHADOW || (gConfig.graphics == G_PERFORMANCE && obj->flags & OBJ_FLAG_SHADOW_DYNAMIC))) { 
@@ -724,7 +729,7 @@ static void render_object_shadows(void) {
     }
 
     list = gObjectListHead;
-    set_material(&gBlankMaterial, MATERIAL_DECAL | MATERIAL_XLU | MATERIAL_DEPTH_READ, 0);
+    material_set(&gBlankMaterial, MATERIAL_DECAL | MATERIAL_XLU | MATERIAL_DEPTH_READ, 0);
     glEnable(GL_TEXTURE_2D);
     while (list) {
         obj = list->obj;
@@ -886,7 +891,7 @@ static void reset_shadow_perspective(void) {
         set_frustrum(-nearClip, nearClip, -nearClip, nearClip, nearClip, farClip);
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
-        set_material(&gBlankMaterial, MATERIAL_CAM_ONLY, 0);
+        material_set(&gBlankMaterial, MATERIAL_CAM_ONLY, 0);
         glEnable(GL_RDPQ_MATERIAL_N64);
         rdpq_mode_antialias(AA_NONE);
         rdpq_mode_combiner(RDPQ_COMBINER_FLAT);

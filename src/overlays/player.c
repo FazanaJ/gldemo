@@ -83,18 +83,22 @@ void loop(Object *obj, int updateRate, float updateRateF) {
             play_sound_spatial_pitch(SOUND_CANNON, obj->pos, 1.0f);
             for (int i = 0; i < 7; i++) {
                 part = spawn_particle(OBJ_NULL, obj->pos[0], obj->pos[1] + 5.0f, obj->pos[2]);
-                part->yVel = 0.0f;
-                part->yVelIncrease = 0.01f;
+                part->yVel = random_float() * 0.02f;
+                part->yVelIncrease = 0.0075f;
                 part->moveAngle = random_float() * 0x10000;
-                part->forwardVel = 0.5f;
+                part->forwardVel = (random_float() * 0.2f) + 0.3f;
                 part->forwardVelIncrease = -0.025f;
                 part->timer = 120;
-                part->scale[0] = 0.2f;
-                part->scale[1] = 0.2f;
-                part->scale[2] = 0.2f;
-                part->scaleIncrease[0] = 0.005f;
-                part->scaleIncrease[1] = 0.005f;
-                part->scaleIncrease[2] = 0.005f;
+                part->material = malloc(sizeof(Material));
+                part->material->textureID = TEXTURE_HEALTH;
+                part->material->flags = MATERIAL_XLU | MATERIAL_FOG | MATERIAL_DEPTH_READ | MATERIAL_CUTOUT;
+                part->material->combiner = 0;
+                part->scale[0] = 0.1f;
+                part->scale[1] = 0.1f;
+                part->scale[2] = 0.1f;
+                part->scaleIncrease[0] = 0.001f;
+                part->scaleIncrease[1] = 0.001f;
+                part->scaleIncrease[2] = 0.0025f;
             }
         }
     }
