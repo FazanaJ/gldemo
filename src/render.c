@@ -401,6 +401,7 @@ extern const TextureInfo sTextureIDs[];
 
 static void render_sky_texture(Environment *e) {
     DEBUG_SNAPSHOT_1();
+    e->skyTimer = 10;
     if (e->texGen == false) {
         e->skySprite = sprite_load(asset_dir(sTextureIDs[e->skyboxTextureID].file, DFS_SPRITE));
         surface_t surf = sprite_get_pixels(e->skySprite);
@@ -1155,6 +1156,16 @@ void render_game(int updateRate, float updateRateF) {
         rdpq_tex_blit(&gScreenshot, 0, 0, NULL);
         rdpq_set_mode_standard();
         rdpq_mode_dithering(DITHER_NONE_NONE);
+    }
+    if (gEnvironment->texGen) {
+        gEnvironment->skyTimer -= updateRate;
+        if (gEnvironment->skyTimer <= 0) {
+            for (int i = 0; i < 32; i++) {
+                glDeleteTextures(1, &gEnvironment->textureSegments[i]);
+            }
+            sprite_free(gEnvironment->skySprite);
+            gEnvironment->texGen = false;
+        }
     }
     get_time_snapshot(PP_RENDER, DEBUG_SNAPSHOT_1_END);
     if (gScreenshotStatus <= SCREENSHOT_NONE) {
