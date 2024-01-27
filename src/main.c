@@ -104,7 +104,7 @@ int main(void) {
         DEBUG_SNAPSHOT_1();
 
         update_game_time(&updateRate, &updateRateF);
-        cycle_textures(updateRate);
+        asset_cycle(updateRate);
         update_inputs(updateRate);
         if (gTalkControl == NULL) {
             update_game_entities(updateRate, updateRateF);

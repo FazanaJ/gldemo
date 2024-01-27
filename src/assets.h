@@ -109,7 +109,7 @@ extern rdpq_font_t *gFonts[FONT_TOTAL];
 
 void setup_textures(GLuint textures[], sprite_t *sprites[], const char *texture_path[], int texture_number);
 void material_set(Material *material, int flags, int combiner);
-void cycle_textures(int updateRate);
+void asset_cycle(int updateRate);
 void init_materials(void);
 void set_particle_render_settings(void);
 char *asset_dir(char *dir, int format);

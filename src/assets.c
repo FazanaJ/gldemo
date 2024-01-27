@@ -184,18 +184,17 @@ static void free_material(MaterialList *material) {
 #endif
 }
 
-void cycle_textures(int updateRate) {
+void asset_cycle(int updateRate) {
     DEBUG_SNAPSHOT_1();
     if (gMaterialListHead == NULL) {
         get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
         return;
     }
-    MaterialList *list = gMaterialListHead;
-
-    while (list) {
-        MaterialList *curList = list;
-        list->loadTimer -= updateRate;
-        list = list->next;
+    MaterialList *matList = gMaterialListHead;
+    while (matList) {
+        MaterialList *curList = matList;
+        matList->loadTimer -= updateRate;
+        matList = matList->next;
         if (curList->loadTimer <= 0) {
             free_material(curList);
             break;
@@ -207,6 +206,16 @@ void cycle_textures(int updateRate) {
     sPrevTextureID = 0;
     sPrevRenderFlags = 0;
     bzero(&sRenderSettings, sizeof(RenderSettings));
+    if (gEnvironment->texGen) {
+        gEnvironment->skyTimer -= updateRate;
+        if (gEnvironment->skyTimer <= 0) {
+            for (int i = 0; i < 32; i++) {
+                glDeleteTextures(1, &gEnvironment->textureSegments[i]);
+            }
+            sprite_free(gEnvironment->skySprite);
+            gEnvironment->texGen = false;
+        }
+    }
     get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
 }
 
