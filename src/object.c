@@ -67,6 +67,7 @@ static void init_object_behaviour(Object *obj, int objectID) {
     }
 
     if (addr == NULL) {
+        debugf("Loading overlay [%s]\n", sObjectOverlays[objectID]);
         list = malloc(sizeof(VoidList));
         if (gOverlayListHead == NULL) {
             gOverlayListHead = list;
@@ -82,7 +83,6 @@ static void init_object_behaviour(Object *obj, int objectID) {
         list->id = objectID;
         list->next = NULL;
         list->timer = 10;
-        debugf("Loading overlay [%s]\n", sObjectOverlays[objectID]);
 #ifdef PUPPYPRINT_DEBUG
         gNumOverlays++;
 #endif
@@ -119,6 +119,7 @@ static void check_unused_model(Object *obj) {
         objList = objList->next;
     }
     
+    debugf("Freeing model [%s]\n", gModelIDs[obj->gfx->modelID - 1]);
     if (obj->gfx->listEntry == gModelIDListHead) {
         if (gModelIDListHead->next) {
             gModelIDListHead = gModelIDListHead->next;
@@ -144,7 +145,6 @@ static void check_unused_model(Object *obj) {
         free(m);
     }
     model64_free(obj->gfx->listEntry->model64);
-    debugf("Freed model [%s]\n", gModelIDs[obj->gfx->modelID - 1]);
     free(obj->gfx->listEntry);
 #ifdef PUPPYPRINT_DEBUG
         gNumModels--;
@@ -163,6 +163,7 @@ static void check_unused_overlay(Object *obj, VoidList *overlay) {
         objList = objList->next;
     }
 
+    debugf("Freeing overlay [%s]\n", sObjectOverlays[overlay->id]);
     if (overlay == gOverlayListHead) {
         if (gOverlayListHead->next) {
             gOverlayListHead = gOverlayListHead->next;
@@ -180,7 +181,6 @@ static void check_unused_overlay(Object *obj, VoidList *overlay) {
         }
     }
     dlclose(overlay->addr);
-    debugf("Freed overlay [%s]\n", sObjectOverlays[overlay->id]);
     free(overlay);
 #ifdef PUPPYPRINT_DEBUG
         gNumOverlays--;
@@ -377,6 +377,7 @@ static void load_object_model(Object *obj, int objectID) {
     }
     gModelIDListTail = list;
 
+    debugf("Loading model [%s]\n", gModelIDs[modelID - 1]);
     list->model64 = model64_load(asset_dir(gModelIDs[modelID - 1], DFS_MODEL64));
     list->entry = NULL;
     int numMeshes = model64_get_mesh_count(list->model64);
@@ -421,7 +422,6 @@ static void load_object_model(Object *obj, int objectID) {
 #ifdef PUPPYPRINT_DEBUG
         gNumModels++;
 #endif
-    debugf("Loading model [%s]\n", gModelIDs[modelID - 1]);
     list->next = NULL;
     list->timer = 10;
     list->id = modelID;
@@ -542,13 +542,13 @@ Particle *spawn_particle(int particleID, float x, float y, float z) {
 
 void free_dynamic_shadow(Object *obj) {
     DynamicShadow *d = obj->gfx->dynamicShadow;
+    debugf("Freeing dynamic shadow for [%s] object.\n", sObjectOverlays[obj->objectID]);
     surface_free(&d->surface);
     for (int i = 0; i < d->texCount; i++) {
         glDeleteTextures(1, &d->tex[i]);
     }
     free(obj->gfx->dynamicShadow);
     obj->gfx->dynamicShadow = NULL;
-    debugf("Freeing dynamic shadow for [%s] object.\n", sObjectOverlays[obj->objectID]);
 }
 
 /**

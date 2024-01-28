@@ -403,6 +403,7 @@ static void render_sky_texture(Environment *e) {
     DEBUG_SNAPSHOT_1();
     e->skyTimer = 10;
     if (e->texGen == false) {
+        debugf("Loading texture: %s.\n", sTextureIDs[e->skyboxTextureID].file);
         e->skySprite = sprite_load(asset_dir(sTextureIDs[e->skyboxTextureID].file, DFS_SPRITE));
         surface_t surf = sprite_get_pixels(e->skySprite);
         int x = 0;

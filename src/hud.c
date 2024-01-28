@@ -557,7 +557,6 @@ void render_hud(int updateRate, float updateRateF) {
     }
 
     transition_render();
-
     talk_render();
 
     if (gCurrentController == -1) {

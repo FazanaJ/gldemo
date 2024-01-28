@@ -144,6 +144,7 @@ static int load_texture(Material *material) {
         gMaterialListTail = gMaterialListTail->next;
     }
     list->next = NULL;
+    debugf("Loading texture: %s.\n", sTextureIDs[material->textureID].file);
     list->sprite = sprite_load(asset_dir(sTextureIDs[material->textureID].file, DFS_SPRITE));
     list->textureID = material->textureID;
     glGenTextures(1, &list->texture);
@@ -196,6 +197,7 @@ void asset_cycle(int updateRate) {
         matList->loadTimer -= updateRate;
         matList = matList->next;
         if (curList->loadTimer <= 0) {
+            debugf("Freeing texture: %s.\n", sTextureIDs[curList->textureID].file);
             free_material(curList);
             break;
         }
@@ -209,6 +211,7 @@ void asset_cycle(int updateRate) {
     if (gEnvironment->texGen) {
         gEnvironment->skyTimer -= updateRate;
         if (gEnvironment->skyTimer <= 0) {
+            debugf("Freeing texture: %s.\n", sTextureIDs[gEnvironment->skyboxTextureID].file);
             for (int i = 0; i < 32; i++) {
                 glDeleteTextures(1, &gEnvironment->textureSegments[i]);
             }

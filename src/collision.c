@@ -114,13 +114,14 @@ typedef struct ModelPrim {
     uint32_t index_type;            ///< Data type of indices (for example GL_UNSIGNED_SHORT)
     uint32_t num_vertices;          ///< Number of vertices
     uint32_t num_indices;           ///< Number of indices
+    uint32_t local_texture;         ///< Texture index in this model
+    uint32_t shared_texture;        ///< A shared texture index between other models
     void *indices;                  ///< Pointer to the first index value. If NULL, indices are not used
 } ModelPrim;
 
 void object_collide(Object *obj) {
     DEBUG_SNAPSHOT_1();
     return;
-    // FIXME
 
     SceneMesh *mesh = sCurrentScene->meshList;
     float peakY = 0;

@@ -161,11 +161,11 @@ void loop(Object *obj, int updateRate, float updateRateF) {
 }
 
 DynamicShadowData shadow = {
-    128,
-    192,
-    20.0f,
-    45.0f,
-    -7.0f
+    .texW = 128,
+    .texH = 192,
+    .planeW = 20.0f,
+    .planeH = 45.0f,
+    .offset = -7.0f;
 };
 
 ObjectEntry entry = {
