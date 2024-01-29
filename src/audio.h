@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../include/global.h"
 #include "object.h"
 
 #define MIXER_BUFFER_SIZE 2

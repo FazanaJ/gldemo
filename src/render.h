@@ -2,7 +2,9 @@
 
 #include <GL/gl.h>
 #include <GL/gl_integration.h>
+#include "../include/global.h"
 #include "assets.h"
+#include "object.h"
 
 typedef struct {
 
@@ -35,6 +37,11 @@ typedef struct RenderList {
 } RenderList;
 
 extern rspq_block_t *sRenderSkyBlock;
+extern RenderSettings gRenderSettings;
+extern int gPrevRenderFlags;
+extern int gPrevTextureID;
+extern int gPrevCombiner;
+extern rspq_block_t *gParticleMaterialBlock;
 
 void init_renderer(void);
 void render_game(int updateRate, float updateRateF);

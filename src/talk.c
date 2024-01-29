@@ -62,8 +62,6 @@ void talk_open(int convoID) {
     gTalkControl->textSpeed = 2;
     gTalkControl->curText = gConversationTable[convoID];
     gTalkControl->curLine = 0;
-    gTalkControl->talkSpriteX1 = 64;
-    gTalkControl->talkSpriteY2 = 0;
     TalkText *curText = gTalkControl->curText;
     if (curText[gTalkControl->curLine].soundID != VOICE_NULL) {
         voice_play(curText[gTalkControl->curLine].soundID, false);
@@ -231,27 +229,12 @@ static void talk_render_text(void) {
     }
 }
 
-TalkSpriteFrame sTestSprite = {
-    {SPRITE_BODY, 0, 0},
-    {SPRITE_EYES1, 32, 32},
-    {SPRITE_EYES2, 32, 40},
-    {SPRITE_NONE, 0, 0},
-    {SPRITE_NONE, 0, 0},
-    {SPRITE_NONE, 0, 0},
-};
-
-static void talksprite_render(void) {
-
-}
-
 void talk_render(void) {
     TalkControl *t = gTalkControl;
 
     if (t == false) {
         return;
     }
-
-    talksprite_render();
 
     if (t->talkBubbleBlock == false) {
         talk_generate_bubble();

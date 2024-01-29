@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../include/global.h"
 #include "object.h"
 
 typedef struct Camera {

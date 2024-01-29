@@ -165,7 +165,7 @@ DynamicShadowData shadow = {
     .texH = 192,
     .planeW = 20.0f,
     .planeH = 45.0f,
-    .offset = -7.0f;
+    .offset = -7.0f
 };
 
 ObjectEntry entry = {

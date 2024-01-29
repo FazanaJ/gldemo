@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../include/global.h"
+
 enum LogicRates {
     LOGIC_60FPS = 1,
     LOGIC_30FPS,

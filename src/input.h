@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../include/global.h"
+
 #define DEADZONE 10.0f
 
 enum InputButtons {

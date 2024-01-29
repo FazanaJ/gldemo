@@ -42,7 +42,7 @@ static void generate_health_block(int hpMin, int hpMax, int hpBase) {
     int newColour = 0;
     
     if (sHealthSprite == NULL) {
-        sHealthSprite = sprite_load(asset_dir("health.i8", DFS_SPRITE));
+        sHealthSprite = sprite_load(asset_dir(gTextureIDs[TEXTURE_HEALTH].file, DFS_SPRITE));
     }
 
     rspq_block_begin();
@@ -72,7 +72,7 @@ static void generate_health_block(int hpMin, int hpMax, int hpBase) {
     glDisable(GL_MULTISAMPLE_ARB);
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
     rdpq_set_prim_color(RGBA32(c[0], c[1], c[2], 192));
-    rdpq_mode_combiner(RDPQ_COMBINER_TEX_FLAT);
+    rdpq_set_combiner_raw(RDPQ_COMBINER1((TEX0,PRIM,TEX0,PRIM), (TEX0,0,PRIM,0)));
     surface_t surf = sprite_get_pixels(sHealthSprite);
     if (hpMin > 0) {
         for (i = 0; i < hpMin; i += 4) {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../include/global.h"
 #include "assets.h"
 
 enum TalkNameTable {
@@ -35,14 +36,8 @@ typedef struct TalkControl {
     unsigned char endChar;
     unsigned char optionsVisible;
     short curOption;
-    short talkSpriteX1;
-    short talkSpriteX2;
-    short talkSpriteY1;
-    short talkSpriteY2;
     TalkText *curText;
     rspq_block_t *talkBubbleBlock;
-    TalkSpriteFrame *leftSpeaker;
-    TalkSpriteFrame *rightSpeaker;
 } TalkControl;
 
 extern TalkControl *gTalkControl;

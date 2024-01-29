@@ -41,6 +41,11 @@ void *gSortHeap;
 unsigned int gSortPos;
 float gHalfFovHor;
 float gHalfFovVert;
+RenderSettings gRenderSettings;
+rspq_block_t *gParticleMaterialBlock;
+int gPrevRenderFlags;
+int gPrevTextureID;
+int gPrevCombiner;
 
 Material gBlobShadowMat = {NULL, TEXTURE_SHADOW, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_XLU, 0};
 
@@ -361,26 +366,180 @@ void matrix_ortho(void) {
     glLoadIdentity();
 }
 
+void set_particle_render_settings(void) {
+    rspq_block_run(gParticleMaterialBlock);
+    gRenderSettings.cutout = false;
+    gRenderSettings.xlu = true;
+    gRenderSettings.depthRead = true;
+    gRenderSettings.vertexColour = false;
+    gRenderSettings.inter = false;
+    gRenderSettings.decal = false;
+    gRenderSettings.backface = false;
+    gRenderSettings.texture = true;
+    if (gEnvironment->flags & ENV_FOG) {
+        if (!gRenderSettings.fog) {
+            glEnable(GL_FOG);
+            gRenderSettings.fog = true;
+        }
+    } else {
+        if (gRenderSettings.fog) {
+            glDisable(GL_FOG);
+            gRenderSettings.fog = false;
+        }
+    }
+}
+
+static void material_mode(int flags) {
+    if (flags & MATERIAL_CUTOUT) {
+        if (!gRenderSettings.cutout) {
+            glEnable(GL_ALPHA_TEST);
+            gRenderSettings.cutout = true;
+        }
+    } else {
+        if (gRenderSettings.cutout) {
+            glDisable(GL_ALPHA_TEST);
+            gRenderSettings.cutout = false;
+        }
+    }
+    if (flags & MATERIAL_XLU) {
+        if (!gRenderSettings.xlu) {
+            glEnable(GL_BLEND);
+            glDepthMask(GL_FALSE);
+            gRenderSettings.xlu = true;
+        }
+    } else {
+        if (gRenderSettings.xlu) {
+            glDisable(GL_BLEND);
+            glDepthMask(GL_TRUE);
+            gRenderSettings.xlu = false;
+        }
+    }
+    if (flags & MATERIAL_DEPTH_READ) {
+        if (!gRenderSettings.depthRead) {
+            glEnable(GL_DEPTH_TEST);
+            gRenderSettings.depthRead = true;
+        }
+    } else {
+        if (gRenderSettings.depthRead) {
+            glDisable(GL_DEPTH_TEST);
+            gRenderSettings.depthRead = false;
+        }
+    }
+    if (flags & MATERIAL_LIGHTING) {
+        if (!gRenderSettings.lighting) {
+            glEnable(GL_LIGHTING);
+            gRenderSettings.lighting = true;
+        }
+    } else {
+        if (gRenderSettings.lighting) {
+            glDisable(GL_LIGHTING);
+            gRenderSettings.lighting = false;
+        }
+    }
+    if (flags & MATERIAL_FOG && gEnvironment->flags & ENV_FOG) {
+        if (!gRenderSettings.fog) {
+            glEnable(GL_FOG);
+            gRenderSettings.fog = true;
+        }
+    } else {
+        if (gRenderSettings.fog) {
+            glDisable(GL_FOG);
+            gRenderSettings.fog = false;
+        }
+    }
+    if (flags & MATERIAL_VTXCOL) {
+        if (!gRenderSettings.vertexColour) {
+            glEnable(GL_COLOR_MATERIAL);
+            gRenderSettings.vertexColour = true;
+        }
+    } else {
+        if (gRenderSettings.vertexColour) {
+            glDisable(GL_COLOR_MATERIAL);
+            gRenderSettings.vertexColour = false;
+        }
+    }
+    if (flags & MATERIAL_BACKFACE) {
+        if (!gRenderSettings.backface) {
+            glDisable(GL_CULL_FACE);
+            gRenderSettings.backface = true;
+        }
+    } else {
+        if (gRenderSettings.backface) {
+            glEnable(GL_CULL_FACE);
+            gRenderSettings.backface = false;
+        }
+    }
+    if (flags & MATERIAL_DECAL) {
+        if (!gRenderSettings.decal) {
+            glDepthFunc(GL_EQUAL);
+            gRenderSettings.decal = true;
+            gRenderSettings.inter = false;
+        }
+    } else if (flags & MATERIAL_INTER) {
+        if (!gRenderSettings.inter) {
+            glDepthFunc(GL_LESS_INTERPENETRATING_N64);
+            gRenderSettings.decal = false;
+            gRenderSettings.inter = true;
+        }
+    } else {
+        if (gRenderSettings.inter || gRenderSettings.decal) {
+            glDepthFunc(GL_LESS);
+            gRenderSettings.inter = false;
+            gRenderSettings.decal = false;
+        }
+    }
+    gPrevRenderFlags = flags;
+}
+
+static void material_texture(Material *m) {
+    if (m->textureID != -1) {
+        if (load_texture(m) == -1) {
+            return;
+        }
+            
+        if (!gRenderSettings.texture) {
+            glEnable(GL_TEXTURE_2D);
+            gRenderSettings.texture = true;
+        }
+        m->index->loadTimer = 10;
+        glBindTexture(GL_TEXTURE_2D, m->index->texture);
+        gPrevTextureID = m->textureID;
+#ifdef PUPPYPRINT_DEBUG
+        gNumTextureLoads++;
+#endif
+    } else {
+        if (gRenderSettings.texture) {
+            glDisable(GL_TEXTURE_2D);
+            gRenderSettings.texture = false;
+        }
+    }
+}
+
+static void material_combiner(int combiner) {
+    rdpq_set_combiner_raw(combiner);
+    gPrevCombiner = combiner;
+}
+
+static void material_set(Material *material, int flags, int combiner) {
+    DEBUG_SNAPSHOT_1();
+    flags |= material->flags;
+    combiner |= material->combiner;
+    if (gPrevTextureID != material->textureID) {
+        material_texture(material);
+    }
+    if (gPrevRenderFlags != flags) {
+        material_mode(flags);
+    }
+    if (gPrevCombiner != combiner) {
+        material_combiner(combiner);
+    }
+    get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
+}
+
 static void render_sky_gradient(Environment *e) {
     DEBUG_SNAPSHOT_1();
     if (sRenderSkyBlock == NULL) {
-        int width = display_get_width();
-        int height = display_get_height();
-        rspq_block_begin();
-        glDisable(GL_DEPTH_TEST);
-        glDisable(GL_MULTISAMPLE_ARB);
-        matrix_ortho();
-        glBegin(GL_QUADS);
-        glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
-        glVertex2i(0, 0);
-        glColor3f(e->skyColourBottom[0], e->skyColourBottom[1], e->skyColourBottom[2]);
-        glVertex2i(0, height);
-        glVertex2i(width, height);
-        glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
-        glVertex2i(width, 0);
-        glColor3f(1, 1, 1);
-        glEnd();
-        sRenderSkyBlock = rspq_block_end();
+        sRenderSkyBlock = sky_gradient_generate(e);
     }
     if (gConfig.graphics != G_PERFORMANCE) {
         rspq_block_run(sRenderSkyBlock);
@@ -397,31 +556,11 @@ static void render_sky_gradient(Environment *e) {
     get_time_snapshot(PP_BG, DEBUG_SNAPSHOT_1_END);
 }
 
-extern const TextureInfo sTextureIDs[];
-
 static void render_sky_texture(Environment *e) {
     DEBUG_SNAPSHOT_1();
     e->skyTimer = 10;
     if (e->texGen == false) {
-        debugf("Loading texture: %s.\n", sTextureIDs[e->skyboxTextureID].file);
-        e->skySprite = sprite_load(asset_dir(sTextureIDs[e->skyboxTextureID].file, DFS_SPRITE));
-        surface_t surf = sprite_get_pixels(e->skySprite);
-        int x = 0;
-        int y = 0;
-        for (int i = 0; i < 32; i++) {
-            if (i == 16) {
-                y += 64;
-                x = 0;
-            }
-            glGenTextures(1, &e->textureSegments[i]);
-            glBindTexture(GL_TEXTURE_2D, e->textureSegments[i]);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            surface_t surfPiece = surface_make_sub(&surf, x, y, 32, 64);
-            glSurfaceTexImageN64(GL_TEXTURE_2D, 0, &surfPiece, &(rdpq_texparms_t){.s.repeats = false, .t.repeats = false});
-            x += 32;
-
-        }
+        sky_texture_generate(e);
         e->texGen = true;
     } else {
         Matrix mtx;
@@ -926,66 +1065,10 @@ static void generate_dynamic_shadows(void) {
         if (obj->flags & OBJ_FLAG_SHADOW_DYNAMIC && obj->flags & OBJ_FLAG_IN_VIEW && !(obj->flags & OBJ_FLAG_INVISIBLE) && obj->gfx) {
             if (obj->gfx->dynamicShadow == false) {
                 if (obj->header->dynamicShadow == NULL) {
-                    return;
+                    list = list->next;
+                    continue;
                 }
-                debugf("Allocating dynamic shadow for [%s] object.", sObjectOverlays[obj->objectID]);
-                obj->gfx->dynamicShadow = malloc(sizeof(DynamicShadow));
-                DynamicShadow *d = obj->gfx->dynamicShadow;
-                d->texW = obj->header->dynamicShadow->texW;
-                d->texH = obj->header->dynamicShadow->texH;
-                d->planeW = obj->header->dynamicShadow->planeW;
-                d->planeH = obj->header->dynamicShadow->planeH;
-                d->offset = obj->header->dynamicShadow->offset;
-                d->angle[0] = 0;
-                d->angle[1] = 0;
-                d->angle[2] = 0;
-                d->staleTimer = 10;
-                d->texCount = 0;
-                d->surface = surface_alloc(FMT_I8, d->texW, d->texH);
-                int w = 0;
-                int h = 0;
-                float frac = (float) d->texW / 64.0f;
-                if (frac <= 1.0f) {
-                    w = 1;
-                } else {
-                    float newFrac = frac - (int) frac;
-                    if (newFrac > 0.0f) {
-                        frac = (int) frac + 1;
-                    }
-                    w = frac;
-                }
-                frac = (float) d->texH / 64.0f;
-                if (frac <= 1.0f) {
-                    h = 1;
-                } else {
-                    float newFrac = frac - (int) frac;
-                    if (newFrac > 0.0f) {
-                        frac = (int) frac + 1;
-                    }
-                    h = frac;
-                }
-                d->acrossX = w;
-                d->acrossY = h;
-                d->texCount = w * h;
-                debugf("Texture count: %d\n", d->texCount);
-                int x = 0;
-                int y = 0;
-                int texLoads = d->texCount - 1;
-                int stepW = MIN(MIN(d->texW, 64), d->texW / w);
-                int stepH = MIN(MIN(d->texH, 64), d->texH / h);
-                for (int i = 0; i < h; i++) {
-                    x = 0;
-                    for (int j = 0; j < w; j++) {
-                        glGenTextures(1, &d->tex[texLoads]);
-                        glBindTexture(GL_TEXTURE_2D, d->tex[texLoads--]);
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                        surface_t surf = surface_make_sub(&d->surface, x, y, stepW, stepH);
-                        glSurfaceTexImageN64(GL_TEXTURE_2D, 0, &surf, &(rdpq_texparms_t){.s.repeats = true, .t.repeats = true});
-                        x += stepW;
-                    }
-                    y += stepH;
-                }
+                shadow_generate(obj);
             }
             rdpq_attach(&obj->gfx->dynamicShadow->surface, NULL);
             rdpq_clear(RGBA32(0, 0, 0, 0));

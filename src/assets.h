@@ -2,6 +2,9 @@
 
 #include <libdragon.h>
 #include <GL/gl.h>
+#include "../include/global.h"
+#include "scene.h"
+#include "object.h"
 
 enum MaterialFlags {
     MATERIAL_NULL,
@@ -48,36 +51,6 @@ enum FontList {
     FONT_TOTAL
 };
 
-typedef struct RenderSettings {
-    unsigned cutout : 1;
-    unsigned xlu : 1;
-    unsigned lighting : 1;
-    unsigned fog : 1;
-    unsigned envmap : 1;
-    unsigned depthRead : 1;
-    unsigned texture : 1;
-    unsigned vertexColour : 1;
-    unsigned decal : 1;
-    unsigned inter : 1;
-    unsigned backface : 1;
-} RenderSettings;
-
-typedef struct MaterialList {
-    struct MaterialList *next;
-    struct MaterialList *prev;
-    sprite_t *sprite;
-    GLuint texture;
-    short loadTimer;
-    short textureID;
-} MaterialList;
-
-typedef struct Material {
-    MaterialList *index;
-    short textureID;
-    short flags;
-    int combiner;
-} Material;
-
  typedef struct TextureInfo {
     char *file;
     unsigned char flags;
@@ -88,30 +61,25 @@ typedef struct Material {
     unsigned char frames;
 } __attribute__((__packed__)) SpriteInfo;
 
-typedef struct TalkSpriteElement {
-    unsigned short spriteID;
-    unsigned char x;
-    unsigned char y;
-} TalkSpriteElement;
-
-typedef struct TalkSpriteFrame {
-    TalkSpriteElement head;
-    TalkSpriteElement eyes;
-    TalkSpriteElement mouth;
-    TalkSpriteElement body;
-    TalkSpriteElement armLeft;
-    TalkSpriteElement armRight;
-} TalkSpriteFrame;
-
 extern short gNumTextures;
 extern short gNumTextureLoads;
+extern const TextureInfo gTextureIDs[];
 extern rdpq_font_t *gFonts[FONT_TOTAL];
 
 void setup_textures(GLuint textures[], sprite_t *sprites[], const char *texture_path[], int texture_number);
-void material_set(Material *material, int flags, int combiner);
 void asset_cycle(int updateRate);
 void init_materials(void);
-void set_particle_render_settings(void);
 char *asset_dir(char *dir, int format);
 void load_font(int fontID);
 void free_font(int fontID);
+int load_texture(Material *material);
+void shadow_generate(struct Object *obj);
+void sky_texture_generate(Environment *e);
+rspq_block_t *sky_gradient_generate(Environment *e);
+struct Object *allocate_object(void);
+struct Clutter *allocate_clutter(void);
+struct Particle *allocate_particle(void);
+void set_object_functions(struct Object *obj, int objectID);
+void free_object(struct Object *obj);
+void free_clutter(struct Clutter *clu);
+void free_particle(struct Particle *particle);

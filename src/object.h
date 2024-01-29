@@ -1,7 +1,7 @@
 #pragma once
 
+#include "../include/global.h"
 #include "object_data.h"
-#include "assets.h"
 #include "render.h"
 
 #define OBJ_DIST(x) (x >> 4)

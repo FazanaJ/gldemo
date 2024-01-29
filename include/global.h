@@ -1,8 +1,5 @@
 #pragma once
 
-#include "config.h"
-#include "enums.h"
-
 #define TEXTURE_NONE -1
 #define PACKED __attribute__((__packed__))
 
@@ -12,3 +9,7 @@
 #define SCREEN_HEIGHT 240
 
 typedef short Texture;
+
+#include "config.h"
+#include "enums.h"
+#include "types.h"

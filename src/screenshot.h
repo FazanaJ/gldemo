@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../include/global.h"
+
 extern char gScreenshotStatus;
 extern surface_t gScreenshot;
 extern sprite_t *gScreenshotSprite;

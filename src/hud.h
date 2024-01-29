@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../include/global.h"
+
 extern char gCameraHudToggle;
 
 enum TransitionType {

@@ -27,6 +27,7 @@
         "menu.h": "c",
         "texture_table.h": "c",
         "object_data.h": "c",
-        "talksprite_table.h": "c"
+        "talksprite_table.h": "c",
+        "scene.h": "c"
     }
 }

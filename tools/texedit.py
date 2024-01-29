@@ -135,7 +135,7 @@ def init_tex_list():
     enumFound = False
     for line in levelString:
         if enumFound == False:
-            ln2 = line.find("sTextureIDs")
+            ln2 = line.find("gTextureIDs")
             if not ln2 == -1:
                 enumFound = True
         else:
@@ -220,7 +220,7 @@ def write_textures():
         for number, line in enumerate(lines):
             # delete line number 5 and 8
             # note: list index start from 0
-            if (not line.find("sTextureIDs") == -1):
+            if (not line.find("gTextureIDs") == -1):
                 firstLine = line
             if (line.find("},") == -1 and line.find("};") == -1):
                 fp.write(line)

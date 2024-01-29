@@ -4,9 +4,9 @@
 
 #include "../src/assets.h"
 
-const TextureInfo sTextureIDs[] = {
+const TextureInfo gTextureIDs[] = {
 {"grass0.ci4", 0},
-{"health.i8", 3},
+{"health.ia4", 3},
 {"plant1.ia8", 6},
 {"shadow.i4", 12},
 {"stone.ci4", 0},

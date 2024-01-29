@@ -1,7 +1,7 @@
 #pragma once
 
-#include "assets.h"
 #include "../include/global.h"
+#include "assets.h"
 
 #define MAP_OBJ 0
 #define MAP_CLU 1
@@ -55,20 +55,6 @@ typedef struct SceneBlock {
     int sceneID;
     void *overlay;
 } SceneBlock;
-
-typedef struct Environment {
-    GLfloat fogColour[4];
-    GLfloat skyColourTop[4];
-    GLfloat skyColourBottom[4];
-    GLfloat fogNear;
-    GLfloat fogFar;
-    int flags;
-    sprite_t *skySprite;
-    Texture skyboxTextureID;
-    unsigned char texGen;
-    unsigned char skyTimer;
-    GLuint textureSegments[32];
-} Environment;
 
 extern SceneBlock *sCurrentScene;
 extern Environment *gEnvironment;

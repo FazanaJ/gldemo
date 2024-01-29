@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../include/global.h"
 
 #define SAVE_MAGIC_NUMBER 0x14 // ¡Qué grande eres magic!
 #define EXPECTED_MEMSIZE sizeof(ConfigBits)
