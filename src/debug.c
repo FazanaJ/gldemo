@@ -129,7 +129,7 @@ void render_profiler(void) {
         boxHeight += 8;
     }
     rdpq_fill_rectangle(8, 6, 96, 28 + boxHeight);
-    rdpq_fill_rectangle(8, gFrameBuffers->height - 42, 120, gFrameBuffers->height - 6);
+    rdpq_fill_rectangle(8, gFrameBuffers->height - 58, 120, gFrameBuffers->height - 6);
     boxHeight = 10;
     for (int i = 0; i < PP_TOTAL; i++) {
         if (i != PP_HALT && gDebugData->timer[i][TIME_TOTAL] > 1) {
@@ -162,6 +162,8 @@ void render_profiler(void) {
     rdpq_text_printf(NULL, FONT_ARIAL, 8, gFrameBuffers->height - 16, "Tex: %d | Loads: %d", gNumTextures, gNumTextureLoads);
     rdpq_text_printf(NULL, FONT_ARIAL, 8, gFrameBuffers->height - 24, "Obj: %d | Clu: %d | Par: %d", gNumObjects, gNumClutter, gNumParticles);
     rdpq_text_printf(NULL, FONT_ARIAL, 8, gFrameBuffers->height - 32, "Mtx: %d | Mdl: %d | Ovl: %d", gDebugData->matrixOps, gNumModels, gNumOverlays);
+    rdpq_text_printf(NULL, FONT_ARIAL, 8, gFrameBuffers->height - 40, "OPA: 0x%X", gSortRecord[0]);
+    rdpq_text_printf(NULL, FONT_ARIAL, 8, gFrameBuffers->height - 48, "XLU: 0x%X", gSortRecord[1]);
 }
 
 #endif

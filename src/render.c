@@ -21,10 +21,10 @@
 #include "screenshot.h"
 
 float gAspectRatio = 1.0f;
-RenderNode *gRenderNodeHead = NULL;
-RenderNode *gRenderNodeTail = NULL;
-RenderList *gMateriallistHead = NULL;
-RenderList *gMateriallistTail = NULL;
+RenderNode *gRenderNodeHead[DRAW_TOTAL];
+RenderNode *gRenderNodeTail[DRAW_TOTAL];
+RenderList *gMateriallistHead[DRAW_TOTAL];
+RenderList *gMateriallistTail[DRAW_TOTAL];
 RenderList *gPrevMatList = NULL;
 Matrix gBillboardMatrix;
 Matrix gScaleMatrix;
@@ -37,8 +37,8 @@ static rspq_block_t *sBeginModeBlock;
 static rspq_block_t *sParticleBlock;
 Material gOverrideMaterial;
 Material gBlankMaterial = {NULL, -1, MATERIAL_NULL};
-void *gSortHeap;
-unsigned int gSortPos;
+void *gSortHeap[DRAW_TOTAL];
+unsigned int gSortPos[DRAW_TOTAL];
 float gHalfFovHor;
 float gHalfFovVert;
 RenderSettings gRenderSettings;
@@ -46,6 +46,9 @@ rspq_block_t *gParticleMaterialBlock;
 int gPrevRenderFlags;
 int gPrevTextureID;
 int gPrevCombiner;
+#ifdef PUPPYPRINT_DEBUG
+int gSortRecord[DRAW_TOTAL];
+#endif
 
 Material gBlobShadowMat = {NULL, TEXTURE_SHADOW, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_XLU, 0};
 
@@ -60,6 +63,11 @@ light_t lightNeutral = {
     direction: {0, 0, 0x6000},
     position: {1.0f, 0.0f, 0.0f, 0.0f},
     radius: 10.0f,
+};
+
+const short sLayerSizes[DRAW_TOTAL] = {
+    0x3800, // Standard
+    0x800, // Semitransparent
 };
 
 
@@ -122,9 +130,11 @@ void init_renderer(void) {
     glScissor(0, 0, display_get_width(), display_get_height());
     sRenderEndBlock = rspq_block_end();
 
-    if (gSortHeap == NULL) {
-        gSortHeap = malloc(0x4000);
-        gSortPos = ((unsigned int) gSortHeap) + 0x3FF0;
+    for (int i = 0; i < DRAW_TOTAL; i++) {
+        if (gSortHeap[i] == NULL) {
+            gSortHeap[i] = malloc(sLayerSizes[i]);
+            gSortPos[i] = ((unsigned int) gSortHeap[i]) + (sLayerSizes[i] - 0x10);
+        }
     }
 }
 
@@ -203,18 +213,6 @@ static void mtx_lookat(float eyex, float eyey, float eyez, float centerx, float 
     gBillboardMatrix.m[3][3] = 1.0f;
 
     memcpy(&gViewMatrix, &m, sizeof(Matrix));
-
-    float aspect = display_get_width() / display_get_height();
-
-    gHalfFovVert = (gCamera->fov + 2.0f) * 180.0f + 0.5f;
-    gHalfFovHor = aspect * gHalfFovVert;
-    float cx, sx;
-    sx = sins(gHalfFovVert);
-    cx = coss(gHalfFovVert);
-    gHalfFovVert = sx / cx;
-    sx = sins(gHalfFovHor);
-    cx = coss(gHalfFovHor);
-    gHalfFovHor = sx / cx;
 
     glMultMatrixf(&m[0][0]);
     get_time_snapshot(PP_MATRIX, DEBUG_SNAPSHOT_1_END);
@@ -356,6 +354,17 @@ static void project_camera(void) {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     mtx_lookat(c->pos[0], c->pos[1], c->pos[2], c->focus[0], c->focus[1], c->focus[2], 0.0f, 1.0f, 0.0f);
+    float aspect = display_get_width() / display_get_height();
+
+    gHalfFovVert = (gCamera->fov + 2.0f) * 180.0f + 0.5f;
+    gHalfFovHor = aspect * gHalfFovVert;
+    float cx, sx;
+    sx = sins(gHalfFovVert);
+    cx = coss(gHalfFovVert);
+    gHalfFovVert = sx / cx;
+    sx = sins(gHalfFovHor);
+    cx = coss(gHalfFovHor);
+    gHalfFovHor = sx / cx;
 }
 
 void matrix_ortho(void) {
@@ -704,12 +713,12 @@ static void apply_render_settings(void) {
     }
 }
 
-static inline void find_material_list(RenderNode *node) {
+static inline void find_material_list(RenderNode *node, int layer) {
     // idk if this section is faster, yet.
     if (gPrevMatList && node->material->textureID == gPrevMatList->entryHead->material->textureID) {
         RenderList *list = gPrevMatList;
-        if (list->entryHead == gRenderNodeHead) {
-            gRenderNodeHead = node;
+        if (list->entryHead == gRenderNodeHead[layer]) {
+            gRenderNodeHead[layer] = node;
         } else {
             list->entryHead->prev->next = node;
         }
@@ -720,17 +729,17 @@ static inline void find_material_list(RenderNode *node) {
         return;
     }
     RenderList *matList;
-    if (gRenderNodeHead == NULL) {
-        gRenderNodeHead = node;
-        gSortPos -= sizeof(RenderList);
-        matList = (RenderList *) gSortPos;
-        gMateriallistHead = matList;
+    if (gRenderNodeHead[layer] == NULL) {
+        gRenderNodeHead[layer] = node;
+        gSortPos[layer] -= sizeof(RenderList);
+        matList = (RenderList *) gSortPos[layer];
+        gMateriallistHead[layer] = matList;
     } else {
-        RenderList *list = gMateriallistHead;
+        RenderList *list = gMateriallistHead[layer];
         while (list) {
             if (list->entryHead->material->textureID == node->material->textureID) {
-                if (list->entryHead == gRenderNodeHead) {
-                    gRenderNodeHead = node;
+                if (list->entryHead == gRenderNodeHead[layer]) {
+                    gRenderNodeHead[layer] = node;
                 } else {
                     list->entryHead->prev->next = node;
                 }
@@ -742,31 +751,34 @@ static inline void find_material_list(RenderNode *node) {
             }
             list = list->next;
         }
-        gSortPos -= sizeof(RenderList);
-        matList = (RenderList *) gSortPos;
-        gMateriallistTail->next = matList;
-        gRenderNodeTail->next = node;
+        gSortPos[layer] -= sizeof(RenderList);
+        matList = (RenderList *) gSortPos[layer];
+        gMateriallistTail[layer]->next = matList;
+        gRenderNodeTail[layer]->next = node;
     }
     node->next = NULL;
     matList->entryHead = node;
     matList->next = NULL;
-    gMateriallistTail = matList;
-    node->prev = gRenderNodeTail;
-    gRenderNodeTail = node;
+    gMateriallistTail[layer] = matList;
+    node->prev = gRenderNodeTail[layer];
+    gRenderNodeTail[layer] = node;
     gPrevMatList = matList;
 }
 
-static void add_render_node(RenderNode *entry, rspq_block_t *block, Material *material, int flags) {
+static void add_render_node(RenderNode *entry, rspq_block_t *block, Material *material, int flags, int layer) {
     DEBUG_SNAPSHOT_1();
     entry->block = block;
     entry->material = material;
     entry->flags = flags;
-    find_material_list(entry);
+    find_material_list(entry, layer);
     get_time_snapshot(PP_BATCH, DEBUG_SNAPSHOT_1_END);
 }
 
-static void pop_render_list(void) {
-    RenderNode *renderList = gRenderNodeHead;
+static void pop_render_list(int layer) {
+    if (gRenderNodeHead[layer] == NULL) {
+        return;
+    }
+    RenderNode *renderList = gRenderNodeHead[layer];
     while (renderList) {
         glPushMatrix();
         if (renderList->matrix) {
@@ -779,12 +791,18 @@ static void pop_render_list(void) {
         glPopMatrix();
         renderList = renderList->next;
     }
-    gRenderNodeHead = NULL;
-    gRenderNodeTail = NULL;
-    gMateriallistHead = NULL;
-    gMateriallistTail = NULL;
+    gRenderNodeHead[layer] = NULL;
+    gRenderNodeTail[layer] = NULL;
+    gMateriallistHead[layer] = NULL;
+    gMateriallistTail[layer] = NULL;
     gPrevMatList = NULL;
-    gSortPos = ((unsigned int) gSortHeap) + 0x4000;
+#ifdef PUPPYPRINT_DEBUG
+    int total = gSortPos[layer] - ((unsigned int) gSortHeap[layer]);
+    if (total < gSortRecord[layer]) {
+        gSortRecord[layer] = total;
+    }
+#endif
+    gSortPos[layer] = ((unsigned int) gSortHeap[layer]) + sLayerSizes[layer];
 }
 
 static void render_particles(void) {
@@ -817,15 +835,21 @@ static void render_world(void) {
         SceneMesh *s = sCurrentScene->meshList;
 
         while (s != NULL) {
-            gSortPos -= sizeof(RenderNode);
-            RenderNode *entry = (RenderNode *) gSortPos;
+            int layer;
+            if (s->material->flags & MATERIAL_XLU || s->material->flags & MATERIAL_DECAL) {
+                layer = DRAW_XLU;
+            } else {
+                layer = DRAW_OPA;
+            }
+            gSortPos[0] -= sizeof(RenderNode);
+            RenderNode *entry = (RenderNode *) gSortPos[0];
             entry->matrix = NULL;
             Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : s->material;
-            add_render_node(entry, s->renderBlock, mat, s->flags);
+            add_render_node(entry, s->renderBlock, mat, s->flags, layer);
             s = s->next;
         }
     }
-    pop_render_list();
+    pop_render_list(DRAW_OPA);
     get_time_snapshot(PP_RENDERLEVEL, DEBUG_SNAPSHOT_1_END);
 #ifdef PUPPYPRINT_DEBUG
     if (gDebugData && gDebugData->enabled) {
@@ -936,27 +960,27 @@ static void render_clutter(void) {
         obj = list->clutter;
         if (obj->flags & OBJ_FLAG_IN_VIEW && !(obj->flags & OBJ_FLAG_INVISIBLE)) {
             if (obj->objectID == CLUTTER_BUSH) {
-                gSortPos -= sizeof(RenderNode);
-                RenderNode *entry = (RenderNode *) gSortPos;
-                gSortPos -= sizeof(Matrix);
-                entry->matrix = (Matrix *) gSortPos;
+                gSortPos[DRAW_OPA] -= sizeof(RenderNode);
+                RenderNode *entry = (RenderNode *) gSortPos[DRAW_OPA];
+                gSortPos[DRAW_OPA] -= sizeof(Matrix);
+                entry->matrix = (Matrix *) gSortPos[DRAW_OPA];
                 
                 mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
                 Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[1];
-                add_render_node(entry, sBushBlock, mat, MATERIAL_NULL);
+                add_render_node(entry, sBushBlock, mat, MATERIAL_NULL, DRAW_OPA);
             } else if (obj->objectID == CLUTTER_ROCK) {
-                gSortPos -= sizeof(RenderNode);
-                RenderNode *entry = (RenderNode *) gSortPos;
-                gSortPos -= sizeof(Matrix);
-                entry->matrix = (Matrix *) gSortPos;
+                gSortPos[DRAW_OPA] -= sizeof(RenderNode);
+                RenderNode *entry = (RenderNode *) gSortPos[DRAW_OPA];
+                gSortPos[DRAW_OPA] -= sizeof(Matrix);
+                entry->matrix = (Matrix *) gSortPos[DRAW_OPA];
                 mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
                 Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[0];
-                add_render_node(entry, sBushBlock, mat, MATERIAL_NULL);
+                add_render_node(entry, sBushBlock, mat, MATERIAL_NULL, DRAW_OPA);
             }
         }
         list = list->next;
     }
-    pop_render_list();
+    pop_render_list(DRAW_OPA);
     get_time_snapshot(PP_RENDERCLUTTER, DEBUG_SNAPSHOT_1_END);
 #ifdef PUPPYPRINT_DEBUG
     if (gDebugData && gDebugData->enabled) {
@@ -985,32 +1009,33 @@ static void render_objects(void) {
             ObjectModel *m = obj->gfx->listEntry->entry;
             Matrix *prevMtx = NULL;
             obj->gfx->listEntry->timer = 10;
-            while (m) {                
-                gSortPos -= sizeof(RenderNode);
-                RenderNode *entry = (RenderNode *) gSortPos;
+            while (m) {
+                int layer;
+                if (m->material.flags & MATERIAL_DECAL || m->material.flags & MATERIAL_XLU) {
+                    layer = DRAW_XLU;
+                } else {
+                    layer = DRAW_OPA;
+                }
+                gSortPos[layer] -= sizeof(RenderNode);
+                RenderNode *entry = (RenderNode *) gSortPos[layer];
                 if (m->matrixBehaviour != MTX_NONE) {
-                    gSortPos -= sizeof(Matrix);
-                    entry->matrix = (Matrix *) gSortPos;
+                    gSortPos[layer] -= sizeof(Matrix);
+                    entry->matrix = (Matrix *) gSortPos[layer];
                     prevMtx = entry->matrix;
                     set_draw_matrix(entry->matrix, m->matrixBehaviour, obj->pos, obj->faceAngle, obj->scale);
                 } else {
-                    if (prevMtx) {
-                        gSortPos -= sizeof(Matrix);
-                        entry->matrix = (Matrix *) gSortPos;
-                        memcpy(entry->matrix, prevMtx, sizeof(Matrix));
-                    } else {
-                        entry->matrix = NULL;
-                    }
+                    entry->matrix = prevMtx;
                 }
                 Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &m->material;
-                add_render_node(entry, m->block, mat, MATERIAL_NULL);
+                add_render_node(entry, m->block, mat, MATERIAL_NULL, layer);
                 m = m->next;
             }
         }
         list = list->next;
     }
 
-    pop_render_list();
+    pop_render_list(DRAW_OPA);
+    pop_render_list(DRAW_XLU);
     get_time_snapshot(PP_RENDEROBJECTS, DEBUG_SNAPSHOT_1_END);
 #ifdef PUPPYPRINT_DEBUG
     if (gDebugData && gDebugData->enabled) {
@@ -1184,6 +1209,9 @@ void render_game(int updateRate, float updateRateF) {
 #ifdef PUPPYPRINT_DEBUG
     DEBUG_SNAPSHOT_1();
     unsigned int offset = gDebugData->timer[PP_HALT][gDebugData->iteration];
+    for (int i = 0; i < DRAW_TOTAL; i++) {
+        gSortRecord[i] = sLayerSizes[i];
+    }
 #endif
     if (gScreenshotStatus != SCREENSHOT_SHOW && gConfig.graphics != G_PERFORMANCE) {
         generate_dynamic_shadows();

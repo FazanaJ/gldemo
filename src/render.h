@@ -6,6 +6,13 @@
 #include "assets.h"
 #include "object.h"
 
+enum DrawLayer {
+    DRAW_OPA,
+    DRAW_XLU,
+
+    DRAW_TOTAL
+};
+
 typedef struct {
 
     const GLfloat color[4];
@@ -42,6 +49,10 @@ extern int gPrevRenderFlags;
 extern int gPrevTextureID;
 extern int gPrevCombiner;
 extern rspq_block_t *gParticleMaterialBlock;
+extern unsigned int gSortPos[DRAW_TOTAL];
+extern const short sLayerSizes[DRAW_TOTAL];
+extern void *gSortHeap[DRAW_TOTAL];
+extern int gSortRecord[DRAW_TOTAL];
 
 void init_renderer(void);
 void render_game(int updateRate, float updateRateF);
