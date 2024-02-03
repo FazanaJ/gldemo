@@ -9,6 +9,9 @@
 enum SceneNames {
     SCENE_INTRO,
     SCENE_TESTAREA,
+    SCENE_TESTAREA2,
+
+    SCENE_TOTAL
 };
 
 enum EnvironmentFlags {
@@ -59,6 +62,6 @@ typedef struct SceneBlock {
 extern SceneBlock *sCurrentScene;
 extern Environment *gEnvironment;
 extern char gSceneUpdate;
-extern char *sSceneTable[2];
+extern char *sSceneTable[SCENE_TOTAL];
 
 void load_scene(int sceneID);

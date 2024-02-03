@@ -112,13 +112,7 @@ static void update_sound(float updateRateF) {
 }
 
 void audio_loop(int updateRate, float updateRateF) {
-#ifdef PUPPYPRINT_DEBUG
-    if (gDebugData && gDebugData->enabled) {
-        DEBUG_SNAPSHOT_3();
-        rspq_wait();
-        get_time_snapshot(PP_HALT, DEBUG_SNAPSHOT_3_END);
-    }
-#endif
+    profiler_wait();
     DEBUG_SNAPSHOT_1();
     update_sound(updateRateF);
     update_sequence(updateRate);
@@ -128,13 +122,7 @@ void audio_loop(int updateRate, float updateRateF) {
 		audio_write_end();
 	}
     get_time_snapshot(PP_AUDIO, DEBUG_SNAPSHOT_1_END);
-#ifdef PUPPYPRINT_DEBUG
-    if (gDebugData && gDebugData->enabled) {
-        DEBUG_SNAPSHOT_3();
-        rspq_wait();
-        get_time_snapshot(PP_HALT, DEBUG_SNAPSHOT_3_END);
-    }
-#endif
+    profiler_wait();
 }
 
 static int find_sound_channel(int priority) {

@@ -171,6 +171,7 @@ DynamicShadowData shadow = {
 ObjectEntry entry = {
     .initFunc = init,
     .loopFunc = loop,
+    .name = "Player",
     .data = sizeof(PlayerData),
     .flags = OBJ_FLAG_MOVE | OBJ_FLAG_GRAVITY | OBJ_FLAG_COLLISION | OBJ_FLAG_SHADOW_DYNAMIC | OBJ_FLAG_TANGIBLE,
     .viewDist = OBJ_DIST(100),

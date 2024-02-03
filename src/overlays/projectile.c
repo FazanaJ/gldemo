@@ -25,6 +25,7 @@ void loop(Object *obj, int updateRate, float updateRateF) {
 ObjectEntry entry = {
     .initFunc = init,
     .loopFunc = loop,
+    .name = "Projectile",
     .data = sizeof(ProjectileData),
     .flags = OBJ_FLAG_MOVE,
     .viewDist = OBJ_DIST(100),

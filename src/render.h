@@ -8,6 +8,7 @@
 
 enum DrawLayer {
     DRAW_OPA,
+    DRAW_DECAL,
     DRAW_XLU,
 
     DRAW_TOTAL

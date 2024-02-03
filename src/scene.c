@@ -15,17 +15,19 @@ SceneBlock *sCurrentScene;
 Environment *gEnvironment;
 char gSceneUpdate;
 
-char *sSceneTable[2] = {
+char *sSceneTable[SCENE_TOTAL] = {
     "intro",
     "testarea",
+    "testarea2",
 };
 
-char sSceneTexIDs[][3] = {
+char sSceneTexIDs[SCENE_TOTAL][6] = {
     {TEXTURE_INTROSIGN, TEXTURE_KITCHENTILE, TEXTURE_INTEROSIGN2},
     {TEXTURE_STONE, TEXTURE_GRASS0, TEXTURE_WATER},
+    {TEXTURE_HEALTH, TEXTURE_KITCHENTILE, TEXTURE_RAILING, TEXTURE_WATER, TEXTURE_WOODWALL, TEXTURE_INTROSIGN},
 };
 
-int sSceneMeshFlags[][3] = {
+int sSceneMeshFlags[SCENE_TOTAL][6] = {
     {MATERIAL_DEPTH_READ, 
     MATERIAL_DEPTH_READ,
     MATERIAL_DEPTH_READ},
@@ -33,6 +35,13 @@ int sSceneMeshFlags[][3] = {
     {MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL, 
     MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL, 
     MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_XLU},
+
+    {MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL | MATERIAL_DECAL | MATERIAL_CUTOUT, 
+    MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL, 
+    MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL | MATERIAL_CUTOUT,
+    MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_XLU,
+    MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL,
+    MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL, },
 };
 
 static void setup_fog(SceneHeader *header) {
@@ -128,8 +137,8 @@ void load_scene(int sceneID) {
                 m->material = malloc(sizeof(Material));
                 m->material->index = NULL;
                 m->material->textureID = sSceneTexIDs[sCurrentScene->sceneID][j];
-                m->material->flags = 0;
-                m->flags = sSceneMeshFlags[sCurrentScene->sceneID][j];
+                m->material->flags = sSceneMeshFlags[sCurrentScene->sceneID][j];
+                m->flags = 0;
                 m->next = NULL;
                 rspq_block_begin();
                 glPushMatrix();

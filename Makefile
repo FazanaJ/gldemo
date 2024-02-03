@@ -16,7 +16,7 @@ assets_opus = $(wildcard assets/opus/*.wav)
 
 
 MAIN_ELF_EXTERNS := $(BUILD_DIR)/gldemo.externs
-DSO_MODULES = boot.dso projectile.dso player.dso npc.dso intro.dso testarea.dso
+DSO_MODULES = boot.dso projectile.dso player.dso npc.dso intro.dso testarea.dso testarea2.dso
 DSO_LIST = $(addprefix filesystem/, $(DSO_MODULES))
 
 assets_conv = $(addprefix filesystem/,$(notdir $(assets_ttf:%.ttf=%.font64))) \
@@ -48,47 +48,47 @@ filesystem/%.font64: assets/archives/%.ttf
 filesystem/%.sprite: assets/textures/character/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 3 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/textures/environment/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 3 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/textures/hud/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 3 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/textures/icons/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 3 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/textures/misc/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 3 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/textures/props/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 3 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/textures/skyboxes/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 3 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/textures/talksprites/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 3 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/archives/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 3 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
 
 filesystem/%.wav64: assets/sounds/%.wav
 	@mkdir -p $(dir $@)
@@ -108,12 +108,12 @@ filesystem/%.xm64: assets/xm/%.xm
 filesystem/%.model64: assets/models/%.glb
 	@mkdir -p $(dir $@)
 	@echo "    [MODEL] $@"
-	@$(N64_MKMODEL) --compress 3 -o filesystem $<
+	@$(N64_MKMODEL) --compress 0 -o filesystem $<
 
 filesystem/%.model64: assets/archives/%.glb
 	@mkdir -p $(dir $@)
 	@echo "    [MODEL] $@"
-	@$(N64_MKMODEL) --compress 3 -o filesystem $<
+	@$(N64_MKMODEL) --compress 0 -o filesystem $<
 
 $(BUILD_DIR)/gldemo.dfs: $(assets_conv) $(DSO_LIST)
 $(BUILD_DIR)/gldemo.elf: $(src:%.c=$(BUILD_DIR)/%.o) $(MAIN_ELF_EXTERNS)
@@ -131,6 +131,8 @@ n64brew_SRC = src/scenes/intro.c
 filesystem/intro.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 n64brew_SRC = src/scenes/testarea.c
 filesystem/testarea.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
+n64brew_SRC = src/scenes/testarea2.c
+filesystem/testarea2.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 
 gldemo.z64: N64_ROM_TITLE="Smile Emote"
 gldemo.z64: N64_ROM_SAVETYPE = eeprom16k

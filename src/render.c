@@ -67,6 +67,7 @@ light_t lightNeutral = {
 
 const short sLayerSizes[DRAW_TOTAL] = {
     0x3800, // Standard
+    0x400, // Decal
     0x800, // Semitransparent
 };
 
@@ -839,37 +840,29 @@ static void render_world(void) {
 
         while (s != NULL) {
             int layer;
-            if (s->material->flags & MATERIAL_XLU || s->material->flags & MATERIAL_DECAL) {
+            if (s->material->flags & MATERIAL_DECAL) {
+                layer = DRAW_DECAL;
+            } else if (s->material->flags & MATERIAL_XLU) {
                 layer = DRAW_XLU;
             } else {
                 layer = DRAW_OPA;
             }
+
             RenderNode *entry = (RenderNode *) render_alloc(sizeof(RenderNode), layer);
             entry->matrix = NULL;
             Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : s->material;
-            add_render_node(entry, s->renderBlock, mat, s->flags, layer);
+            add_render_node(entry, s->renderBlock, mat, s->material->flags, layer);
             s = s->next;
         }
     }
     pop_render_list(DRAW_OPA);
+    pop_render_list(DRAW_DECAL);
     get_time_snapshot(PP_RENDERLEVEL, DEBUG_SNAPSHOT_1_END);
-#ifdef PUPPYPRINT_DEBUG
-    if (gDebugData && gDebugData->enabled) {
-        DEBUG_SNAPSHOT_3();
-        rspq_wait();
-        get_time_snapshot(PP_HALT, DEBUG_SNAPSHOT_3_END);
-    }
-#endif
+    profiler_wait();
 }
 
 static void render_object_shadows(void) {
-#ifdef PUPPYPRINT_DEBUG
-    if (gDebugData && gDebugData->enabled) {
-        DEBUG_SNAPSHOT_3();
-        rspq_wait();
-        get_time_snapshot(PP_HALT, DEBUG_SNAPSHOT_3_END);
-    }
-#endif
+    profiler_wait();
     DEBUG_SNAPSHOT_1();
     ObjectList *list = gObjectListHead;
     Object *obj;
@@ -885,13 +878,7 @@ static void render_object_shadows(void) {
 
     if (gConfig.graphics == G_PERFORMANCE) {
     get_time_snapshot(PP_SHADOWS, DEBUG_SNAPSHOT_1_END);
-#ifdef PUPPYPRINT_DEBUG
-    if (gDebugData && gDebugData->enabled) {
-        DEBUG_SNAPSHOT_3();
-        rspq_wait();
-        get_time_snapshot(PP_HALT, DEBUG_SNAPSHOT_3_END);
-    }
-#endif
+    profiler_wait();
         return;
     }
 
@@ -937,13 +924,7 @@ static void render_object_shadows(void) {
         list = list->next;
     }
     get_time_snapshot(PP_SHADOWS, DEBUG_SNAPSHOT_1_END);
-#ifdef PUPPYPRINT_DEBUG
-    if (gDebugData && gDebugData->enabled) {
-        DEBUG_SNAPSHOT_3();
-        rspq_wait();
-        get_time_snapshot(PP_HALT, DEBUG_SNAPSHOT_3_END);
-    }
-#endif
+    profiler_wait();
 }
 
 static void render_clutter(void) {
@@ -980,23 +961,11 @@ static void render_clutter(void) {
     }
     pop_render_list(DRAW_OPA);
     get_time_snapshot(PP_RENDERCLUTTER, DEBUG_SNAPSHOT_1_END);
-#ifdef PUPPYPRINT_DEBUG
-    if (gDebugData && gDebugData->enabled) {
-        DEBUG_SNAPSHOT_3();
-        rspq_wait();
-        get_time_snapshot(PP_HALT, DEBUG_SNAPSHOT_3_END);
-    }
-#endif
+    profiler_wait();
 }
 
 static void render_objects(void) {
-#ifdef PUPPYPRINT_DEBUG
-    if (gDebugData && gDebugData->enabled) {
-        DEBUG_SNAPSHOT_3();
-        rspq_wait();
-        get_time_snapshot(PP_HALT, DEBUG_SNAPSHOT_3_END);
-    }
-#endif
+    profiler_wait();
     DEBUG_SNAPSHOT_1();
     ObjectList *list = gObjectListHead;
     Object *obj;
@@ -1033,13 +1002,7 @@ static void render_objects(void) {
     pop_render_list(DRAW_OPA);
     pop_render_list(DRAW_XLU);
     get_time_snapshot(PP_RENDEROBJECTS, DEBUG_SNAPSHOT_1_END);
-#ifdef PUPPYPRINT_DEBUG
-    if (gDebugData && gDebugData->enabled) {
-        DEBUG_SNAPSHOT_3();
-        rspq_wait();
-        get_time_snapshot(PP_HALT, DEBUG_SNAPSHOT_3_END);
-    }
-#endif
+    profiler_wait();
 }
 
 rspq_block_t *sDynamicShadowBlock;
@@ -1065,13 +1028,7 @@ static void reset_shadow_perspective(void) {
 }
 
 static void generate_dynamic_shadows(void) {
-#ifdef PUPPYPRINT_DEBUG
-    if (gDebugData && gDebugData->enabled) {
-        DEBUG_SNAPSHOT_3();
-        rspq_wait();
-        get_time_snapshot(PP_HALT, DEBUG_SNAPSHOT_3_END);
-    }
-#endif
+    profiler_wait();
     DEBUG_SNAPSHOT_1();
     ObjectList *list = gObjectListHead;
     Object *obj;
@@ -1118,13 +1075,7 @@ static void generate_dynamic_shadows(void) {
     }
     glDisable(GL_RDPQ_MATERIAL_N64);
     get_time_snapshot(PP_SHADOWS, DEBUG_SNAPSHOT_1_END);
-#ifdef PUPPYPRINT_DEBUG
-    if (gDebugData && gDebugData->enabled) {
-        DEBUG_SNAPSHOT_3();
-        rspq_wait();
-        get_time_snapshot(PP_HALT, DEBUG_SNAPSHOT_3_END);
-    }
-#endif
+    profiler_wait();
 }
 
 void clear_dynamic_shadows(void) {

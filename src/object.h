@@ -25,6 +25,8 @@ enum ObjectIDs {
 	OBJ_PLAYER,
 	OBJ_PROJECTILE,
 	OBJ_NPC,
+
+	OBJ_TOTAL
 };
 
 enum ClutterIDs {
@@ -220,6 +222,9 @@ typedef struct ModelList {
 typedef struct ObjectEntry {
     void (*initFunc)(Object *obj);
     void (*loopFunc)(Object *obj, int updateRate, float updateRateF);
+#ifdef PUPPYPRINT_DEBUG
+	char *name;
+#endif
     unsigned short data;
     unsigned short flags;
 	unsigned char viewDist;

@@ -23,6 +23,7 @@ void loop(Object *obj, int updateRate, float updateRateF) {
 ObjectEntry entry = {
     .loopFunc = loop,
     .data = 0,
+    .name = "NPC",
     .flags = OBJ_FLAG_SHADOW | OBJ_FLAG_TANGIBLE,
     .viewDist = OBJ_DIST(200),
     .viewWidth = 3,

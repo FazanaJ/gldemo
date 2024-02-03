@@ -250,6 +250,7 @@ static void update_objects(int updateRate, float updateRateF) {
 
     DEBUG_GET_TIME_1(PP_PLAYER);
     while (objList) {
+        DEBUG_SNAPSHOT_2();
         obj = objList->obj;
         if (obj->gfx && obj->gfx->dynamicShadow) {
             DynamicShadow *d = obj->gfx->dynamicShadow;
@@ -281,6 +282,8 @@ static void update_objects(int updateRate, float updateRateF) {
         objList = objList->next;
         if (obj->flags & OBJ_FLAG_DELETE) {
             free_object(obj);
+        } else {
+            get_obj_snapshot(obj, DEBUG_SNAPSHOT_2_END);
         }
     }
     get_time_snapshot(PP_OBJECTS, DEBUG_SNAPSHOT_1_END);

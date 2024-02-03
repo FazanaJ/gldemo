@@ -483,8 +483,8 @@ static void process_sceneselect_menu(int updateRate) {
         }
         play_sound_global(SOUND_MENU_CLICK);
         clear_input(INPUT_A);
-        menu_set_reset(MENU_CLOSED);
         transition_into_scene(sMenuSelection[1], TRANSITION_FULLSCREEN_IN, 30, TRANSITION_FULLSCREEN_OUT);
+        menu_set_reset(MENU_CLOSED);
         set_background_music(0, 30);
     } else if (get_input_pressed(INPUT_B, 3) && sMenuSwapTimer == 0) {
         goback:

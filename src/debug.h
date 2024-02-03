@@ -2,6 +2,7 @@
 
 #include "../include/global.h"
 #include "rspq_profile.h"
+#include "object.h"
 
 #define TIME_ITERATIONS 60
 #define TIME_AGGREGATE TIME_ITERATIONS
@@ -65,15 +66,41 @@ enum ProfileTimers {
     PP_TOTAL
 };
 
+enum PPPages {
+    PAGE_MINIMAL,
+    PAGE_OVERVIEW,
+    PAGE_BREAKDOWN,
+    PAGE_OBJECTS,
+    PAGE_MEMORY,
+    PAGE_AUDIO,
+
+    PAGE_TOTAL
+};
+
+#define PP_PAGES \
+    "Minimal", \
+    "Overview", \
+    "Breakdown", \
+    "Objects", \
+    "Memory", \
+    "Audio"
+
 typedef struct DebugData {
     rspq_profile_data_t rspData;
     unsigned int timer[PP_TOTAL][TIME_TOTAL + 1];
+    unsigned short objTimer[OBJ_TOTAL][TIME_TOTAL + 1];
+    unsigned char objCount[OBJ_TOTAL];
+    ObjectEntry *objHeader[OBJ_TOTAL];
     unsigned int cpuTime[TIME_TOTAL + 1];
     unsigned int rspTime[TIME_TOTAL + 1];
     unsigned int rdpTime[TIME_TOTAL + 1];
-    unsigned char iteration : 8;
+    unsigned iteration : 8;
     unsigned enabled : 1;
     unsigned viewHitbox : 1;
+    unsigned menuOpen : 1;
+    signed char menuScroll;
+    signed char menuPage;
+    signed char menuOption;
     unsigned short matrixOps;
     model64_t *debugMeshes[2];
 } DebugData;
@@ -91,6 +118,8 @@ void get_rdp_time(int diff);
 void init_debug(void);
 void render_profiler(void);
 void process_profiler(void);
+void get_obj_snapshot(Object *obj, int diff);
+void profiler_wait(void);
 #define DEBUG_SNAPSHOT_1() unsigned int first1 = timer_ticks()
 #define DEBUG_SNAPSHOT_2() unsigned int first2 = timer_ticks()
 #define DEBUG_SNAPSHOT_3() unsigned int first3 = timer_ticks()
@@ -114,12 +143,14 @@ void process_profiler(void);
 #define reset_profiler_times()
 #define get_time_snapshot(index, diff)
 #define add_time_offset(index, diff)
+#define get_obj_snapshot(obj, diff)
 #define get_cpu_time(diff)
 #define get_rsp_time(diff)
 #define get_rdp_time(diff)
 #define init_debug()
 #define render_profiler()
 #define process_profiler()
+#define profiler_wait()
 #define DEBUG_SNAPSHOT_1()
 #define DEBUG_SNAPSHOT_2()
 #define DEBUG_SNAPSHOT_3()
