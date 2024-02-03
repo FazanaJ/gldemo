@@ -308,6 +308,11 @@ static void mtx_scale(Matrix *mtx, float scaleX, float scaleY, float scaleZ) {
     }
 }
 
+static inline void *render_alloc(int size, int layer) {
+    gSortPos[layer] -= size;
+    return (void *) gSortPos[layer];
+}
+
 static void set_draw_matrix(Matrix *mtx, int matrixType, float *pos, u_uint16_t *angle, float *scale) {
     DEBUG_SNAPSHOT_1();
     switch (matrixType) {
@@ -731,8 +736,7 @@ static inline void find_material_list(RenderNode *node, int layer) {
     RenderList *matList;
     if (gRenderNodeHead[layer] == NULL) {
         gRenderNodeHead[layer] = node;
-        gSortPos[layer] -= sizeof(RenderList);
-        matList = (RenderList *) gSortPos[layer];
+        matList = (RenderList *) render_alloc(sizeof(RenderList), layer);
         gMateriallistHead[layer] = matList;
     } else {
         RenderList *list = gMateriallistHead[layer];
@@ -751,8 +755,7 @@ static inline void find_material_list(RenderNode *node, int layer) {
             }
             list = list->next;
         }
-        gSortPos[layer] -= sizeof(RenderList);
-        matList = (RenderList *) gSortPos[layer];
+        matList = (RenderList *) render_alloc(sizeof(RenderList), layer);
         gMateriallistTail[layer]->next = matList;
         gRenderNodeTail[layer]->next = node;
     }
@@ -841,8 +844,7 @@ static void render_world(void) {
             } else {
                 layer = DRAW_OPA;
             }
-            gSortPos[0] -= sizeof(RenderNode);
-            RenderNode *entry = (RenderNode *) gSortPos[0];
+            RenderNode *entry = (RenderNode *) render_alloc(sizeof(RenderNode), layer);
             entry->matrix = NULL;
             Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : s->material;
             add_render_node(entry, s->renderBlock, mat, s->flags, layer);
@@ -960,19 +962,15 @@ static void render_clutter(void) {
         obj = list->clutter;
         if (obj->flags & OBJ_FLAG_IN_VIEW && !(obj->flags & OBJ_FLAG_INVISIBLE)) {
             if (obj->objectID == CLUTTER_BUSH) {
-                gSortPos[DRAW_OPA] -= sizeof(RenderNode);
-                RenderNode *entry = (RenderNode *) gSortPos[DRAW_OPA];
-                gSortPos[DRAW_OPA] -= sizeof(Matrix);
-                entry->matrix = (Matrix *) gSortPos[DRAW_OPA];
+                RenderNode *entry = (RenderNode *) render_alloc(sizeof(RenderNode), DRAW_OPA);
+                entry->matrix = (Matrix *) render_alloc(sizeof(Matrix), DRAW_OPA);
                 
                 mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
                 Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[1];
                 add_render_node(entry, sBushBlock, mat, MATERIAL_NULL, DRAW_OPA);
             } else if (obj->objectID == CLUTTER_ROCK) {
-                gSortPos[DRAW_OPA] -= sizeof(RenderNode);
-                RenderNode *entry = (RenderNode *) gSortPos[DRAW_OPA];
-                gSortPos[DRAW_OPA] -= sizeof(Matrix);
-                entry->matrix = (Matrix *) gSortPos[DRAW_OPA];
+                RenderNode *entry = (RenderNode *) render_alloc(sizeof(RenderNode), DRAW_OPA);
+                entry->matrix = (Matrix *) render_alloc(sizeof(Matrix), DRAW_OPA);
                 mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
                 Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[0];
                 add_render_node(entry, sBushBlock, mat, MATERIAL_NULL, DRAW_OPA);
@@ -1016,11 +1014,9 @@ static void render_objects(void) {
                 } else {
                     layer = DRAW_OPA;
                 }
-                gSortPos[layer] -= sizeof(RenderNode);
-                RenderNode *entry = (RenderNode *) gSortPos[layer];
+                RenderNode *entry = (RenderNode *) render_alloc(sizeof(RenderNode), layer);
                 if (m->matrixBehaviour != MTX_NONE) {
-                    gSortPos[layer] -= sizeof(Matrix);
-                    entry->matrix = (Matrix *) gSortPos[layer];
+                    entry->matrix = (Matrix *) render_alloc(sizeof(Matrix), layer);
                     prevMtx = entry->matrix;
                     set_draw_matrix(entry->matrix, m->matrixBehaviour, obj->pos, obj->faceAngle, obj->scale);
                 } else {
