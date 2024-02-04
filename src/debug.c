@@ -49,14 +49,14 @@ void get_time_snapshot(int index, int diff) {
     gDebugData->timer[index][TIME_AGGREGATE] += time;
 }
 
-void get_obj_snapshot(Object *obj, int diff) {
+void get_obj_snapshot(Object *obj, int diff, int count) {
     int time = TIMER_MICROS(diff);
     if (time > 99999) {
         time = 99999;
     }
     gDebugData->objTimer[obj->objectID][gDebugData->iteration] += time;
     gDebugData->objTimer[obj->objectID][TIME_AGGREGATE] += time;
-    gDebugData->objCount[obj->objectID]++;
+    gDebugData->objCount[obj->objectID] += count;
     gDebugData->objHeader[obj->objectID] = obj->header;
 }
 

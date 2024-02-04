@@ -118,7 +118,7 @@ void get_rdp_time(int diff);
 void init_debug(void);
 void render_profiler(void);
 void process_profiler(void);
-void get_obj_snapshot(Object *obj, int diff);
+void get_obj_snapshot(Object *obj, int diff, int count);
 void profiler_wait(void);
 #define DEBUG_SNAPSHOT_1() unsigned int first1 = timer_ticks()
 #define DEBUG_SNAPSHOT_2() unsigned int first2 = timer_ticks()
@@ -143,7 +143,7 @@ void profiler_wait(void);
 #define reset_profiler_times()
 #define get_time_snapshot(index, diff)
 #define add_time_offset(index, diff)
-#define get_obj_snapshot(obj, diff)
+#define get_obj_snapshot(obj, diff, count)
 #define get_cpu_time(diff)
 #define get_rsp_time(diff)
 #define get_rdp_time(diff)

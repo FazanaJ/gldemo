@@ -324,7 +324,9 @@ static void update_objects(int updateRate, float updateRateF) {
             obj->hitbox->numCollisions = 0;
         }
         objList = objList->next;
-        get_obj_snapshot(obj, DEBUG_SNAPSHOT_2_END);
+        if ((obj->flags & OBJ_FLAG_DELETE) == false) {
+            get_obj_snapshot(obj, DEBUG_SNAPSHOT_2_END, true);
+        }
     }
     objList = gObjectListHead;
     while (objList) {
@@ -365,7 +367,7 @@ static void update_objects(int updateRate, float updateRateF) {
         if (obj->flags & OBJ_FLAG_DELETE) {
             free_object(obj);
         } else {
-            get_obj_snapshot(obj, DEBUG_SNAPSHOT_2_END);
+            get_obj_snapshot(obj, DEBUG_SNAPSHOT_2_END, false);
         }
     }
     get_time_snapshot(PP_OBJECTS, DEBUG_SNAPSHOT_1_END);
