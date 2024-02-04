@@ -165,17 +165,13 @@ static void object_hitbox(Object *obj) {
                     float dist;
                     float relX;
                     float relZ;
-                    //debugf("1: %2.2f, 2: %2.2f\n", mag, mag2);
-                    if (mag != 0.0f || mag2 != 0.0f) {
-                        relX = (obj->pos[0] - testObj->pos[0]);
-                        relZ = (obj->pos[2] - testObj->pos[2]);
-                        dist = sqrtf(SQR(relX) + SQR(relZ));
-                    }
+
+                    relX = (obj->pos[0] - testObj->pos[0]);
+                    relZ = (obj->pos[2] - testObj->pos[2]);
+                    dist = sqrtf(SQR(relX) + SQR(relZ));
                     
-                    if (mag2 != 0.0f) {
-                        obj->pos[0] += ((radiusX - dist) / radiusX * relX) * mag2;
-                        obj->pos[2] += ((radiusZ - dist) / radiusZ * relZ) * mag2;
-                    }
+                    obj->pos[0] += ((radiusX - dist) / radiusX * relX) * mag2;
+                    obj->pos[2] += ((radiusZ - dist) / radiusZ * relZ) * mag2;
 
                     if (mag != 0.0f) {
                         testObj->pos[0] -= ((radiusX - dist) / radiusX * relX) * mag;
