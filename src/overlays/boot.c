@@ -52,7 +52,7 @@ void read_config(void) {
     }
     gConfig.graphics = config.graphics;
     gConfig.screenMode = config.screenMode;
-    gConfig.frameCap = config.frameCap;
+    gConfig.vsync = config.vsync;
     gMusicVolume = (float) gConfig.musicVolume / (float) 9.0f;
     gSoundVolume = (float) gConfig.soundVolume / (float) 9.0f;
     if (write) {

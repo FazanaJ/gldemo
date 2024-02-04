@@ -17,7 +17,7 @@ void write_config(void) {
     config.graphics = gConfig.graphics;
     config.regionMode = gConfig.regionMode;
     config.screenMode = gConfig.screenMode;
-    config.frameCap = gConfig.frameCap;
+    config.vsync = gConfig.vsync;
     config.soundMode = gConfig.soundMode;
     config.musicVolume = gConfig.musicVolume;
     config.soundVolume = gConfig.soundVolume;

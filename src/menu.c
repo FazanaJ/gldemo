@@ -237,7 +237,7 @@ static MenuOption sMenuOptions[] = {
     {"Screen Pos Y", &gConfig.screenPosY, -8, 8, OPTION_STUB | OPTION_BAR, NULL, 0},
     {"Sound Volume", &gConfig.soundVolume, 0, 9, OPTION_BAR, menu_set_sound, 0},
     {"Music Volume", &gConfig.musicVolume, 0, 9, OPTION_BAR, menu_set_sound, 0},
-    {"Frame Cap", &gConfig.frameCap, 0, 1, OPTION_STRING | OPTION_PAL_OFFSET | OPTION_STUB, NULL, 13},
+    {"Vsync", &gConfig.vsync, 0, 1, OPTION_STRING | OPTION_STUB, NULL, 13},
 };
 
 static char *sMenuOptionStrings[] = {
@@ -254,10 +254,8 @@ static char *sMenuOptionStrings[] = {
     "Mono",
     "Stereo",
     "Surround",
-    "60",
-    "30",
-    "50",
-    "25"
+    "Triple Buffering",
+    "Double Buffering"
 };
 
 void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short *selectionY,  int minX, int minY, int maxX, int maxY) {

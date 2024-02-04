@@ -25,12 +25,14 @@ char *sObjectOverlays[] = {
     "player",
     "projectile",
     "npc",
+    "crate",
 };
 
 char *gModelIDs[] = {
     "humanoid",
     "rock",
-    "bottombillboard"
+    "bottombillboard",
+    "crate",
 };
 
 short gObjectModels[] = {
@@ -38,6 +40,7 @@ short gObjectModels[] = {
     1,
     3,
     1,
+    4,
 };
 
 short playerModelTextures[][9] = {
@@ -658,6 +661,10 @@ static void load_object_model(Object *obj, int objectID) {
                 m->material.flags = playerModelFlags[i][j] | MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_LIGHTING;
                 m->material.textureID = playerModelTextures[i][j];
                 m->material.combiner = 0;
+            } else if (modelID == 4) {
+                m->material.flags = MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_LIGHTING | MATERIAL_VTXCOL;
+                m->material.textureID = TEXTURE_CRATE;
+                m->material.combiner = 0;
             } else {
                 m->material.flags = MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_LIGHTING | MATERIAL_VTXCOL;
                 m->material.textureID = -1;
@@ -672,7 +679,11 @@ static void load_object_model(Object *obj, int objectID) {
             }
             rspq_block_begin();
             //glScalef(10.0f, 9.0f, 10.0f);
-            glScalef(0.95f, 1.33f, 1.33f);
+            if (modelID == 1) {
+                glScalef(0.95f, 1.33f, 1.33f);
+            } else {
+                glScalef(1.2f, 1.2f, 1.2f);
+            }
             model64_draw_primitive(prim);
             m->block = rspq_block_end();
 
@@ -807,4 +818,108 @@ void free_particle(Particle *obj) {
 #ifdef PUPPYPRINT_DEBUG
     gNumParticles--;
 #endif
+}
+
+Object *spawn_object_pos(int objectID, float x, float y, float z) {
+    Object *obj = allocate_object();
+    if (obj == NULL) {
+        return NULL;
+    }
+    obj->pos[0] = x;
+    obj->pos[1] = y;
+    obj->pos[2] = z;
+    obj->faceAngle[0] = 0;
+    obj->faceAngle[1] = 0;
+    obj->faceAngle[2] = 0;
+    obj->moveAngle[0] = 0;
+    obj->moveAngle[1] = 0;
+    obj->moveAngle[2] = 0;
+    obj->scale[0] = 1.0f;
+    obj->scale[1] = 1.0f;
+    obj->scale[2] = 1.0f;
+    obj->objectID = objectID;
+    set_object_functions(obj, objectID);
+    return obj;
+}
+
+Object *spawn_object_pos_angle(int objectID, float x, float y, float z, short pitch, short roll, short yaw) {
+    Object *obj = spawn_object_pos(OBJ_NULL, x, y, z);
+    if (obj == NULL) {
+        return NULL;
+    }
+    obj->faceAngle[0] = pitch;
+    obj->faceAngle[1] = roll;
+    obj->faceAngle[2] = yaw;
+    obj->moveAngle[0] = pitch;
+    obj->moveAngle[1] = roll;
+    obj->moveAngle[2] = yaw;
+    obj->objectID = objectID;
+    set_object_functions(obj, objectID);
+    return obj;
+}
+
+Object *spawn_object_pos_angle_scale(int objectID, float x, float y, float z, short pitch, short roll, short yaw, float scaleX, float scaleY, float scaleZ) {
+    Object *obj = spawn_object_pos(OBJ_NULL, x, y, z);
+    if (obj == NULL) {
+        return NULL;
+    }
+    obj->faceAngle[0] = pitch;
+    obj->faceAngle[1] = roll;
+    obj->faceAngle[2] = yaw;
+    obj->moveAngle[0] = pitch;
+    obj->moveAngle[1] = roll;
+    obj->moveAngle[2] = yaw;
+    obj->scale[0] = scaleX;
+    obj->scale[1] = scaleY;
+    obj->scale[2] = scaleZ;
+    obj->objectID = objectID;
+    set_object_functions(obj, objectID);
+    return obj;
+}
+
+Object *spawn_object_pos_scale(int objectID, float x, float y, float z, float scaleX, float scaleY, float scaleZ) {
+    Object *obj = spawn_object_pos(OBJ_NULL, x, y, z);
+    if (obj == NULL) {
+        return NULL;
+    }
+    obj->scale[0] = scaleX;
+    obj->scale[1] = scaleY;
+    obj->scale[2] = scaleZ;
+    obj->objectID = objectID;
+    set_object_functions(obj, objectID);
+    return obj;
+}
+
+Clutter *spawn_clutter(int objectID, float x, float y, float z, short pitch, short roll, short yaw) {
+    Clutter *clutter = allocate_clutter();
+    if (clutter == NULL) {
+        return NULL;
+    }
+    clutter->pos[0] = x;
+    clutter->pos[1] = y;
+    clutter->pos[2] = z;
+    clutter->faceAngle[0] = pitch;
+    clutter->faceAngle[1] = roll;
+    clutter->faceAngle[2] = yaw;
+    clutter->scale[0] = 1.0f;
+    clutter->scale[1] = 1.0f;
+    clutter->scale[2] = 1.0f;
+    clutter->objectID = objectID;
+    clutter->gfx = malloc(sizeof(ObjectGraphics));
+    return clutter;
+}
+
+Particle *spawn_particle(int particleID, float x, float y, float z) {
+    Particle *particle = allocate_particle();
+    if (particle == NULL) {
+        return NULL;
+    }
+    particle->pos[0] = x;
+    particle->pos[1] = y;
+    particle->pos[2] = z;
+    particle->scale[0] = 1.0f;
+    particle->scale[1] = 1.0f;
+    particle->scale[2] = 1.0f;
+    particle->material = NULL;
+    return particle;
 }

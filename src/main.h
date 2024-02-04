@@ -48,7 +48,7 @@ typedef struct Config {
     char screenPosY;
     char soundVolume;
     char musicVolume;
-    char frameCap;
+    char vsync;
     char subtitles;
 } Config;
 
@@ -61,7 +61,7 @@ typedef struct ConfigBits {
     signed screenPosY : 5;
     unsigned soundVolume : 4;
     unsigned musicVolume : 4;
-    unsigned frameCap : 1;
+    unsigned vsync : 1;
     unsigned magic : 6;
     unsigned subtitles : 1;
 } ConfigBits;

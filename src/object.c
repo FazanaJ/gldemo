@@ -32,8 +32,9 @@ char gGamePaused = false;
 
 static void object_move(Object *obj, float updateRateF) {
     if (obj->forwardVel != 0.0f) {
-        obj->pos[0] += ((obj->forwardVel * sins(obj->moveAngle[1])) / 20.0f) * updateRateF;
-        obj->pos[2] += ((obj->forwardVel * coss(obj->moveAngle[1])) / 20.0f) * updateRateF;
+        float vel = obj->forwardVel / 20.0f;
+        obj->pos[0] += (vel * sins(obj->moveAngle[1])) * updateRateF;
+        obj->pos[2] += (vel * coss(obj->moveAngle[1])) * updateRateF;
     }
 }
 
@@ -53,110 +54,6 @@ static void object_gravity(Object *obj, float updateRateF) {
             obj->yVel = 0.0f;
         }
     }
-}
-
-Object *spawn_object_pos(int objectID, float x, float y, float z) {
-    Object *obj = allocate_object();
-    if (obj == NULL) {
-        return NULL;
-    }
-    obj->pos[0] = x;
-    obj->pos[1] = y;
-    obj->pos[2] = z;
-    obj->faceAngle[0] = 0;
-    obj->faceAngle[1] = 0;
-    obj->faceAngle[2] = 0;
-    obj->moveAngle[0] = 0;
-    obj->moveAngle[1] = 0;
-    obj->moveAngle[2] = 0;
-    obj->scale[0] = 1.0f;
-    obj->scale[1] = 1.0f;
-    obj->scale[2] = 1.0f;
-    obj->objectID = objectID;
-    set_object_functions(obj, objectID);
-    return obj;
-}
-
-Object *spawn_object_pos_angle(int objectID, float x, float y, float z, short pitch, short roll, short yaw) {
-    Object *obj = spawn_object_pos(OBJ_NULL, x, y, z);
-    if (obj == NULL) {
-        return NULL;
-    }
-    obj->faceAngle[0] = pitch;
-    obj->faceAngle[1] = roll;
-    obj->faceAngle[2] = yaw;
-    obj->moveAngle[0] = pitch;
-    obj->moveAngle[1] = roll;
-    obj->moveAngle[2] = yaw;
-    obj->objectID = objectID;
-    set_object_functions(obj, objectID);
-    return obj;
-}
-
-Object *spawn_object_pos_angle_scale(int objectID, float x, float y, float z, short pitch, short roll, short yaw, float scaleX, float scaleY, float scaleZ) {
-    Object *obj = spawn_object_pos(OBJ_NULL, x, y, z);
-    if (obj == NULL) {
-        return NULL;
-    }
-    obj->faceAngle[0] = pitch;
-    obj->faceAngle[1] = roll;
-    obj->faceAngle[2] = yaw;
-    obj->moveAngle[0] = pitch;
-    obj->moveAngle[1] = roll;
-    obj->moveAngle[2] = yaw;
-    obj->scale[0] = scaleX;
-    obj->scale[1] = scaleY;
-    obj->scale[2] = scaleZ;
-    obj->objectID = objectID;
-    set_object_functions(obj, objectID);
-    return obj;
-}
-
-Object *spawn_object_pos_scale(int objectID, float x, float y, float z, float scaleX, float scaleY, float scaleZ) {
-    Object *obj = spawn_object_pos(OBJ_NULL, x, y, z);
-    if (obj == NULL) {
-        return NULL;
-    }
-    obj->scale[0] = scaleX;
-    obj->scale[1] = scaleY;
-    obj->scale[2] = scaleZ;
-    obj->objectID = objectID;
-    set_object_functions(obj, objectID);
-    return obj;
-}
-
-Clutter *spawn_clutter(int objectID, float x, float y, float z, short pitch, short roll, short yaw) {
-    Clutter *clutter = allocate_clutter();
-    if (clutter == NULL) {
-        return NULL;
-    }
-    clutter->pos[0] = x;
-    clutter->pos[1] = y;
-    clutter->pos[2] = z;
-    clutter->faceAngle[0] = pitch;
-    clutter->faceAngle[1] = roll;
-    clutter->faceAngle[2] = yaw;
-    clutter->scale[0] = 1.0f;
-    clutter->scale[1] = 1.0f;
-    clutter->scale[2] = 1.0f;
-    clutter->objectID = objectID;
-    clutter->gfx = malloc(sizeof(ObjectGraphics));
-    return clutter;
-}
-
-Particle *spawn_particle(int particleID, float x, float y, float z) {
-    Particle *particle = allocate_particle();
-    if (particle == NULL) {
-        return NULL;
-    }
-    particle->pos[0] = x;
-    particle->pos[1] = y;
-    particle->pos[2] = z;
-    particle->scale[0] = 1.0f;
-    particle->scale[1] = 1.0f;
-    particle->scale[2] = 1.0f;
-    particle->material = NULL;
-    return particle;
 }
 
 /**
@@ -238,7 +135,7 @@ Object *find_nearest_object_facing(Object *obj, int objectID, float baseDist, in
 
 #define COLLISION_CAP (sizeof(obj->hitbox->collideObj) / sizeof(int *))
 
-void object_hitbox(Object *obj) {
+static void object_hitbox(Object *obj) {
     DEBUG_SNAPSHOT_1();
     ObjectList *objList = gObjectListHead;
     Object *testObj;
@@ -258,40 +155,33 @@ void object_hitbox(Object *obj) {
                 if (h2->numCollisions < COLLISION_CAP) {
                     h2->collideObj[(int) h2->numCollisions++] = obj;
                 }
-                if (obj->flags & OBJ_FLAG_TANGIBLE && testObj->flags & OBJ_FLAG_TANGIBLE) {
+                if (testObj->flags & OBJ_FLAG_TANGIBLE) {
                     float maxWeight = MAX(h->weight, h2->weight);
                     float mag = MAX(h->weight - h2->weight, 0.0f);
                     float mag2 = (maxWeight - mag) / maxWeight;
                     mag /= maxWeight;
                     float radiusX = h->width + h2->width;
                     float radiusZ = h->length + h2->length;
-                    float dist2;
                     float dist;
                     float relX;
                     float relZ;
-                    float relX2;
-                    float relZ2;
                     //debugf("1: %2.2f, 2: %2.2f\n", mag, mag2);
-                    if (mag != 0.0f) {
-                        relX2 = (testObj->pos[0] - obj->pos[0]);
-                        relZ2 = (testObj->pos[2] - obj->pos[2]);
-                        dist2 = sqrtf(SQR(relX2) + SQR(relZ2));
-                    }
-                    if (mag2 != 0.0f) {
+                    if (mag != 0.0f || mag2 != 0.0f) {
                         relX = (obj->pos[0] - testObj->pos[0]);
                         relZ = (obj->pos[2] - testObj->pos[2]);
                         dist = sqrtf(SQR(relX) + SQR(relZ));
-                    }
-                    
-                    if (mag != 0.0f) {
-                        testObj->pos[0] += ((radiusX - dist2) / radiusX * relX2) * mag;
-                        testObj->pos[2] += ((radiusZ - dist2) / radiusZ * relZ2) * mag;
                     }
                     
                     if (mag2 != 0.0f) {
                         obj->pos[0] += ((radiusX - dist) / radiusX * relX) * mag2;
                         obj->pos[2] += ((radiusZ - dist) / radiusZ * relZ) * mag2;
                     }
+
+                    if (mag != 0.0f) {
+                        testObj->pos[0] -= ((radiusX - dist) / radiusX * relX) * mag;
+                        testObj->pos[2] -= ((radiusZ - dist) / radiusZ * relZ) * mag;
+                    }
+                    
                 }
             }
         }
@@ -314,6 +204,7 @@ static void update_objects(int updateRate, float updateRateF) {
     Object *obj;
 
     DEBUG_GET_TIME_1(PP_PLAYER);
+    // Run object specific functions first
     while (objList) {
         DEBUG_SNAPSHOT_2();
         obj = objList->obj;
@@ -328,6 +219,7 @@ static void update_objects(int updateRate, float updateRateF) {
             get_obj_snapshot(obj, DEBUG_SNAPSHOT_2_END, true);
         }
     }
+    // Reset the list and run generic functions.
     objList = gObjectListHead;
     while (objList) {
         DEBUG_SNAPSHOT_2();
@@ -356,11 +248,11 @@ static void update_objects(int updateRate, float updateRateF) {
         if (obj->flags & OBJ_FLAG_GRAVITY) {
             object_gravity(obj, updateRateF);
         }
-        if (obj->flags & OBJ_FLAG_COLLISION) {
-            object_collide(obj);
-        }
         if (obj->hitbox && obj->flags & OBJ_FLAG_TANGIBLE) {
             object_hitbox(obj);
+        }
+        if (obj->flags & OBJ_FLAG_COLLISION) {
+            object_collide(obj);
         }
         skipObject:
         objList = objList->next;

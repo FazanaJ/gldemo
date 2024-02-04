@@ -25,4 +25,5 @@ const TextureInfo gTextureIDs[] = {
 {"skybox1.rgba16", 0},
 {"logwall.i8", 0},
 {"railing.ia4", 0},
+{"crate.i8", 12},
 };

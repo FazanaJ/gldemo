@@ -25,6 +25,7 @@ enum ObjectIDs {
 	OBJ_PLAYER,
 	OBJ_PROJECTILE,
 	OBJ_NPC,
+	OBJ_CRATE,
 
 	OBJ_TOTAL
 };
@@ -56,6 +57,7 @@ enum HitboxTypes {
 typedef struct Hitbox {
 	char type;
 	char numCollisions;
+	unsigned short pushNoise;
 	float offsetY;
 	float width;
 	float length;
@@ -253,12 +255,6 @@ extern short gNumParticles;
 extern short gNumModels;
 extern short gNumOverlays;
 
-Object *spawn_object_pos(int objectID, float x, float y, float z);
-Object *spawn_object_pos_angle(int objectID, float x, float y, float z, short pitch, short roll, short yaw);
-Object *spawn_object_pos_angle_scale(int objectID, float x, float y, float z, short pitch, short roll, short yaw, float scaleX, float scaleY, float scaleZ);
-Object *spawn_object_pos_scale(int objectID, float x, float y, float z, float scaleX, float scaleY, float scaleZ);
-Clutter *spawn_clutter(int objectID, float x, float y, float z, short pitch, short roll, short yaw);
-Particle *spawn_particle(int particleID, float x, float y, float z);
 void delete_object(Object *obj);
 void delete_clutter(Clutter *clutter);
 void update_game_entities(int updateRate, float updateRateF);
