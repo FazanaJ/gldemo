@@ -407,6 +407,7 @@ static void init_object_behaviour(Object *obj, int objectID) {
     obj->loopFunc = entry->loopFunc;
     obj->flags = entry->flags;
     obj->overlay = list;
+    obj->hitbox = entry->hitbox;
     if (entry->viewDist) {
         obj->viewDist = entry->viewDist << 4;
     } else {

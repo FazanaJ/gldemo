@@ -236,6 +236,71 @@ Object *find_nearest_object_facing(Object *obj, int objectID, float baseDist, in
     return bestObj;
 }
 
+#define COLLISION_CAP (sizeof(obj->hitbox->collideObj) / sizeof(int *))
+
+void object_hitbox(Object *obj) {
+    DEBUG_SNAPSHOT_1();
+    ObjectList *objList = gObjectListHead;
+    Object *testObj;
+    while (objList) {
+        testObj = objList->obj;
+        if (obj->hitbox && obj != testObj) {
+            Hitbox *h = obj->hitbox;
+            Hitbox *h2 = testObj->hitbox;
+            for (int i = 0; i < h->numCollisions; i++) {
+                if (testObj == h->collideObj[i] || h->numCollisions >= COLLISION_CAP) {
+                    goto next;
+                }
+            }
+            if (fabsf(obj->pos[0] - testObj->pos[0]) < h->width + h2->width &&
+                fabsf(obj->pos[2] - testObj->pos[2]) < h->length + h2->length) {
+                h->collideObj[(int) h->numCollisions++] = testObj;
+                if (h2->numCollisions < COLLISION_CAP) {
+                    h2->collideObj[(int) h2->numCollisions++] = obj;
+                }
+                if (obj->flags & OBJ_FLAG_TANGIBLE && testObj->flags & OBJ_FLAG_TANGIBLE) {
+                    float maxWeight = MAX(h->weight, h2->weight);
+                    float mag = MAX(h->weight - h2->weight, 0.0f);
+                    float mag2 = (maxWeight - mag) / maxWeight;
+                    mag /= maxWeight;
+                    float radiusX = h->width + h2->width;
+                    float radiusZ = h->length + h2->length;
+                    float dist2;
+                    float dist;
+                    float relX;
+                    float relZ;
+                    float relX2;
+                    float relZ2;
+                    //debugf("1: %2.2f, 2: %2.2f\n", mag, mag2);
+                    if (mag != 0.0f) {
+                        relX2 = (testObj->pos[0] - obj->pos[0]);
+                        relZ2 = (testObj->pos[2] - obj->pos[2]);
+                        dist2 = sqrtf(SQR(relX2) + SQR(relZ2));
+                    }
+                    if (mag2 != 0.0f) {
+                        relX = (obj->pos[0] - testObj->pos[0]);
+                        relZ = (obj->pos[2] - testObj->pos[2]);
+                        dist = sqrtf(SQR(relX) + SQR(relZ));
+                    }
+                    
+                    if (mag != 0.0f) {
+                        testObj->pos[0] += ((radiusX - dist2) / radiusX * relX2) * mag;
+                        testObj->pos[2] += ((radiusZ - dist2) / radiusZ * relZ2) * mag;
+                    }
+                    
+                    if (mag2 != 0.0f) {
+                        obj->pos[0] += ((radiusX - dist) / radiusX * relX) * mag2;
+                        obj->pos[2] += ((radiusZ - dist) / radiusZ * relZ) * mag2;
+                    }
+                }
+            }
+        }
+        next:
+        objList = objList->next;
+    }
+    get_time_snapshot(PP_COLLISION, DEBUG_SNAPSHOT_1_END);
+}
+
 /**
  * Loop through every element in the object list and run their loop function.
 */
@@ -252,6 +317,22 @@ static void update_objects(int updateRate, float updateRateF) {
     while (objList) {
         DEBUG_SNAPSHOT_2();
         obj = objList->obj;
+        if (obj->loopFunc && (obj->flags & OBJ_FLAG_DELETE) == false && (obj->flags & OBJ_FLAG_INACTIVE) == false) {
+            (objList->obj->loopFunc)(objList->obj, updateRate, updateRateF);
+        }
+        if (obj->hitbox) {
+            obj->hitbox->numCollisions = 0;
+        }
+        objList = objList->next;
+        get_obj_snapshot(obj, DEBUG_SNAPSHOT_2_END);
+    }
+    objList = gObjectListHead;
+    while (objList) {
+        DEBUG_SNAPSHOT_2();
+        obj = objList->obj;
+        if (obj->flags & OBJ_FLAG_INACTIVE) {
+            goto skipObject;
+        }
         if (obj->gfx && obj->gfx->dynamicShadow) {
             DynamicShadow *d = obj->gfx->dynamicShadow;
             if (d->staleTimer > 0) {
@@ -267,9 +348,6 @@ static void update_objects(int updateRate, float updateRateF) {
         } else {
             obj->flags |= OBJ_FLAG_INVISIBLE;
         }
-        if (obj->loopFunc) {
-            (objList->obj->loopFunc)(objList->obj, updateRate, updateRateF);
-        }
         if (obj->flags & OBJ_FLAG_MOVE) {
             object_move(obj, updateRateF);
         }
@@ -279,6 +357,10 @@ static void update_objects(int updateRate, float updateRateF) {
         if (obj->flags & OBJ_FLAG_COLLISION) {
             object_collide(obj);
         }
+        if (obj->hitbox && obj->flags & OBJ_FLAG_TANGIBLE) {
+            object_hitbox(obj);
+        }
+        skipObject:
         objList = objList->next;
         if (obj->flags & OBJ_FLAG_DELETE) {
             free_object(obj);

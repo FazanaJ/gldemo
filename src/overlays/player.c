@@ -168,6 +168,15 @@ DynamicShadowData shadow = {
     .offset = -7.0f
 };
 
+Hitbox bbox = {
+    .type = HITBOX_CYLINDER,
+    .offsetY = 0,
+    .width = 3.0f,
+    .length = 3.0f,
+    .weight = 100.0f,
+    .height = 10.0f,
+};
+
 ObjectEntry entry = {
     .initFunc = init,
     .loopFunc = loop,
@@ -178,4 +187,5 @@ ObjectEntry entry = {
     .viewWidth = 3,
     .viewHeight = 5,
     .dynamicShadow = &shadow,
+    .hitbox = &bbox,
 };

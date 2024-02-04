@@ -20,6 +20,15 @@ void loop(Object *obj, int updateRate, float updateRateF) {
     }
 }
 
+Hitbox bbox = {
+    .type = HITBOX_CYLINDER,
+    .offsetY = 0,
+    .width = 3.0f,
+    .length = 3.0f,
+    .weight = 90.0f,
+    .height = 10.0f,
+};
+
 ObjectEntry entry = {
     .loopFunc = loop,
     .data = 0,
@@ -28,4 +37,5 @@ ObjectEntry entry = {
     .viewDist = OBJ_DIST(200),
     .viewWidth = 3,
     .viewHeight = 5,
+    .hitbox = &bbox,
 };

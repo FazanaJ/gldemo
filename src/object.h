@@ -55,9 +55,13 @@ enum HitboxTypes {
 
 typedef struct Hitbox {
 	char type;
+	char numCollisions;
 	float offsetY;
 	float width;
+	float length;
 	float height;
+	float weight;
+	struct Object *collideObj[4];
 } Hitbox;
 
 typedef struct DynamicShadowData {
@@ -232,6 +236,7 @@ typedef struct ObjectEntry {
 	unsigned char viewHeight;
 	unsigned char pad;
 	DynamicShadowData *dynamicShadow;
+	Hitbox *hitbox;
 } ObjectEntry;
 
 extern char *sObjectOverlays[];
