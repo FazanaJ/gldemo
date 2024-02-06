@@ -181,7 +181,8 @@ void object_collide(Object *obj) {
         }
         mesh = mesh->next;
     }
-    obj->pos[1] = peakY;
+    obj->floorHeight = peakY;
+    //obj->pos[1] = peakY;
 
     get_time_snapshot(PP_COLLISION, DEBUG_SNAPSHOT_1_END);
 }

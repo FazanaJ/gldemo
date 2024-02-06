@@ -56,9 +56,12 @@ enum HitboxTypes {
 
 typedef struct Hitbox {
 	char type;
-	char numCollisions;
-	unsigned short pushNoise;
+	unsigned numCollisions : 4;
+	unsigned solid : 4;
+	unsigned short moveSound;
+	float offsetX;
 	float offsetY;
+	float offsetZ;
 	float width;
 	float length;
 	float height;
@@ -114,26 +117,29 @@ typedef struct ObjectGraphics {
 
 typedef struct Object {
 	ObjectGraphics *gfx;
+	float pos[3];
+	Hitbox *hitbox;
+	struct ObjectList *entry;
+	uint16_t faceAngle[3];
+	short objectID;
 	struct ObjectEntry *header;
 	struct VoidList *overlay;
 	void (*loopFunc)(struct Object *obj, int updateRate, float updateRateF);
-	struct ObjectList *entry;
 	struct Object *parent;
-	Hitbox *hitbox;
+	struct Object *platform;
+	float hitboxHeight;
+	float floorHeight;
 	float cameraDist;
 	float viewDist;
-	float pos[3];
 	float yVel;
 	float yVelMax;
 	float weight;
 	float scale[3];
 	float forwardVel;
+	float prevPos[3];
 	u_uint32_t flags;
 	void *data;
-	uint16_t faceAngle[3];
 	uint16_t moveAngle[3];
-	short objectID;
-	short floorHeight;
 	unsigned char animID;
 } Object;
 
@@ -145,14 +151,15 @@ typedef struct ObjectList {
 
 typedef struct Clutter {
 	ObjectGraphics *gfx;
-	struct ClutterList *entry;
-	float cameraDist;
-	float viewDist;
 	float pos[3];
-	float scale[3];
-	u_uint32_t flags;
+	Hitbox *hitbox;
+	struct ClutterList *entry;
 	uint16_t faceAngle[3];
 	short objectID;
+	float cameraDist;
+	float viewDist;
+	float scale[3];
+	u_uint32_t flags;
 } Clutter;
 
 typedef struct ClutterList {

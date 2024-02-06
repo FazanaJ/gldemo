@@ -76,7 +76,7 @@ void loop(Object *obj, int updateRate, float updateRateF) {
     if (get_input_pressed(INPUT_A, 0) && gGameTimer > 120) {
         if (get_input_held(INPUT_Z)) {
             if (obj->yVel == 0.0f) {
-                obj->yVel = 10.0f;
+                obj->yVel = 35.0f;
             }
         } else {
             Particle *part;

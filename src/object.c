@@ -13,6 +13,7 @@
 #include "talk.h"
 #include "scene.h"
 #include "assets.h"
+#include "audio.h"
 
 ObjectList *gObjectListHead = NULL;
 ObjectList *gObjectListTail = NULL;
@@ -36,11 +37,23 @@ static void object_move(Object *obj, float updateRateF) {
         obj->pos[0] += (vel * sins(obj->moveAngle[1])) * updateRateF;
         obj->pos[2] += (vel * coss(obj->moveAngle[1])) * updateRateF;
     }
+    if (obj->platform) {
+        Object *p = obj->platform;
+        if (obj->pos[1] <= obj->hitboxHeight + 0.5f) {
+            float diff[3];
+            diff[0] = p->pos[0] - p->prevPos[0];
+            diff[1] = p->pos[1] - p->prevPos[1];
+            diff[2] = p->pos[2] - p->prevPos[2];
+            obj->pos[0] += diff[0];
+            obj->pos[1] += diff[1];
+            obj->pos[2] += diff[2];
+        }
+    }
 }
 
 static void object_gravity(Object *obj, float updateRateF) {
-    return;
-    float weightMax = -(obj->weight * 10.0f);
+    //return;
+    float weightMax = -(obj->weight * 5.0f);
     if (obj->yVel > weightMax) {
         obj->yVel -= (obj->weight) * updateRateF;
         if (obj->yVel < weightMax) {
@@ -48,9 +61,10 @@ static void object_gravity(Object *obj, float updateRateF) {
         }
     }
     if (obj->yVel != 0.0f) {
+        float height = MAX(obj->floorHeight, obj->hitboxHeight);
         obj->pos[1] += (obj->yVel / 10.0f) * updateRateF;
-        if (obj->yVel < 0.0f && obj->pos[1] - obj->floorHeight < 0.0f) {
-            obj->pos[1] = obj->floorHeight;
+        if (obj->yVel < 0.0f && obj->pos[1] - height < 0.0f) {
+            obj->pos[1] = height;
             obj->yVel = 0.0f;
         }
     }
@@ -139,6 +153,9 @@ static void object_hitbox(Object *obj) {
     DEBUG_SNAPSHOT_1();
     ObjectList *objList = gObjectListHead;
     Object *testObj;
+    Object *prevPlatform = obj->platform;
+    obj->hitboxHeight = -30000;
+    obj->platform = NULL;
     while (objList) {
         testObj = objList->obj;
         if (obj->hitbox && obj != testObj) {
@@ -156,26 +173,39 @@ static void object_hitbox(Object *obj) {
                     h2->collideObj[(int) h2->numCollisions++] = obj;
                 }
                 if (testObj->flags & OBJ_FLAG_TANGIBLE) {
-                    float maxWeight = MAX(h->weight, h2->weight);
-                    float mag = MAX(h->weight - h2->weight, 0.0f);
-                    float mag2 = (maxWeight - mag) / maxWeight;
-                    mag /= maxWeight;
-                    float radiusX = h->width + h2->width;
-                    float radiusZ = h->length + h2->length;
-                    float dist;
-                    float relX;
-                    float relZ;
+                    if (h2->solid && (obj->pos[1] >= testObj->pos[1] + h2->offsetY + h2->height || (prevPlatform == testObj && obj->pos[1] >= testObj->pos[1] + h2->offsetY))) {
+                        obj->hitboxHeight = testObj->pos[1] + h2->height;
+                        obj->platform = testObj;
+                    } else {
+                        float maxWeight = MAX(h->weight, h2->weight);
+                        float mag = MAX(h->weight - h2->weight, 0.0f);
+                        float mag2 = (maxWeight - mag) / maxWeight;
+                        mag /= maxWeight;
+                        float radiusX = h->width + h2->width;
+                        float radiusZ = h->length + h2->length;
+                        float dist;
+                        float relX;
+                        float relZ;
 
-                    relX = (obj->pos[0] - testObj->pos[0]);
-                    relZ = (obj->pos[2] - testObj->pos[2]);
-                    dist = sqrtf(SQR(relX) + SQR(relZ));
-                    
-                    obj->pos[0] += ((radiusX - dist) / radiusX * relX) * mag2;
-                    obj->pos[2] += ((radiusZ - dist) / radiusZ * relZ) * mag2;
+                        relX = (obj->pos[0] - testObj->pos[0]);
+                        relZ = (obj->pos[2] - testObj->pos[2]);
+                        dist = sqrtf(SQR(relX) + SQR(relZ));
+                        
+                        obj->pos[0] += ((radiusX - dist) / radiusX * relX) * mag2;
+                        obj->pos[2] += ((radiusZ - dist) / radiusZ * relZ) * mag2;
 
-                    if (mag != 0.0f) {
-                        testObj->pos[0] -= ((radiusX - dist) / radiusX * relX) * mag;
-                        testObj->pos[2] -= ((radiusZ - dist) / radiusZ * relZ) * mag;
+                        if (mag != 0.0f) {
+                            float oldPos[3] = {testObj->pos[0], testObj->pos[1], testObj->pos[2]};
+                            testObj->pos[0] -= ((radiusX - dist) / radiusX * relX) * mag;
+                            testObj->pos[2] -= ((radiusZ - dist) / radiusZ * relZ) * mag;
+                            if (h2->moveSound) {
+                                float moveDist = DIST3(oldPos, testObj->pos);
+                                moveDist = sqrtf(fabsf(moveDist));
+                                if (moveDist != 0.0f) {
+                                    play_sound_spatial_pitch(h2->moveSound, testObj->pos, 0.5f + moveDist);
+                                }
+                            }
+                        }
                     }
                     
                 }
@@ -204,6 +234,9 @@ static void update_objects(int updateRate, float updateRateF) {
     while (objList) {
         DEBUG_SNAPSHOT_2();
         obj = objList->obj;
+        obj->prevPos[0] = obj->pos[0];
+        obj->prevPos[1] = obj->pos[1];
+        obj->prevPos[2] = obj->pos[2];
         if (obj->loopFunc && (obj->flags & OBJ_FLAG_DELETE) == false && (obj->flags & OBJ_FLAG_INACTIVE) == false) {
             (objList->obj->loopFunc)(objList->obj, updateRate, updateRateF);
         }

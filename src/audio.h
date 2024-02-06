@@ -55,6 +55,14 @@ typedef struct VoiceData {
     unsigned short timer;
 } VoiceData;
 
+typedef struct AudioEmitter {
+    float pos[3];
+    float pitch;
+    float volume;
+    unsigned short soundID;
+    // padding
+} AudioEmitter;
+
 extern SoundData sSoundTable[];
 extern VoiceData sVoiceTable[];
 extern SequenceData sSequenceTable[];
