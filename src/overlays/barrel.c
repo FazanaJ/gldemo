@@ -21,9 +21,9 @@ void loop(Object *obj, int updateRate, float updateRateF) {
     if (tempTimer < 120) {
         obj->pos[0] += 0.05f * updateRateF;
     } else if (tempTimer < 240) {
-        obj->pos[1] += 0.05f * updateRateF;
+        obj->pos[1] += 0.2f * updateRateF;
     } else if (tempTimer < 360) {
-        obj->pos[1] -= 0.05f * updateRateF;
+        obj->pos[1] -= 0.2f * updateRateF;
     } else {
         obj->pos[0] -= 0.05f * updateRateF;
         if (tempTimer >= 480) {
@@ -33,7 +33,7 @@ void loop(Object *obj, int updateRate, float updateRateF) {
 }
 
 Hitbox bbox = {
-    .type = HITBOX_BLOCK,
+    .type = HITBOX_CYLINDER,
     .solid = true,
     .offsetY = 0,
     .width = 4.0f,

@@ -121,18 +121,18 @@ typedef struct ModelPrim {
 
 void object_collide(Object *obj) {
     DEBUG_SNAPSHOT_1();
-    return;
+    //return;
 
     SceneMesh *mesh = sCurrentScene->meshList;
-    float peakY = 0;
+    float peakY = -30000;
     while (mesh) {
         ModelPrim *prim = (ModelPrim *) mesh->mesh;
         int numTris = prim->num_indices;
         attribute_t *attr = &prim->position;
         //attribute_t *col = &prim->color;
-        int mulFactor = prim->vertex_precision - 1;
+        //int mulFactor = prim->vertex_precision - 1;
         obj->floorHeight = 0.0f;
-        //float scale = (int) (1 << (prim->vertex_precision - 1)));
+        float scale = (int) (1 << (prim->vertex_precision - 1));
         float dir[3];
         float tempP[3] = {obj->pos[0] / 5, (obj->pos[1] / 5) + 25.0f, obj->pos[2] / 5};
         dir[0] = tempP[0];// + ((obj->forwardVel * sins(obj->moveAngle[2])) / 20.0f);
@@ -155,9 +155,15 @@ void object_collide(Object *obj) {
             float hit[3] = {0, 0, 0};
             
             float length;
-            float vert0[3] = {v1[0] >> mulFactor, v1[1] >> mulFactor, v1[2] >> mulFactor};
-            float vert1[3] = {v2[0] >> mulFactor, v2[1] >> mulFactor, v2[2] >> mulFactor};
-            float vert2[3] = {v3[0] >> mulFactor, v3[1] >> mulFactor, v3[2] >> mulFactor};
+            float vert0[3] = {v1[0], v1[1], v1[2]};
+            float vert1[3] = {v2[0], v2[1], v2[2]};
+            float vert2[3] = {v3[0], v3[1], v3[2]};
+
+            for (int k = 0; k < 3; k++) {
+                vert0[k] /= scale;
+                vert1[k] /= scale;
+                vert2[k] /= scale;
+            }
             
             //*c1 = 0xFFFFFFFF;
             //*c2 = 0xFFFFFFFF;
@@ -175,7 +181,7 @@ void object_collide(Object *obj) {
                 if ((hit[1] / 2) * 5 > peakY) {
                     peakY = (hit[1] / 2) * 5;
                 }
-                obj->yVel = 0.0f;
+                //obj->yVel = 0.0f;
                 //obj->floorHeight = (hit[2] * 5);
             }
         }

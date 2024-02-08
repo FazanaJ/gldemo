@@ -891,7 +891,8 @@ static void render_object_shadows(void) {
             DynamicShadow *d = obj->gfx->dynamicShadow;
             Matrix matrix;
             glPushMatrix();
-            float pos[3] = {obj->pos[0], obj->floorHeight + 0.1f, obj->pos[2]};
+            float floorHeight = MAX(obj->floorHeight, obj->hitboxHeight);
+            float pos[3] = {obj->pos[0], floorHeight + 0.1f, obj->pos[2]};
             u_uint16_t angle[3] = {0, d->angle[1] + 0x4000, 0};
             set_draw_matrix(&matrix, MTX_TRANSLATE_ROTATE_SCALE, pos, angle, obj->scale);
             glMultMatrixf((GLfloat *) &matrix.m);

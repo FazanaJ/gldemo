@@ -20,27 +20,33 @@ char *gFontAssetTable[] = {
     "mvboli.12"
 };
 
-char *sObjectOverlays[] = {
+char *sObjectOverlays[OBJ_TOTAL] = {
     NULL,
     "player",
     "projectile",
     "npc",
     "crate",
+    "testsphere",
+    "barrel",
 };
 
-char *gModelIDs[] = {
+char *gModelIDs[OBJ_TOTAL] = {
     "humanoid",
     "rock",
     "bottombillboard",
     "crate",
+    "testsphere",
+    "testcylinder",
 };
 
-short gObjectModels[] = {
+short gObjectModels[OBJ_TOTAL] = {
     0,
     1,
     3,
     1,
     4,
+    5,
+    6,
 };
 
 short playerModelTextures[][9] = {
@@ -605,7 +611,7 @@ static int temp_matrix_grabber(int modelID) {
     case 3:
         return MTX_BILLBOARD;
     }
-    return MTX_TRANSLATE;
+    return MTX_TRANSLATE_ROTATE_SCALE;
 }
 
 static void load_object_model(Object *obj, int objectID) {
@@ -682,7 +688,7 @@ static void load_object_model(Object *obj, int objectID) {
             if (modelID == 1) {
                 glScalef(0.95f, 1.33f, 1.33f);
             } else {
-                glScalef(1.2f, 1.2f, 1.2f);
+                glScalef(1.0f, 1.0f, 1.0f);
             }
             model64_draw_primitive(prim);
             m->block = rspq_block_end();

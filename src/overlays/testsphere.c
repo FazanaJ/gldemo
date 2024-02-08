@@ -12,7 +12,7 @@ int tempTimer = 0;
 void init(Object *obj) {
     tempTimer = 0;
     obj->scale[0] = 3.0f;
-    obj->scale[1] = 0.5f;
+    obj->scale[1] = 3.0f;
     obj->scale[2] = 3.0f;
 }
 
@@ -21,9 +21,9 @@ void loop(Object *obj, int updateRate, float updateRateF) {
     if (tempTimer < 120) {
         obj->pos[0] += 0.05f * updateRateF;
     } else if (tempTimer < 240) {
-        obj->pos[1] += 0.05f * updateRateF;
+        obj->pos[1] += 0.2f * updateRateF;
     } else if (tempTimer < 360) {
-        obj->pos[1] -= 0.05f * updateRateF;
+        obj->pos[1] -= 0.2f * updateRateF;
     } else {
         obj->pos[0] -= 0.05f * updateRateF;
         if (tempTimer >= 480) {
@@ -33,7 +33,7 @@ void loop(Object *obj, int updateRate, float updateRateF) {
 }
 
 Hitbox bbox = {
-    .type = HITBOX_BLOCK,
+    .type = HITBOX_SPHERE,
     .solid = true,
     .offsetY = 0,
     .width = 4.0f,
@@ -46,7 +46,7 @@ Hitbox bbox = {
 ObjectEntry entry = {
     .initFunc = init,
     .loopFunc = loop,
-    .name = "Crate",
+    .name = "Sphere",
     .flags = OBJ_FLAG_MOVE | OBJ_FLAG_TANGIBLE,
     .viewDist = OBJ_DIST(100),
     .viewWidth = 4,

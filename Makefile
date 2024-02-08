@@ -16,7 +16,7 @@ assets_opus = $(wildcard assets/opus/*.wav)
 
 
 MAIN_ELF_EXTERNS := $(BUILD_DIR)/gldemo.externs
-DSO_MODULES = boot.dso projectile.dso player.dso npc.dso intro.dso testarea.dso testarea2.dso crate.dso
+DSO_MODULES = boot.dso projectile.dso player.dso npc.dso intro.dso testarea.dso testarea2.dso crate.dso barrel.dso testsphere.dso
 DSO_LIST = $(addprefix filesystem/, $(DSO_MODULES))
 
 assets_conv = $(addprefix filesystem/,$(notdir $(assets_ttf:%.ttf=%.font64))) \
@@ -129,6 +129,10 @@ n64brew_SRC = src/overlays/npc.c
 filesystem/npc.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 n64brew_SRC = src/overlays/crate.c
 filesystem/crate.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
+n64brew_SRC = src/overlays/barrel.c
+filesystem/barrel.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
+n64brew_SRC = src/overlays/testsphere.c
+filesystem/testsphere.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 
 n64brew_SRC = src/scenes/intro.c
 filesystem/intro.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)

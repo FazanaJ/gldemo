@@ -37,25 +37,26 @@ static void object_move(Object *obj, float updateRateF) {
         obj->pos[0] += (vel * sins(obj->moveAngle[1])) * updateRateF;
         obj->pos[2] += (vel * coss(obj->moveAngle[1])) * updateRateF;
     }
-    if (obj->platform) {
-        Object *p = obj->platform;
-        if (obj->pos[1] <= obj->hitboxHeight + 0.5f) {
-            float diff[3];
-            diff[0] = p->pos[0] - p->prevPos[0];
-            diff[1] = p->pos[1] - p->prevPos[1];
-            diff[2] = p->pos[2] - p->prevPos[2];
-            obj->pos[0] += diff[0];
-            obj->pos[1] += diff[1];
-            obj->pos[2] += diff[2];
-        }
+}
+
+static void object_platform_displacement(Object *obj) {
+    Object *p = obj->platform;
+    if (obj->pos[1] <= obj->hitboxHeight + 0.5f) {
+        float diff[3];
+        diff[0] = p->pos[0] - p->prevPos[0];
+        diff[1] = p->pos[1] - p->prevPos[1];
+        diff[2] = p->pos[2] - p->prevPos[2];
+        obj->pos[0] += diff[0];
+        obj->pos[1] += diff[1];
+        obj->pos[2] += diff[2];
     }
 }
 
 static void object_gravity(Object *obj, float updateRateF) {
     //return;
-    float weightMax = -(obj->weight * 5.0f);
+    float weightMax = -(obj->weight * 10.0f);
     if (obj->yVel > weightMax) {
-        obj->yVel -= (obj->weight) * updateRateF;
+        obj->yVel -= (obj->weight / 10.0f) * updateRateF;
         if (obj->yVel < weightMax) {
             obj->yVel = weightMax;
         }
@@ -122,6 +123,10 @@ Object *find_nearest_object(Object *obj, int objectID, float baseDist) {
     return bestObj;
 }
 
+float gHitboxSize[2][3];
+Object *sPrevPlatform;
+#define COLLISION_CAP (sizeof(obj->hitbox->collideObj) / sizeof(int *))
+
 Object *find_nearest_object_facing(Object *obj, int objectID, float baseDist, int range, int angle) {
     float bestDist = SQR(baseDist);
     ObjectList *objList = gObjectListHead;
@@ -147,74 +152,279 @@ Object *find_nearest_object_facing(Object *obj, int objectID, float baseDist, in
     return bestObj;
 }
 
-#define COLLISION_CAP (sizeof(obj->hitbox->collideObj) / sizeof(int *))
+
+static int object_hit_platform_flat(Object *obj, Object *testObj) {
+    Hitbox *h = obj->hitbox;
+    Hitbox *h2 = testObj->hitbox;
+    float heightScale = h->offsetY * obj->scale[1];
+    float heightScale2 = h2->offsetY * testObj->scale[1];
+    if (h2->solid) {
+        if (obj->pos[1] + heightScale >= testObj->pos[1] + (heightScale2 + gHitboxSize[1][1]) || 
+            (sPrevPlatform == testObj && obj->pos[1] + heightScale >= testObj->pos[1] + heightScale2)) {
+            obj->hitboxHeight = testObj->pos[1] + gHitboxSize[1][1] + heightScale2;
+            obj->platform = testObj;
+            return true;
+        }
+    }
+    // Above or below it, so return.
+    if (obj->pos[1] + heightScale + gHitboxSize[0][1] <= testObj->pos[1] + heightScale2 || 
+        obj->pos[1] + heightScale >= testObj->pos[1] + heightScale2 + gHitboxSize[1][1]) {
+        return true;
+    }
+    return false;
+}
+
+static int object_hit_platform_round(Object *obj, Object *testObj) {
+    Hitbox *h = obj->hitbox;
+    Hitbox *h2 = testObj->hitbox;
+    float heightScale = h->offsetY * obj->scale[1];
+    float heightScale2 = h2->offsetY * testObj->scale[1];
+    if (h2->solid) {
+        float midPoint = (gHitboxSize[1][1] / 2.0f);
+        if (obj->pos[1] + heightScale >= testObj->pos[1] + heightScale2 + midPoint || 
+            (sPrevPlatform == testObj && obj->pos[1] + heightScale >= testObj->pos[1] + heightScale2)) {
+            float relX = fabsf((obj->pos[0]) - (testObj->pos[0]));
+            float relZ = fabsf((obj->pos[2]) - (testObj->pos[2]));
+            float dist = (SQR(relX) + SQR(relZ)) / ((gHitboxSize[0][0] + gHitboxSize[1][0]) * (gHitboxSize[0][2] + gHitboxSize[1][2]));
+            float height = testObj->pos[1] + heightScale2 + (midPoint * (2.0f - dist));
+            obj->hitboxHeight = height;
+            obj->platform = testObj;
+            return true;
+        }
+    }
+    // Above or below it, so return.
+    if (obj->pos[1] + heightScale + gHitboxSize[0][1] <= testObj->pos[1] + heightScale2 || 
+        obj->pos[1] + heightScale >= testObj->pos[1] + heightScale2 + gHitboxSize[1][1]) {
+        return true;
+    }
+    return false;
+}
+
+static void object_hit_block_block(Object *obj, Object *testObj) {
+    if (fabsf(obj->pos[0] - testObj->pos[0]) < gHitboxSize[0][0] + gHitboxSize[1][0] &&
+        fabsf(obj->pos[2] - testObj->pos[2]) < gHitboxSize[0][2] + gHitboxSize[1][2]) {
+        Hitbox *h = obj->hitbox;
+        Hitbox *h2 = testObj->hitbox;
+        if (object_hit_platform_flat(obj, testObj) == true) {
+            return;
+        }
+    }
+}
+
+
+static void object_hit_block_cylinder(Object *obj, Object *testObj) {
+    if (fabsf(obj->pos[0] - testObj->pos[0]) < gHitboxSize[0][0] + gHitboxSize[1][0] &&
+        fabsf(obj->pos[2] - testObj->pos[2]) < gHitboxSize[0][2] + gHitboxSize[1][2]) {
+        Hitbox *h = obj->hitbox;
+        Hitbox *h2 = testObj->hitbox;
+        h->collideObj[(int) h->numCollisions++] = testObj;
+        if (h2->numCollisions < COLLISION_CAP) {
+            h2->collideObj[(int) h2->numCollisions++] = obj;
+        }
+        if (testObj->flags & OBJ_FLAG_TANGIBLE) {
+            if (object_hit_platform_flat(obj, testObj) == true) {
+                return;
+            }
+            float pointX;
+            float pointZ;
+            if (obj->pos[0] < testObj->pos[0]) { // Left
+                pointX = testObj->pos[0] - gHitboxSize[1][0];
+            } else { // Right
+                pointX = testObj->pos[0] + gHitboxSize[1][0];
+            }
+            if (obj->pos[2] < testObj->pos[2]) { // Up
+                pointZ = testObj->pos[2] - gHitboxSize[1][2];
+            } else { // Down
+                pointZ = testObj->pos[2] + gHitboxSize[1][2];
+            }
+            float dist = SQR(obj->pos[0] - pointX) + SQR(obj->pos[2] - pointZ);
+            if (dist < h->width * h->length) {
+
+            }
+        }
+    }
+}
+
+static void object_hit_block_sphere(Object *obj, Object *testObj) {
+    
+}
+
+static void object_hit_cylinder_cylinder(Object *obj, Object *testObj) {
+        float relX = (obj->pos[0] - testObj->pos[0]);
+        float relZ = (obj->pos[2] - testObj->pos[2]);
+        float radiusX = gHitboxSize[0][0] + gHitboxSize[1][0];
+        float radiusZ = gHitboxSize[0][2] + gHitboxSize[1][2];
+    if (fabsf(relX) < radiusX && fabsf(relZ) < radiusZ) {
+        Hitbox *h = obj->hitbox;
+        Hitbox *h2 = testObj->hitbox;
+        float dist = SQR(relX) + SQR(relZ);
+        if (dist > (gHitboxSize[0][0] + gHitboxSize[1][0]) * (gHitboxSize[0][2] + gHitboxSize[1][2])) {
+            return;
+        }
+        dist = sqrtf(dist);
+        h->collideObj[(int) h->numCollisions++] = testObj;
+        if (h2->numCollisions < COLLISION_CAP) {
+            h2->collideObj[(int) h2->numCollisions++] = obj;
+        }
+        if (testObj->flags & OBJ_FLAG_TANGIBLE) {
+            if (object_hit_platform_flat(obj, testObj) == true) {
+                return;
+            }
+            float maxWeight = MAX(h->weight, h2->weight);
+            float mag = MAX(h->weight - h2->weight, 0.0f);
+            float mag2 = (maxWeight - mag) / maxWeight;
+            mag /= maxWeight;
+            
+            obj->pos[0] += ((radiusX - dist) / radiusX * relX) * mag2;
+            obj->pos[2] += ((radiusZ - dist) / radiusZ * relZ) * mag2;
+
+            if (mag != 0.0f) {
+                float oldPos[3] = {testObj->pos[0], testObj->pos[1], testObj->pos[2]};
+                testObj->pos[0] -= ((radiusX - dist) / radiusX * relX) * mag;
+                testObj->pos[2] -= ((radiusZ - dist) / radiusZ * relZ) * mag;
+                if (h2->moveSound) {
+                    float moveDist = DIST3(oldPos, testObj->pos);
+                    moveDist = sqrtf(moveDist);
+                    if (moveDist != 0.0f) {
+                        play_sound_spatial_pitch(h2->moveSound, testObj->pos, 0.5f + moveDist);
+                    }
+                }
+            }
+        }
+    }
+}
+
+static void object_hit_cylinder_sphere(Object *obj, Object *testObj) {
+        float relX = (obj->pos[0] - testObj->pos[0]);
+        float relZ = (obj->pos[2] - testObj->pos[2]);
+        float radiusX = gHitboxSize[0][0] + gHitboxSize[1][0];
+        float radiusY = gHitboxSize[0][1] + gHitboxSize[1][1];
+        float radiusZ = gHitboxSize[0][2] + gHitboxSize[1][2];
+    if (fabsf(relX) < radiusX && fabsf(relZ) < radiusZ) {
+        Hitbox *h = obj->hitbox;
+        Hitbox *h2 = testObj->hitbox;
+        float dist = SQR(relX) + SQR(relZ);
+        if (dist > radiusX * radiusZ) {
+            return;
+        }
+        dist = sqrtf(dist);
+        h->collideObj[(int) h->numCollisions++] = testObj;
+        if (h2->numCollisions < COLLISION_CAP) {
+            h2->collideObj[(int) h2->numCollisions++] = obj;
+        }
+        if (testObj->flags & OBJ_FLAG_TANGIBLE) {
+            if (object_hit_platform_round(obj, testObj) == true) {
+                return;
+            }
+            float maxWeight = MAX(h->weight, h2->weight);
+            float mag = MAX(h->weight - h2->weight, 0.0f);
+            float midPoint = gHitboxSize[1][1] / 2.0f;
+            float relY = ((obj->pos[1] + gHitboxSize[0][1] + (h->offsetY * obj->scale[1])) - testObj->pos[1] + (h2->offsetY * testObj->scale[1]));
+            float distV = MIN(relY / (gHitboxSize[0][1] + gHitboxSize[1][1]), 1.0f);
+            float mag2 = ((maxWeight - mag) / maxWeight) * distV;
+            mag /= maxWeight;
+            
+            obj->pos[0] += ((radiusX - dist) / radiusX * relX) * mag2;
+            obj->pos[2] += ((radiusZ - dist) / radiusZ * relZ) * mag2;
+
+            if (mag != 0.0f) {
+                float oldPos[3] = {testObj->pos[0], testObj->pos[1], testObj->pos[2]};
+                testObj->pos[0] -= ((radiusX - dist) / radiusX * relX) * mag;
+                testObj->pos[2] -= ((radiusZ - dist) / radiusZ * relZ) * mag;
+                if (h2->moveSound) {
+                    float moveDist = DIST3(oldPos, testObj->pos);
+                    moveDist = sqrtf(moveDist);
+                    if (moveDist != 0.0f) {
+                        play_sound_spatial_pitch(h2->moveSound, testObj->pos, 0.5f + moveDist);
+                    }
+                }
+            }
+        }
+    }
+}
+
+static void object_hit_sphere_sphere(Object *obj, Object *testObj) {
+    
+}
+
+static void object_hit_cylinder(Object *obj, Object *testObj) {
+    switch (testObj->hitbox->type) {
+    case HITBOX_BLOCK:
+        object_hit_block_cylinder(obj, testObj);
+        break;
+    case HITBOX_CYLINDER:
+        object_hit_cylinder_cylinder(obj, testObj);
+        break;
+    case HITBOX_SPHERE:
+        object_hit_cylinder_sphere(obj, testObj);
+        break;
+    }
+}
+
+static void object_hit_block(Object *obj, Object *testObj) {
+    switch (testObj->hitbox->type) {
+    case HITBOX_BLOCK:
+        object_hit_block_block(obj, testObj);
+        break;
+    case HITBOX_CYLINDER:
+        object_hit_block_cylinder(obj, testObj);
+        break;
+    case HITBOX_SPHERE:
+        object_hit_block_sphere(obj, testObj);
+        break;
+    }
+}
+
+static void object_hit_sphere(Object *obj, Object *testObj) {
+    switch (testObj->hitbox->type) {
+    case HITBOX_BLOCK:
+        object_hit_block_sphere(obj, testObj);
+        break;
+    case HITBOX_CYLINDER:
+        object_hit_cylinder_sphere(obj, testObj);
+        break;
+    case HITBOX_SPHERE:
+        object_hit_sphere_sphere(obj, testObj);
+        break;
+    }
+}
+
+static void (*sObjectHitFuncs[])(Object *, Object *) = {
+    object_hit_block,
+    object_hit_sphere,
+    object_hit_cylinder,
+};
 
 static void object_hitbox(Object *obj) {
     DEBUG_SNAPSHOT_1();
+    if ((obj->hitbox) == NULL) {
+        return;
+    }
     ObjectList *objList = gObjectListHead;
     Object *testObj;
-    Object *prevPlatform = obj->platform;
+    sPrevPlatform = obj->platform;
     obj->hitboxHeight = -30000;
     obj->platform = NULL;
+    gHitboxSize[0][0] = obj->hitbox->width * obj->scale[0];
+    gHitboxSize[0][1] = obj->hitbox->height * obj->scale[1];
+    gHitboxSize[0][2] = obj->hitbox->length * obj->scale[2];
     while (objList) {
         testObj = objList->obj;
-        if (obj->hitbox && obj != testObj) {
-            Hitbox *h = obj->hitbox;
-            Hitbox *h2 = testObj->hitbox;
-            for (int i = 0; i < h->numCollisions; i++) {
-                if (testObj == h->collideObj[i] || h->numCollisions >= COLLISION_CAP) {
+        if (testObj->hitbox && obj != testObj) {
+            for (int i = 0; i < obj->hitbox->numCollisions; i++) {
+                if (testObj == obj->hitbox->collideObj[i] || obj->hitbox->numCollisions >= COLLISION_CAP) {
                     goto next;
                 }
             }
-            if (fabsf(obj->pos[0] - testObj->pos[0]) < h->width + h2->width &&
-                fabsf(obj->pos[2] - testObj->pos[2]) < h->length + h2->length) {
-                h->collideObj[(int) h->numCollisions++] = testObj;
-                if (h2->numCollisions < COLLISION_CAP) {
-                    h2->collideObj[(int) h2->numCollisions++] = obj;
-                }
-                if (testObj->flags & OBJ_FLAG_TANGIBLE) {
-                    if (h2->solid && (obj->pos[1] >= testObj->pos[1] + h2->offsetY + h2->height || (prevPlatform == testObj && obj->pos[1] >= testObj->pos[1] + h2->offsetY))) {
-                        obj->hitboxHeight = testObj->pos[1] + h2->height;
-                        obj->platform = testObj;
-                    } else {
-                        float maxWeight = MAX(h->weight, h2->weight);
-                        float mag = MAX(h->weight - h2->weight, 0.0f);
-                        float mag2 = (maxWeight - mag) / maxWeight;
-                        mag /= maxWeight;
-                        float radiusX = h->width + h2->width;
-                        float radiusZ = h->length + h2->length;
-                        float dist;
-                        float relX;
-                        float relZ;
-
-                        relX = (obj->pos[0] - testObj->pos[0]);
-                        relZ = (obj->pos[2] - testObj->pos[2]);
-                        dist = sqrtf(SQR(relX) + SQR(relZ));
-                        
-                        obj->pos[0] += ((radiusX - dist) / radiusX * relX) * mag2;
-                        obj->pos[2] += ((radiusZ - dist) / radiusZ * relZ) * mag2;
-
-                        if (mag != 0.0f) {
-                            float oldPos[3] = {testObj->pos[0], testObj->pos[1], testObj->pos[2]};
-                            testObj->pos[0] -= ((radiusX - dist) / radiusX * relX) * mag;
-                            testObj->pos[2] -= ((radiusZ - dist) / radiusZ * relZ) * mag;
-                            if (h2->moveSound) {
-                                float moveDist = DIST3(oldPos, testObj->pos);
-                                moveDist = sqrtf(fabsf(moveDist));
-                                if (moveDist != 0.0f) {
-                                    play_sound_spatial_pitch(h2->moveSound, testObj->pos, 0.5f + moveDist);
-                                }
-                            }
-                        }
-                    }
-                    
-                }
-            }
+            gHitboxSize[1][0] = testObj->hitbox->width * testObj->scale[0];
+            gHitboxSize[1][1] = testObj->hitbox->height * testObj->scale[1];
+            gHitboxSize[1][2] = testObj->hitbox->length * testObj->scale[2];
+            sObjectHitFuncs[(int) obj->hitbox->type](obj, testObj);
         }
         next:
         objList = objList->next;
     }
-    get_time_snapshot(PP_COLLISION, DEBUG_SNAPSHOT_1_END);
+    get_time_snapshot(PP_HITBOXES, DEBUG_SNAPSHOT_1_END);
 }
 
 /**
@@ -289,6 +499,19 @@ static void update_objects(int updateRate, float updateRateF) {
             free_object(obj);
         } else {
             get_obj_snapshot(obj, DEBUG_SNAPSHOT_2_END, false);
+        }
+    }
+    // Reset the list and run platform displacement
+    objList = gObjectListHead;
+    while (objList) {
+        DEBUG_SNAPSHOT_2();
+        obj = objList->obj;
+        if (obj->platform) {
+            object_platform_displacement(obj);
+        }
+        objList = objList->next;
+        if ((obj->flags & OBJ_FLAG_DELETE) == false) {
+            get_obj_snapshot(obj, DEBUG_SNAPSHOT_2_END, true);
         }
     }
     get_time_snapshot(PP_OBJECTS, DEBUG_SNAPSHOT_1_END);

@@ -19,7 +19,7 @@ void init(Object *obj) {
     data->healthMax = data->healthBase;
     data->health = data->healthBase;
     data->cameraAngle = 0;
-    obj->weight = 2.5f;
+    obj->weight = 3.0f;
 }
 
 void loop(Object *obj, int updateRate, float updateRateF) {
@@ -76,7 +76,7 @@ void loop(Object *obj, int updateRate, float updateRateF) {
     if (get_input_pressed(INPUT_A, 0) && gGameTimer > 120) {
         if (get_input_held(INPUT_Z)) {
             if (obj->yVel == 0.0f) {
-                obj->yVel = 35.0f;
+                obj->yVel = 7.5f;
             }
         } else {
             Particle *part;
@@ -174,7 +174,7 @@ Hitbox bbox = {
     .width = 3.0f,
     .length = 3.0f,
     .weight = 100.0f,
-    .height = 10.0f,
+    .height = 14.0f,
 };
 
 ObjectEntry entry = {
@@ -185,7 +185,7 @@ ObjectEntry entry = {
     .flags = OBJ_FLAG_MOVE | OBJ_FLAG_GRAVITY | OBJ_FLAG_COLLISION | OBJ_FLAG_SHADOW_DYNAMIC | OBJ_FLAG_TANGIBLE,
     .viewDist = OBJ_DIST(100),
     .viewWidth = 3,
-    .viewHeight = 5,
+    .viewHeight = 14,
     .dynamicShadow = &shadow,
     .hitbox = &bbox,
 };

@@ -42,6 +42,6 @@ typedef struct Environment {
     sprite_t *skySprite;
     Texture skyboxTextureID;
     unsigned char texGen;
-    unsigned char skyTimer;
+    char skyTimer;
     GLuint textureSegments[32];
 } Environment;

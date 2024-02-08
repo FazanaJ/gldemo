@@ -33,7 +33,8 @@
     "Menu", \
     "", \
     "Culling", \
-    "Background"
+    "Background", \
+    "Hitboxes"
 
 
 enum ProfileTimers {
@@ -62,6 +63,7 @@ enum ProfileTimers {
     PP_HALT,
     PP_CULLING,
     PP_BG,
+    PP_HITBOXES,
 
     PP_TOTAL
 };
