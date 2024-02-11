@@ -182,8 +182,8 @@ static int object_hit_platform_round(Object *obj, Object *testObj) {
         float midPoint = (gHitboxSize[1][1] / 2.0f);
         if (obj->pos[1] + heightScale >= testObj->pos[1] + heightScale2 + midPoint || 
             (sPrevPlatform == testObj && obj->pos[1] + heightScale >= testObj->pos[1] + heightScale2)) {
-            float relX = fabsf((obj->pos[0]) - (testObj->pos[0]));
-            float relZ = fabsf((obj->pos[2]) - (testObj->pos[2]));
+            float relX = obj->pos[0] - testObj->pos[0];
+            float relZ = obj->pos[2] - testObj->pos[2];
             float dist = (SQR(relX) + SQR(relZ)) / ((gHitboxSize[0][0] + gHitboxSize[1][0]) * (gHitboxSize[0][2] + gHitboxSize[1][2]));
             float height = testObj->pos[1] + heightScale2 + (midPoint * (2.0f - dist));
             obj->hitboxHeight = height;

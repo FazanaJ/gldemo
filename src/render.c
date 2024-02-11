@@ -1124,9 +1124,9 @@ static void render_determine_visible(void) {
         obj = list->obj;
         if (!(obj->flags & OBJ_FLAG_INVISIBLE)) {
             float screenPos[3];
-            float pos[3] = {obj->pos[0], obj->pos[1] + 2.0f, obj->pos[2]};
+            float pos[3] = {obj->pos[0], obj->pos[1] + obj->gfx->yOffset, obj->pos[2]};
             linear_mtxf_mul_vec3f_and_translate(gViewMatrix, screenPos, pos);
-            if (render_inside_view(2.0f, 10.0f, screenPos)) {
+            if (render_inside_view(obj->gfx->width, obj->gfx->height, screenPos)) {
                 obj->flags |= OBJ_FLAG_IN_VIEW;
             } else {
                 obj->flags &= ~OBJ_FLAG_IN_VIEW;
