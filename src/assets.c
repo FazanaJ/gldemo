@@ -173,6 +173,7 @@ void free_font(int fontID) {
 }
 
 int load_texture(Material *material) {
+    DEBUG_SNAPSHOT_1();
     MaterialList *list = gMaterialListHead;
     // Check if the texture is already loaded, and bind it to the index.
     while (list) {
@@ -197,13 +198,14 @@ int load_texture(Material *material) {
         gMaterialListTail = gMaterialListTail->next;
     }
     list->next = NULL;
-    debugf("Loading texture: %s.\n", gTextureIDs[material->textureID].file);
+    debugf("Loading texture: %s.", gTextureIDs[material->textureID].file);
     list->sprite = sprite_load(asset_dir(gTextureIDs[material->textureID].file, DFS_SPRITE));
     list->textureID = material->textureID;
     glGenTextures(1, &list->texture);
     bind_new_texture(list);
     list->loadTimer = 10;
     material->index = list;
+    debugf(" Time: %2.3fs.\n", ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
 #ifdef PUPPYPRINT_DEBUG
     gNumTextures++;
 #endif
@@ -239,6 +241,7 @@ static void free_material(MaterialList *material) {
 }
 
 void shadow_generate(Object *obj) {
+    DEBUG_SNAPSHOT_1();
     debugf("Allocating dynamic shadow for [%s] object.", sObjectOverlays[obj->objectID]);
     obj->gfx->dynamicShadow = malloc(sizeof(DynamicShadow));
     DynamicShadow *d = obj->gfx->dynamicShadow;
@@ -278,7 +281,6 @@ void shadow_generate(Object *obj) {
     d->acrossX = w;
     d->acrossY = h;
     d->texCount = w * h;
-    debugf("Texture count: %d\n", d->texCount);
     int x = 0;
     int y = 0;
     int texLoads = d->texCount - 1;
@@ -297,6 +299,8 @@ void shadow_generate(Object *obj) {
         }
         y += stepH;
     }
+    debugf(" Texture count: %d.", d->texCount);
+    debugf(" Time: %2.3fs.\n", ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
 }
 
 void asset_cycle(int updateRate) {
@@ -337,7 +341,8 @@ void asset_cycle(int updateRate) {
 }
 
 void sky_texture_generate(Environment *e) {
-    debugf("Loading texture: %s.\n", gTextureIDs[e->skyboxTextureID].file);
+    DEBUG_SNAPSHOT_1();
+    debugf("Loading texture: %s.", gTextureIDs[e->skyboxTextureID].file);
     e->skySprite = sprite_load(asset_dir(gTextureIDs[e->skyboxTextureID].file, DFS_SPRITE));
     surface_t surf = sprite_get_pixels(e->skySprite);
     int x = 0;
@@ -355,6 +360,7 @@ void sky_texture_generate(Environment *e) {
         glSurfaceTexImageN64(GL_TEXTURE_2D, 0, &surfPiece, &(rdpq_texparms_t){.s.repeats = false, .t.repeats = false});
         x += 32;
     }
+    debugf(" Time: %2.3fs.\n", ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
 }
 
 rspq_block_t *sky_gradient_generate(Environment *e) {
@@ -378,6 +384,7 @@ rspq_block_t *sky_gradient_generate(Environment *e) {
 }
 
 static void init_object_behaviour(Object *obj, int objectID) {
+    DEBUG_SNAPSHOT_1();
     void *addr = NULL;
     VoidList *list = gOverlayListHead;
     if (gOverlayListHead) {
@@ -391,7 +398,7 @@ static void init_object_behaviour(Object *obj, int objectID) {
     }
 
     if (addr == NULL) {
-        debugf("Loading overlay [%s]\n", sObjectOverlays[objectID]);
+        debugf("Loading overlay [%s].", sObjectOverlays[objectID]);
         list = malloc(sizeof(VoidList));
         if (gOverlayListHead == NULL) {
             gOverlayListHead = list;
@@ -410,6 +417,7 @@ static void init_object_behaviour(Object *obj, int objectID) {
 #ifdef PUPPYPRINT_DEBUG
         gNumOverlays++;
 #endif
+        debugf(" Time: %2.3fs.\n", ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
     }
     ObjectEntry *entry = dlsym(addr, "entry");
     obj->header = entry;
@@ -615,6 +623,7 @@ static int temp_matrix_grabber(int modelID) {
 }
 
 static void load_object_model(Object *obj, int objectID) {
+    DEBUG_SNAPSHOT_1();
     obj->gfx = malloc(sizeof(ObjectGraphics));
     bzero(obj->gfx, sizeof(ObjectGraphics));
     obj->gfx->envColour[0] = 0xFF;
@@ -652,7 +661,7 @@ static void load_object_model(Object *obj, int objectID) {
     }
     gModelIDListTail = list;
 
-    debugf("Loading model [%s]\n", gModelIDs[modelID - 1]);
+    debugf("Loading model [%s].", gModelIDs[modelID - 1]);
     list->model64 = model64_load(asset_dir(gModelIDs[modelID - 1], DFS_MODEL64));
     list->entry = NULL;
     int numMeshes = model64_get_mesh_count(list->model64);
@@ -701,6 +710,7 @@ static void load_object_model(Object *obj, int objectID) {
             tail = m;
         }
     }
+    debugf(" Time: %2.3fs.\n", ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
 
 #ifdef PUPPYPRINT_DEBUG
         gNumModels++;

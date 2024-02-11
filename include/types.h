@@ -33,9 +33,9 @@ typedef struct Material {
 } Material;
 
 typedef struct Environment {
-    GLfloat fogColour[4];
-    GLfloat skyColourTop[4];
-    GLfloat skyColourBottom[4];
+    GLfloat fogColour[3];
+    GLfloat skyColourTop[3];
+    GLfloat skyColourBottom[3];
     GLfloat fogNear;
     GLfloat fogFar;
     int flags;

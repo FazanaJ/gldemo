@@ -52,15 +52,12 @@ static void setup_fog(SceneHeader *header) {
     gEnvironment->fogColour[0] = ((float) header->fogColour[0]) / 255.0f;
     gEnvironment->fogColour[1] = ((float) header->fogColour[1]) / 255.0f;
     gEnvironment->fogColour[2] = ((float) header->fogColour[2]) / 255.0f;
-    gEnvironment->fogColour[3] = 1.0f;
     gEnvironment->skyColourBottom[0] = ((float) header->skyBottom[0]) / 255.0f;
     gEnvironment->skyColourBottom[1] = ((float) header->skyBottom[1]) / 255.0f;
     gEnvironment->skyColourBottom[2] = ((float) header->skyBottom[2]) / 255.0f;
-    gEnvironment->skyColourBottom[3] = 1.0f;
     gEnvironment->skyColourTop[0] = ((float) header->skyTop[0]) / 255.0f;
     gEnvironment->skyColourTop[1] = ((float) header->skyTop[1]) / 255.0f;
     gEnvironment->skyColourTop[2] = ((float) header->skyTop[2]) / 255.0f;
-    gEnvironment->skyColourTop[3] = 1.0f;
     gEnvironment->flags = header->flags;
     gEnvironment->fogNear = header->fogNear;
     gEnvironment->fogFar = header->fogFar;

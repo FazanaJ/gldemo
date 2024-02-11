@@ -41,7 +41,7 @@ static void object_move(Object *obj, float updateRateF) {
 
 static void object_platform_displacement(Object *obj) {
     Object *p = obj->platform;
-    if (obj->pos[1] <= obj->hitboxHeight + 0.5f) {
+    if (obj->yVel <= 0.0f && obj->pos[1] <= obj->hitboxHeight + 1.5f) {
         float diff[3];
         diff[0] = p->pos[0] - p->prevPos[0];
         diff[1] = p->pos[1] - p->prevPos[1];
@@ -53,7 +53,6 @@ static void object_platform_displacement(Object *obj) {
 }
 
 static void object_gravity(Object *obj, float updateRateF) {
-    //return;
     float weightMax = -(obj->weight * 10.0f);
     if (obj->yVel > weightMax) {
         obj->yVel -= (obj->weight / 10.0f) * updateRateF;
@@ -64,7 +63,7 @@ static void object_gravity(Object *obj, float updateRateF) {
     if (obj->yVel != 0.0f) {
         float height = MAX(obj->floorHeight, obj->hitboxHeight);
         obj->pos[1] += (obj->yVel / 10.0f) * updateRateF;
-        if (obj->yVel < 0.0f && obj->pos[1] - height < 0.0f) {
+        if (obj->yVel < 0.0f && obj->pos[1] - height < 1.5f) {
             obj->pos[1] = height;
             obj->yVel = 0.0f;
         }

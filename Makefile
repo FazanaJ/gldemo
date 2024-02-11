@@ -30,6 +30,7 @@ assets_conv = $(addprefix filesystem/,$(notdir $(assets_ttf:%.ttf=%.font64))) \
 MKSPRITE_FLAGS ?=
 MKFONT_FLAGS ?=
 AUDIOCONV_FLAGS ?= --wav-compress 1
+COMPRESS_LEVEL ?= --compress 2
 
 all: gldemo.z64
 
@@ -38,57 +39,52 @@ filesystem/arial.10.font64: MKFONT_FLAGS+=--size 10
 filesystem/%.font64: assets/fonts/%.ttf
 	@mkdir -p $(dir $@)
 	@echo "    [FONT] $@"
-	@$(N64_MKFONT) $(MKFONT_FLAGS) --compress 3 -o filesystem "$<"
+	@$(N64_MKFONT) $(MKFONT_FLAGS) $(COMPRESS_LEVEL) -o filesystem "$<"
 
 filesystem/%.font64: assets/archives/%.ttf
 	@mkdir -p $(dir $@)
 	@echo "    [FONT] $@"
-	@$(N64_MKFONT) $(MKFONT_FLAGS) --compress 3 -o filesystem "$<"
+	@$(N64_MKFONT) $(MKFONT_FLAGS) $(COMPRESS_LEVEL) -o filesystem "$<"
 
 filesystem/%.sprite: assets/textures/character/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) $(COMPRESS_LEVEL) -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/textures/environment/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) $(COMPRESS_LEVEL) -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/textures/hud/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) $(COMPRESS_LEVEL) -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/textures/icons/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) $(COMPRESS_LEVEL) -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/textures/misc/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) $(COMPRESS_LEVEL) -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/textures/props/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) $(COMPRESS_LEVEL) -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/textures/skyboxes/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
-
-filesystem/%.sprite: assets/textures/talksprites/%.png
-	@mkdir -p $(dir $@)
-	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) $(COMPRESS_LEVEL) -o "$(dir $@)" "$<"
 
 filesystem/%.sprite: assets/archives/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	@$(N64_MKSPRITE) --compress 0 -o "$(dir $@)" "$<"
+	@$(N64_MKSPRITE) --compress 3 -o "$(dir $@)" "$<"
 
 filesystem/%.wav64: assets/sounds/%.wav
 	@mkdir -p $(dir $@)
@@ -108,12 +104,12 @@ filesystem/%.xm64: assets/xm/%.xm
 filesystem/%.model64: assets/models/%.glb
 	@mkdir -p $(dir $@)
 	@echo "    [MODEL] $@"
-	@$(N64_MKMODEL) --compress 0 -o filesystem $<
+	@$(N64_MKMODEL) $(COMPRESS_LEVEL) -o filesystem $<
 
 filesystem/%.model64: assets/archives/%.glb
 	@mkdir -p $(dir $@)
 	@echo "    [MODEL] $@"
-	@$(N64_MKMODEL) --compress 0 -o filesystem $<
+	@$(N64_MKMODEL) $(COMPRESS_LEVEL) -o filesystem $<
 
 $(BUILD_DIR)/gldemo.dfs: $(assets_conv) $(DSO_LIST)
 $(BUILD_DIR)/gldemo.elf: $(src:%.c=$(BUILD_DIR)/%.o) $(MAIN_ELF_EXTERNS)
