@@ -1124,9 +1124,10 @@ static void render_determine_visible(void) {
         obj = list->obj;
         if (!(obj->flags & OBJ_FLAG_INVISIBLE)) {
             float screenPos[3];
-            float pos[3] = {obj->pos[0], obj->pos[1] + obj->gfx->yOffset, obj->pos[2]};
+            float pos[3] = {obj->pos[0], obj->pos[1] + (obj->gfx->yOffset * obj->scale[1]), obj->pos[2]};
+            float highScale = MAX(obj->scale[0], obj->scale[2]);
             linear_mtxf_mul_vec3f_and_translate(gViewMatrix, screenPos, pos);
-            if (render_inside_view(obj->gfx->width, obj->gfx->height, screenPos)) {
+            if (render_inside_view(obj->gfx->width * highScale, obj->gfx->height * obj->scale[1], screenPos)) {
                 obj->flags |= OBJ_FLAG_IN_VIEW;
             } else {
                 obj->flags &= ~OBJ_FLAG_IN_VIEW;
@@ -1141,8 +1142,10 @@ static void render_determine_visible(void) {
         clu = cList->clutter;
         if (!(clu->flags & OBJ_FLAG_INVISIBLE)) {
             float screenPos[3];
-            linear_mtxf_mul_vec3f_and_translate(gViewMatrix, screenPos, clu->pos);
-            if (render_inside_view(2.0f, 2.0f, screenPos)) {
+            float pos[3] = {clu->pos[0], clu->pos[1] + (clu->gfx->yOffset * clu->scale[1]), clu->pos[2]};
+            float highScale = MAX(clu->scale[0], clu->scale[2]);
+            linear_mtxf_mul_vec3f_and_translate(gViewMatrix, screenPos, pos);
+            if (render_inside_view(clu->gfx->width * highScale, clu->gfx->height * clu->scale[1], screenPos)) {
                 clu->flags |= OBJ_FLAG_IN_VIEW;
             } else {
                 clu->flags &= ~OBJ_FLAG_IN_VIEW;

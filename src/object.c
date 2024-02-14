@@ -283,9 +283,8 @@ static void object_hit_cylinder_cylinder(Object *obj, Object *testObj) {
                 testObj->pos[2] -= ((radiusZ - dist) / radiusZ * relZ) * mag;
                 if (h2->moveSound) {
                     float moveDist = DIST3(oldPos, testObj->pos);
-                    moveDist = sqrtf(moveDist);
                     if (moveDist != 0.0f) {
-                        play_sound_spatial_pitch(h2->moveSound, testObj->pos, 0.5f + moveDist);
+                        play_sound_spatial_pitch(h2->moveSound, testObj->pos, 0.5f + sqrtf(moveDist));
                     }
                 }
             }
@@ -332,9 +331,8 @@ static void object_hit_cylinder_sphere(Object *obj, Object *testObj) {
                 testObj->pos[2] -= ((radiusZ - dist) / radiusZ * relZ) * mag;
                 if (h2->moveSound) {
                     float moveDist = DIST3(oldPos, testObj->pos);
-                    moveDist = sqrtf(moveDist);
                     if (moveDist != 0.0f) {
-                        play_sound_spatial_pitch(h2->moveSound, testObj->pos, 0.5f + moveDist);
+                        play_sound_spatial_pitch(h2->moveSound, testObj->pos, 0.5f + sqrtf(moveDist));
                     }
                 }
             }
