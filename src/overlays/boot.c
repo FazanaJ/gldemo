@@ -146,7 +146,7 @@ void init_memory(void) {
 }
 
 void init_controller(void) {
-    controller_init();
+    joypad_init();
     bzero(&gInputData, sizeof(Input));
     gInputData.pak = 0;
 }

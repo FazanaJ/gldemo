@@ -26,28 +26,28 @@ void loop(Object *obj, int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
     PlayerData *data = (PlayerData *) obj->data;
     Camera *c = gCamera;
-	float stickX = get_stick_x(STICK_LEFT);
-    float intendedMag = get_stick_mag(STICK_LEFT);
+	float stickX = input_stick_x(STICK_LEFT);
+    float intendedMag = input_stick_mag(STICK_LEFT);
     int moveTicks = timer_int(60);
     if (gCurrentController == -1) {
         get_time_snapshot(PP_PLAYER, DEBUG_SNAPSHOT_1_END);
         return;
     }
 
-    if (get_input_pressed(INPUT_DLEFT, 0)) {
+    if (input_pressed(INPUT_DLEFT, 0)) {
         data->health--;
     }
-    if (get_input_pressed(INPUT_DRIGHT, 0)) {
+    if (input_pressed(INPUT_DRIGHT, 0)) {
         data->health++;
     }
 
-    if (get_input_pressed(INPUT_DDOWN, 0)) {
+    if (input_pressed(INPUT_DDOWN, 0)) {
         data->healthMax--;
         if (data->health > data->healthMax) {
             data->health = data->healthMax;
         }
     }
-    if (get_input_pressed(INPUT_DUP, 0)) {
+    if (input_pressed(INPUT_DUP, 0)) {
         data->healthMax++;
     }
 
@@ -58,23 +58,23 @@ void loop(Object *obj, int updateRate, float updateRateF) {
         gCamera->target = NULL;
     }
 
-    if (targetObj && get_input_pressed(INPUT_Z, 3)) {
-        clear_input(INPUT_Z);
+    if (targetObj && input_pressed(INPUT_Z, 3)) {
+        input_clear(INPUT_Z);
         data->zTarget = targetObj;
-    } else if (get_input_released(INPUT_Z, 0)) {
+    } else if (input_released(INPUT_Z, 0)) {
         data->zTarget = NULL;
     }
 
-    if (get_input_pressed(INPUT_B, 0) && gGameTimer > 120) {
+    if (input_pressed(INPUT_B, 0) && gGameTimer > 120) {
         play_sound_spatial(SOUND_LASER, obj->pos);
         Object *bullet = spawn_object_pos(OBJ_PROJECTILE, obj->pos[0], obj->pos[1] + 5.0f, obj->pos[2]);
         bullet->forwardVel = 20.0f;
         bullet->moveAngle[1] = obj->faceAngle[1];
-        rumble_set(3);
+        input_rumble(3);
     }
 
-    if (get_input_pressed(INPUT_A, 0) && gGameTimer > 120) {
-        if (get_input_held(INPUT_Z)) {
+    if (input_pressed(INPUT_A, 0) && gGameTimer > 120) {
+        if (input_held(INPUT_Z)) {
             if (obj->yVel == 0.0f) {
                 obj->yVel = 7.5f;
             }
@@ -103,7 +103,7 @@ void loop(Object *obj, int updateRate, float updateRateF) {
         }
     }
 
-    if (intendedMag > 0.01f && get_input_held(INPUT_L) == false) {
+    if (intendedMag > 0.01f && input_held(INPUT_L) == false) {
         if (intendedMag < 0.25f) {
             intendedMag = 0.25f;
         }
@@ -113,7 +113,7 @@ void loop(Object *obj, int updateRate, float updateRateF) {
             float pitchBend = random_float() / 16.0f;
             play_sound_spatial_pitch(SOUND_STEP_STONE, obj->pos, 0.25f + pitchBend);
         }
-        short intendedYaw = get_stick_angle(STICK_LEFT);
+        short intendedYaw = input_stick_angle(STICK_LEFT);
         float moveLerp;
         INCREASE_VAR(c->moveTimer, updateRate, moveTicks);
         moveLerp = 1.0f - (((float) (moveTicks - c->moveTimer)) / (float) moveTicks);

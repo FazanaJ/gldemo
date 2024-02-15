@@ -89,7 +89,7 @@ void talk_update(int updateRate) {
     }
     TalkControl *t = gTalkControl;
     
-    if (t->curChar == t->endChar && get_input_pressed(INPUT_B, 5) && t->curLine != 0) {
+    if (t->curChar == t->endChar && input_pressed(INPUT_B, 5) && t->curLine != 0) {
         TalkText *curText = t->curText;
         if (t->optionsVisible) {
             t->optionsVisible = false;
@@ -102,7 +102,7 @@ void talk_update(int updateRate) {
             voice_play(curText[t->curLine].soundID, false);
         }
         play_sound_global(SOUND_MENU_CLICK);
-        clear_input(INPUT_B);
+        input_clear(INPUT_B);
         return;
     }
     if (t->optionsVisible == false) {
@@ -137,7 +137,7 @@ void talk_update(int updateRate) {
         int optCount = opt[0].nextID;
         handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &t->curOption, 0, 0, 0, optCount);
     }
-    if (get_input_pressed(INPUT_A, 5)) {
+    if (input_pressed(INPUT_A, 5)) {
         if (t->curChar < t->endChar) {
             t->curChar = t->endChar;
         } else {
@@ -157,7 +157,7 @@ void talk_update(int updateRate) {
                 t->curLine++;
             } else if (curText[t->curLine].nextID == TALK_END) {
                 talk_close();
-                clear_input(INPUT_A);
+                input_clear(INPUT_A);
                 return;
             } else {
                 t->curLine = curText[t->curLine].nextID;
@@ -173,12 +173,11 @@ void talk_update(int updateRate) {
             }
         }
             
-        clear_input(INPUT_A);
+        input_clear(INPUT_A);
     }
 }
 
 static void talk_generate_bubble(void) {
-    TalkControl *t = gTalkControl;
     int w = display_get_width();
     int h = display_get_height();
     //rspq_block_begin();

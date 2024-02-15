@@ -5,25 +5,25 @@
 #define DEADZONE 10.0f
 
 enum InputButtons {
-    INPUT_A,
-    INPUT_B,
-    INPUT_START,
-    INPUT_L,
-    INPUT_R,
-    INPUT_Z,
-    INPUT_CUP,
-    INPUT_CLEFT,
     INPUT_CRIGHT,
+    INPUT_CLEFT,
     INPUT_CDOWN,
-    INPUT_DUP,
-    INPUT_DLEFT,
+    INPUT_CUP,
+    INPUT_R,
+    INPUT_L,
+    INPUT_X,
+    INPUT_Y,
     INPUT_DRIGHT,
+    INPUT_DLEFT,
     INPUT_DDOWN,
+    INPUT_DUP,
+    INPUT_START,
+    INPUT_Z,
+    INPUT_B,
+    INPUT_A,
 
     INPUT_TOTAL,
 
-    INPUT_X = INPUT_CUP,
-    INPUT_Y,
 };
 
 enum InputType {
@@ -56,14 +56,14 @@ extern int gCurrentController;
 extern struct controller_data gController;
 extern Input gInputData;
 
-void update_inputs(int updateRate);
-int get_input_pressed(int input, int numFrames);
-int get_input_held(int input);
-int get_input_released(int input, int numFrames);
-int get_stick_x(int type);
-int get_stick_y(int type);
-short get_stick_angle(int type);
-float get_stick_mag(int type);
-void rumble_set(int timer);
-void clear_input(int input);
-int get_controller_type(void);
+void input_update(int updateRate);
+int input_pressed(int input, int numFrames);
+int input_held(int input);
+int input_released(int input, int numFrames);
+int input_stick_x(int type);
+int input_stick_y(int type);
+short input_stick_angle(int type);
+float input_stick_mag(int type);
+void input_rumble(int timer);
+void input_clear(int input);
+int input_type(void);

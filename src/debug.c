@@ -131,27 +131,27 @@ void process_profiler(void) {
         gDebugData->iteration = 0;
     }
 
-    if (get_input_pressed(INPUT_L, 5) && get_input_held(INPUT_DUP)) {
+    if (input_pressed(INPUT_L, 5) && input_held(INPUT_DUP)) {
         gDebugData->enabled ^= 1;
-        clear_input(INPUT_L);
-        clear_input(INPUT_DUP);
+        input_clear(INPUT_L);
+        input_clear(INPUT_DUP);
     } else if (gDebugData->enabled) {
-        if (get_input_pressed(INPUT_L, 5)) {
+        if (input_pressed(INPUT_L, 5)) {
             gDebugData->menuOpen ^= 1;
             if (gDebugData->menuOpen == false) {
                 gDebugData->menuPage = gDebugData->menuOption;
             }
-            clear_input(INPUT_L);
+            input_clear(INPUT_L);
         }
-        if (get_input_pressed(INPUT_DUP, 5)) {
-            clear_input(INPUT_DUP);
+        if (input_pressed(INPUT_DUP, 5)) {
+            input_clear(INPUT_DUP);
             gDebugData->menuOption--;
             if (gDebugData->menuOption <= -1) {
                 gDebugData->menuOption = PAGE_TOTAL - 1;
                 gDebugData->menuScroll = PAGE_TOTAL - 5;
             }
-        } else if (get_input_pressed(INPUT_DDOWN, 5)) {
-            clear_input(INPUT_DDOWN);
+        } else if (input_pressed(INPUT_DDOWN, 5)) {
+            input_clear(INPUT_DDOWN);
             gDebugData->menuOption++;
             if (gDebugData->menuOption >= PAGE_TOTAL) {
                 gDebugData->menuOption = 0;

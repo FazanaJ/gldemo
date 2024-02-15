@@ -58,14 +58,14 @@ void camera_shake(Camera *c, int updateRate, float updateRateF) {
 
 static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
     float zoom;
-    float stickX = get_stick_x(STICK_LEFT);
-    float stickY = get_stick_y(STICK_LEFT);
+    float stickX = input_stick_x(STICK_LEFT);
+    float stickY = input_stick_y(STICK_LEFT);
     float pan;
     PlayerData *data = (PlayerData *) c->parent->data;
 
     if (gMenuStatus == MENU_CLOSED) {
         camera_shake(c, updateRate, updateRateF);
-        if (get_input_held(INPUT_Z)) {
+        if (input_held(INPUT_Z)) {
             c->yawTarget = data->cameraAngle + 0x8000;
             INCREASE_VAR(gZTargetTimer, updateRate * 4, timer_int(20));
             c->targetZoom = lerp(c->targetZoom, 1, 0.05f * updateRateF);
@@ -74,8 +74,8 @@ static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
             c->targetZoom = lerp(c->targetZoom, 0, 0.05f * updateRateF);
         }
 
-        if (get_controller_type() == CONTROLLER_N64) {
-            if (get_input_held(INPUT_L)) {
+        if (input_type() == CONTROLLER_N64) {
+            if (input_held(INPUT_L)) {
                 letMeUseL:
                 float intendedPitch = stickY * 100.0f;
                 c->yawTarget -= (float) (stickX * ((8.0f * updateRateF)));
@@ -89,8 +89,8 @@ static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
             }
         } else {
             letMeUseC:
-            float stickRX = get_stick_x(STICK_RIGHT);
-            float stickRY = get_stick_y(STICK_RIGHT);
+            float stickRX = input_stick_x(STICK_RIGHT);
+            float stickRY = input_stick_y(STICK_RIGHT);
             float intendedPitch = stickRY * 100.0f;
             c->yawTarget -= (float) (stickRX * ((8.0f * updateRateF)));
             c->pan = lerp(c->pan, -stickX, 0.025f * updateRateF);
@@ -98,8 +98,8 @@ static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
             c->lookPitch = lerp(c->lookPitch, intendedPitch, 0.1f * updateRateF);
         }
     } else if (gMenuStatus == MENU_CONFIG) {
-        if (get_controller_type() == CONTROLLER_N64) {
-            if (get_input_held(INPUT_L)) {
+        if (input_type() == CONTROLLER_N64) {
+            if (input_held(INPUT_L)) {
                 goto letMeUseL;
             }
         } else {
@@ -128,7 +128,7 @@ static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
             tar = c->target;
         }
         float targetMag;
-        if (get_input_held(INPUT_Z)) {
+        if (input_held(INPUT_Z)) {
             targetMag = 0.5f;
         } else {
             targetMag = 1.0f - (DIST3(c->parent->pos, tar->pos) / SQR(30.0f));
@@ -159,8 +159,8 @@ static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
     c->pos[2] = intendedFocus[2] - ((zoom) * sins(c->yaw - 0x4000));
     c->pos[1] = intendedFocus[1] + 10.0f + (11.5f * sins(c->viewPitch + 0x4000)) + (c->shakePos * 1.25f);
 
-    if (get_input_held(INPUT_R)) {
-        clear_input(INPUT_R);
+    if (input_held(INPUT_R)) {
+        input_clear(INPUT_R);
         c->shakeSpeed = 15;
         c->shakeStrength = 10;
         c->shakeTimer = 90;
@@ -169,51 +169,51 @@ static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
 }
 
 static void camera_update_photo(Camera *c, int updateRate, float updateRateF) {
-    float stickMag = get_stick_mag(STICK_LEFT);
-    u_uint16_t stickAngle = get_stick_angle(STICK_LEFT);
+    float stickMag = input_stick_mag(STICK_LEFT);
+    u_uint16_t stickAngle = input_stick_angle(STICK_LEFT);
     
     c->pos[0] += ((stickMag * sins(c->yaw + stickAngle)) / 2.0f) * updateRateF;
     c->pos[2] += ((stickMag * coss(c->yaw + stickAngle)) / 2.0f) * updateRateF;
 
-    if (get_input_held(INPUT_CLEFT)) {
+    if (input_held(INPUT_CLEFT)) {
         c->yawTarget += 0x100 * updateRate;
-    } else if (get_input_held(INPUT_CRIGHT)) {
+    } else if (input_held(INPUT_CRIGHT)) {
         c->yawTarget -= 0x100 * updateRate;
     }
 
-    if (get_input_held(INPUT_CUP)) {
+    if (input_held(INPUT_CUP)) {
         c->pitch += 0x80 * updateRate;
         if (c->pitch > 0x3F00) {
             c->pitch = 0x3F00;
         }
-    } else if (get_input_held(INPUT_CDOWN)) {
+    } else if (input_held(INPUT_CDOWN)) {
         c->pitch -= 0x80 * updateRate;
         if (c->pitch < -0x3F00) {
             c->pitch = -0x3F00;
         }
     }
 
-    if (get_input_held(INPUT_DUP)) {
+    if (input_held(INPUT_DUP)) {
         c->fov -= 0.5f * updateRateF;
         if (c->fov < 15.0f) {
             c->fov = 15.0f;
         }
-    } else if (get_input_held(INPUT_DDOWN)) {
+    } else if (input_held(INPUT_DDOWN)) {
         c->fov += 0.5f * updateRateF;
         if (c->fov > 90.0f) {
             c->fov = 90.0f;
         }
     }
 
-    if (get_input_held(INPUT_Z) || get_input_held(INPUT_L)) {
+    if (input_held(INPUT_Z) || input_held(INPUT_L)) {
         c->pos[1] -= 0.5f * updateRateF;
-    } else if (get_input_held(INPUT_R)) {
+    } else if (input_held(INPUT_R)) {
         c->pos[1] += 0.5f * updateRateF;
     }
 
-    if (get_input_pressed(INPUT_A, 3)) {
+    if (input_pressed(INPUT_A, 3)) {
         gCameraHudToggle ^= 1;
-        clear_input(INPUT_A);
+        input_clear(INPUT_A);
     }
 
     

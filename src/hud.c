@@ -546,13 +546,13 @@ void render_hud(int updateRate, float updateRateF) {
     }
     render_hud_subtitles();
 
-    if (get_input_pressed(INPUT_CDOWN, 0)) {
+    if (input_pressed(INPUT_CDOWN, 0)) {
         add_subtitle("You have pressed C down!", 120);
     }
-    if (get_input_pressed(INPUT_CLEFT, 0)) {
+    if (input_pressed(INPUT_CLEFT, 0)) {
         add_subtitle("You have pressed C left!\nThat's quite an acomplishment right there.", 200);
     }
-    if (get_input_pressed(INPUT_CUP, 0)) {
+    if (input_pressed(INPUT_CUP, 0)) {
         add_subtitle("You have pressed C left!\nThat's quite an acomplishment right there.\nOh god, we have a THIRD line now?", 200);
     }
 

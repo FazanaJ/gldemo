@@ -263,9 +263,9 @@ void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short
     int playSound = false;
 
     if (flags & MENUSTICK_STICKX) {
-        stickMag = get_stick_x(STICK_LEFT);
+        stickMag = input_stick_x(STICK_LEFT);
         DECREASE_VAR(sMenuSelectionTimer[0], updateRate, 0);
-        if (fabs(stickMag) > 25 || get_input_held(INPUT_DLEFT) || get_input_held(INPUT_DRIGHT)) {
+        if (fabs(stickMag) > 25 || input_held(INPUT_DLEFT) || input_held(INPUT_DRIGHT)) {
             if (sMenuSelectionTimer[0] == 0) {
                 if (sMenuSelectionType[0] == 0) {
                     sMenuSelectionTimer[0] = 30;
@@ -273,7 +273,7 @@ void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short
                 } else {
                     sMenuSelectionTimer[0] = 10;
                 }
-                if (stickMag < 0 || get_input_held(INPUT_DLEFT)) {
+                if (stickMag < 0 || input_held(INPUT_DLEFT)) {
                     if (*selectionX > minX) {
                         playSound = true;
                         *selectionX = *selectionX - 1;
@@ -301,9 +301,9 @@ void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short
         }
     }
     if (flags & MENUSTICK_STICKY) {
-        stickMag = get_stick_y(STICK_LEFT);
+        stickMag = input_stick_y(STICK_LEFT);
         DECREASE_VAR(sMenuSelectionTimer[1], updateRate, 0);
-        if (fabs(stickMag) > 25 || get_input_held(INPUT_DUP) || get_input_held(INPUT_DDOWN)) {
+        if (fabs(stickMag) > 25 || input_held(INPUT_DUP) || input_held(INPUT_DDOWN)) {
             if (sMenuSelectionTimer[1] == 0) {
                 if (sMenuSelectionType[1] == 0) {
                     sMenuSelectionTimer[1] = 30;
@@ -311,7 +311,7 @@ void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short
                 } else {
                     sMenuSelectionTimer[1] = 10;
                 }
-                if (stickMag > 0 || get_input_held(INPUT_DUP)) {
+                if (stickMag > 0 || input_held(INPUT_DUP)) {
                     if (*selectionY > minY) {
                         playSound = true;
                         *selectionY = *selectionY - 1;
@@ -383,7 +383,7 @@ static void process_config_menu(int updateRate) {
         }
     }
 
-    if (get_input_held(INPUT_L)) {
+    if (input_held(INPUT_L)) {
         return;
     }
 
@@ -427,9 +427,9 @@ static void process_options_menu(int updateRate) {
 
     handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &sMenuSelection[1], 0, 0, 0, 4);
 
-    if (get_input_pressed(INPUT_A, 5)) {
+    if (input_pressed(INPUT_A, 5)) {
         play_sound_global(SOUND_MENU_CLICK);
-        clear_input(INPUT_A);
+        input_clear(INPUT_A);
         switch (sMenuSelection[1]) {
         case 0:
             menu_set_backward(MENU_PREV);
@@ -455,10 +455,10 @@ static void process_options_menu(int updateRate) {
         }
     }
 
-    if ((get_input_pressed(INPUT_START, 3) || get_input_pressed(INPUT_B, 3)) && sMenuSwapTimer == 0) {
+    if ((input_pressed(INPUT_START, 3) || input_pressed(INPUT_B, 3)) && sMenuSwapTimer == 0) {
         play_sound_global(SOUND_MENU_CLICK);
-        clear_input(INPUT_START);
-        clear_input(INPUT_B);
+        input_clear(INPUT_START);
+        input_clear(INPUT_B);
         menu_set_backward(MENU_PREV);
     }
 }
@@ -475,19 +475,19 @@ static void process_sceneselect_menu(int updateRate) {
 
     handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &sMenuSelection[1], 0, 0, 0, sMenuDisplay->listCount);
 
-    if (get_input_pressed(INPUT_A, 3) && sMenuSwapTimer == 0) {
+    if (input_pressed(INPUT_A, 3) && sMenuSwapTimer == 0) {
         if (sMenuSelection[1] == sMenuDisplay->listCount - 1) {
             goto goback;
         }
         play_sound_global(SOUND_MENU_CLICK);
-        clear_input(INPUT_A);
+        input_clear(INPUT_A);
         transition_into_scene(sMenuSelection[1], TRANSITION_FULLSCREEN_IN, 30, TRANSITION_FULLSCREEN_OUT);
         menu_set_reset(MENU_CLOSED);
         set_background_music(0, 30);
-    } else if (get_input_pressed(INPUT_B, 3) && sMenuSwapTimer == 0) {
+    } else if (input_pressed(INPUT_B, 3) && sMenuSwapTimer == 0) {
         goback:
         play_sound_global(SOUND_MENU_CLICK);
-        clear_input(INPUT_B);
+        input_clear(INPUT_B);
         menu_set_backward(MENU_PREV);
     }
 }
@@ -510,9 +510,9 @@ static void process_title_menu(int updateRate) {
 
     handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &sMenuSelection[1], 0, 0, 0, sMenuDisplay->listCount);
 
-    if (get_input_pressed(INPUT_A, 3) && sMenuSwapTimer == 0) {
+    if (input_pressed(INPUT_A, 3) && sMenuSwapTimer == 0) {
         play_sound_global(SOUND_MENU_CLICK);
-        clear_input(INPUT_A);
+        input_clear(INPUT_A);
         switch (sMenuSelection[1]) {
         case 0:
             menu_set_reset(MENU_CLOSED);
@@ -542,7 +542,7 @@ void process_menus(int updateRate, float updateRateF) {
     DECREASE_VAR(sMenuSwapTimer, updateRate, 0);
     switch (gMenuStatus) {
     case MENU_CLOSED:
-        if (sMenuSwapTimer == 0 && gTalkControl == NULL && get_input_pressed(INPUT_START, 3)) {
+        if (sMenuSwapTimer == 0 && gTalkControl == NULL && input_pressed(INPUT_START, 3)) {
             if (gCamera->mode == CAMERA_PHOTO) {
                 camera_reset();
             } else {
@@ -550,7 +550,7 @@ void process_menus(int updateRate, float updateRateF) {
                 screenshot_on(FMT_I8);
             }
             play_sound_global(SOUND_MENU_CLICK);
-            clear_input(INPUT_START);
+            input_clear(INPUT_START);
         }
         return;
     case MENU_TITLE:
@@ -560,17 +560,17 @@ void process_menus(int updateRate, float updateRateF) {
         process_options_menu(updateRate);
         return;
     case MENU_CONTROLS:
-        if (get_input_pressed(INPUT_B, 3)) {
-            clear_input(INPUT_B);
+        if (input_pressed(INPUT_B, 3)) {
+            input_clear(INPUT_B);
             menu_set_backward(MENU_PREV);
         }
         return;
     case MENU_CONFIG:
         process_config_menu(updateRate);
-        if ((get_input_pressed(INPUT_START, 3) || get_input_pressed(INPUT_B, 3)) && sMenuSwapTimer == 0) {
+        if ((input_pressed(INPUT_START, 3) || input_pressed(INPUT_B, 3)) && sMenuSwapTimer == 0) {
             play_sound_global(SOUND_MENU_CLICK);
-            clear_input(INPUT_START);
-            clear_input(INPUT_B);
+            input_clear(INPUT_START);
+            input_clear(INPUT_B);
             menu_set_backward(MENU_PREV);
             if (gMenuStatus == MENU_OPTIONS) {
                 screenshot_on(FMT_I8);

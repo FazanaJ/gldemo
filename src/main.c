@@ -105,7 +105,7 @@ int main(void) {
 
         update_game_time(&updateRate, &updateRateF);
         asset_cycle(updateRate);
-        update_inputs(updateRate);
+        input_update(updateRate);
         if (gTalkControl == NULL) {
             update_game_entities(updateRate, updateRateF);
         }
