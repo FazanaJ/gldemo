@@ -131,7 +131,7 @@ static void collision_normals(u_int16_t *v0, u_int16_t *v1, u_int16_t *v2, float
     normals[3] = -(nx * x1 + ny * y1 + nz * z1);
 }
 
-static int collision_surface_down(float *posF, int16_t *pos, u_int16_t *v0, u_int16_t *v1, u_int16_t *v2) {
+static float collision_surface_down(float *posF, int16_t *pos, u_int16_t *v0, u_int16_t *v1, u_int16_t *v2) {
     if ((v0[2] - pos[2]) * (v1[0] - v0[0]) - (v0[0] - pos[0]) * (v1[2] - v0[2]) < 0) {
         return -30000;
     }
@@ -188,24 +188,22 @@ void object_collide(Object *obj) {
     DEBUG_SNAPSHOT_1();
 
     SceneMesh *mesh = sCurrentScene->meshList;
-    int peakY = -30000;
+    float peakY = -30000;
     float scale = 1.0f;
     while (mesh) {
         ModelPrim *prim = (ModelPrim *) mesh->mesh;
         int numTris = prim->num_indices;
         attribute_t *attr = &prim->position;
-        attribute_t *norm = &prim->normal;
         //attribute_t *col = &prim->color;
         int mulFactor = prim->vertex_precision;
         float mulFactorF = (int) (1 << (prim->vertex_precision));
-        obj->floorHeight = 0.0f;
-        float dir[3];
-        float tempP[3] = {obj->pos[0] / 5, (obj->pos[1] / 5) + 25.0f, obj->pos[2] / 5};
-        dir[0] = tempP[0];// + ((obj->forwardVel * sins(obj->moveAngle[2])) / 20.0f);
-        dir[1] = tempP[1] - (50.0f);// - ((obj->forwardVel * coss(obj->moveAngle[2])) / 20.0f);
-        dir[2] = tempP[2];
-        vec3f_normalize(dir);
-        float dirLen = sqrtf(SQR(dir[0]) + SQR(dir[1]) + SQR(dir[2]));
+        //float dir[3];
+        //float tempP[3] = {obj->pos[0] / 5, (obj->pos[1] / 5) + 25.0f, obj->pos[2] / 5};
+        //dir[0] = tempP[0];// + ((obj->forwardVel * sins(obj->moveAngle[2])) / 20.0f);
+        //dir[1] = tempP[1] - (50.0f);// - ((obj->forwardVel * coss(obj->moveAngle[2])) / 20.0f);
+        //dir[2] = tempP[2];
+        //vec3f_normalize(dir);
+        //float dirLen = sqrtf(SQR(dir[0]) + SQR(dir[1]) + SQR(dir[2]));
         int16_t pl[3] = {((int)(obj->pos[0]) << mulFactor) / 5, ((int)((obj->pos[1]) + 15) << mulFactor) / 5, ((int)(obj->pos[2]) << mulFactor) / 5};
         float plF[3] = {((obj->pos[0]) * mulFactorF) / 5, (((obj->pos[1]) + 15) * mulFactorF) / 5, ((obj->pos[2]) * mulFactorF) / 5};
 
@@ -220,10 +218,10 @@ void object_collide(Object *obj) {
             //u_int32_t *c1 = (u_int32_t *) (col->pointer + col->stride * indices[i + 0]);
             //u_int32_t *c2 = (u_int32_t *) (col->pointer + col->stride * indices[i + 1]);
             //u_int32_t *c3 = (u_int32_t *) (col->pointer + col->stride * indices[i + 2]);
-            float hit[3] = {0, 0, 0};
+            //float hit[3] = {0, 0, 0};
 
 
-            int h = collision_surface_down(plF, pl, v1, v2, v3);
+            float h = collision_surface_down(plF, pl, v1, v2, v3);
 
             if (h > peakY) {
                 peakY = h;
@@ -263,7 +261,6 @@ void object_collide(Object *obj) {
         }
         mesh = mesh->next;
     }
-    float peakYF = peakY;
     obj->floorHeight = (peakY / scale) * 5;
     //obj->floorHeight = peakY * 5;
     //obj->pos[1] = peakY;
