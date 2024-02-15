@@ -97,7 +97,7 @@ static int ray_surface_intersect(float orig[3], float dir[3], float dir_length, 
 typedef int16_t u_int16_t __attribute__((aligned(1)));
 typedef float u_flt __attribute__((aligned(1)));
 
-static void collision_normals(u_int16_t *v0, u_int16_t *v1, u_int16_t *v2, float *normals) {
+static void collision_normals(u_int16_t *v0, u_int16_t *v1, u_int16_t *v2, float *normals, int w) {
     float nx, ny, nz;
     float mag;
     
@@ -119,8 +119,17 @@ static void collision_normals(u_int16_t *v0, u_int16_t *v1, u_int16_t *v2, float
     nx = (y2 - y1) * (z3 - z2) - (z2 - z1) * (y3 - y2);
     ny = (z2 - z1) * (x3 - x2) - (x2 - x1) * (z3 - z2);
     nz = (x2 - x1) * (y3 - y2) - (y2 - y1) * (x3 - x2);
-    mag = sqrtf(nx * nx + ny * ny + nz * nz);
-    mag = (float)(1.0f / mag);
+    mag = nx * nx + ny * ny + nz * nz;
+    if (fabsf(mag) < 0.0001f) {
+        normals[0] = 0.0f;
+        normals[1] = 1.0f;
+        normals[2] = 0.0f;
+        if (w) {
+            normals[3] = 0.0f;
+        }
+        return;
+    }
+    mag = 1.0f / sqrtf(mag);
     nx *= mag;
     ny *= mag;
     nz *= mag;
@@ -128,7 +137,9 @@ static void collision_normals(u_int16_t *v0, u_int16_t *v1, u_int16_t *v2, float
     normals[0] = nx;
     normals[1] = ny;
     normals[2] = nz;
-    normals[3] = -(nx * x1 + ny * y1 + nz * z1);
+    if (w) {
+        normals[3] = -(nx * x1 + ny * y1 + nz * z1);
+    }
 }
 
 static float collision_surface_down(float *posF, int16_t *pos, u_int16_t *v0, u_int16_t *v1, u_int16_t *v2) {
@@ -144,15 +155,15 @@ static float collision_surface_down(float *posF, int16_t *pos, u_int16_t *v0, u_
 
     float normals[4];
 
-    collision_normals(v0, v1, v2, normals);
+    collision_normals(v0, v1, v2, normals, true);
 
-    if (normals[1] == 0.0f) {
+    if (fabsf(normals[1]) <= 0.0001f) {
         return v0[1];
     }
 
     float y = -(posF[0] * normals[0] + normals[2] * posF[2] + normals[3]) / normals[1];
 
-    if (posF[1] - (y + -78.0f) < 0.0f) {
+    if (posF[1] - (y -78.0f) < 0.0f) {
         return -30000;
     } else {
         return y;
@@ -188,14 +199,13 @@ void object_collide(Object *obj) {
     DEBUG_SNAPSHOT_1();
 
     SceneMesh *mesh = sCurrentScene->meshList;
-    float peakY = -30000;
+    float peakY = -30000.0f;
     float scale = 1.0f;
     while (mesh) {
         ModelPrim *prim = (ModelPrim *) mesh->mesh;
         int numTris = prim->num_indices;
         attribute_t *attr = &prim->position;
         //attribute_t *col = &prim->color;
-        int mulFactor = prim->vertex_precision;
         float mulFactorF = (int) (1 << (prim->vertex_precision));
         //float dir[3];
         //float tempP[3] = {obj->pos[0] / 5, (obj->pos[1] / 5) + 25.0f, obj->pos[2] / 5};
@@ -204,8 +214,8 @@ void object_collide(Object *obj) {
         //dir[2] = tempP[2];
         //vec3f_normalize(dir);
         //float dirLen = sqrtf(SQR(dir[0]) + SQR(dir[1]) + SQR(dir[2]));
-        int16_t pl[3] = {((int)(obj->pos[0]) << mulFactor) / 5, ((int)((obj->pos[1]) + 15) << mulFactor) / 5, ((int)(obj->pos[2]) << mulFactor) / 5};
         float plF[3] = {((obj->pos[0]) * mulFactorF) / 5, (((obj->pos[1]) + 15) * mulFactorF) / 5, ((obj->pos[2]) * mulFactorF) / 5};
+        int16_t pl[3] = {plF[0], plF[1], plF[2]};
 
         //typedef int16_t u_int16_t __attribute__((aligned(1)));
         //typedef int32_t u_int32_t __attribute__((aligned(1)));
@@ -225,7 +235,7 @@ void object_collide(Object *obj) {
 
             if (h > peakY) {
                 peakY = h;
-                scale = (int) (1 << (prim->vertex_precision));
+                scale = mulFactorF;
             }
             
             /*float length;
@@ -262,6 +272,11 @@ void object_collide(Object *obj) {
         mesh = mesh->next;
     }
     obj->floorHeight = (peakY / scale) * 5;
+    if (peakY == -30000.0f) {
+        obj->pos[0] = obj->prevPos[0];
+        obj->pos[1] = obj->prevPos[1];
+        obj->pos[2] = obj->prevPos[2];
+    }
     //obj->floorHeight = peakY * 5;
     //obj->pos[1] = peakY;
 

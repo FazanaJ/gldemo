@@ -10,6 +10,7 @@ enum SceneNames {
     SCENE_INTRO,
     SCENE_TESTAREA,
     SCENE_TESTAREA2,
+    SCENE_TESTAREA3,
 
     SCENE_TOTAL
 };
