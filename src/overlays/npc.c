@@ -36,6 +36,6 @@ ObjectEntry entry = {
     .flags = OBJ_FLAG_SHADOW | OBJ_FLAG_TANGIBLE,
     .viewDist = OBJ_DIST(200),
     .viewWidth = 3,
-    .viewHeight = 5,
+    .viewHeight = 14,
     .hitbox = &bbox,
 };
