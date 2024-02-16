@@ -27,8 +27,14 @@ typedef struct SceneMesh {
     primitive_t *mesh;
     Material *material;
     rspq_block_t *renderBlock;
-    int flags;
 } SceneMesh;
+
+typedef struct SceneChunk {
+    struct SceneChunk *next;
+    SceneMesh *meshList;
+    int flags;
+    float bounds[2][3];
+} SceneChunk;
 
 typedef struct ObjectMap {
     short objectID;
@@ -55,7 +61,7 @@ typedef struct SceneHeader {
 
 typedef struct SceneBlock {
     model64_t *model;
-    SceneMesh *meshList;
+    SceneChunk *chunkList;
     int sceneID;
     void *overlay;
 } SceneBlock;

@@ -197,79 +197,92 @@ typedef struct ModelPrim {
 
 void object_collide(Object *obj) {
     DEBUG_SNAPSHOT_1();
-
-    SceneMesh *mesh = sCurrentScene->meshList;
+    SceneChunk *chunk = sCurrentScene->chunkList;
     float peakY = -30000.0f;
     float scale = 1.0f;
-    while (mesh) {
-        ModelPrim *prim = (ModelPrim *) mesh->mesh;
-        int numTris = prim->num_indices;
-        attribute_t *attr = &prim->position;
-        //attribute_t *col = &prim->color;
-        float mulFactorF = (int) (1 << (prim->vertex_precision));
-        //float dir[3];
-        //float tempP[3] = {obj->pos[0] / 5, (obj->pos[1] / 5) + 25.0f, obj->pos[2] / 5};
-        //dir[0] = tempP[0];// + ((obj->forwardVel * sins(obj->moveAngle[2])) / 20.0f);
-        //dir[1] = tempP[1] - (50.0f);// - ((obj->forwardVel * coss(obj->moveAngle[2])) / 20.0f);
-        //dir[2] = tempP[2];
-        //vec3f_normalize(dir);
-        //float dirLen = sqrtf(SQR(dir[0]) + SQR(dir[1]) + SQR(dir[2]));
-        float plF[3] = {((obj->pos[0]) * mulFactorF) / 5, (((obj->pos[1]) + 15) * mulFactorF) / 5, ((obj->pos[2]) * mulFactorF) / 5};
-        int16_t pl[3] = {plF[0], plF[1], plF[2]};
+    int i = 0;
 
-        //typedef int16_t u_int16_t __attribute__((aligned(1)));
-        //typedef int32_t u_int32_t __attribute__((aligned(1)));
-
-        for (int i = 0; i < numTris; i += 3) {
-            uint16_t *indices = (uint16_t *) prim->indices;
-            u_int16_t *v1 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 0]);
-            u_int16_t *v2 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 1]);
-            u_int16_t *v3 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 2]);
-            //u_int32_t *c1 = (u_int32_t *) (col->pointer + col->stride * indices[i + 0]);
-            //u_int32_t *c2 = (u_int32_t *) (col->pointer + col->stride * indices[i + 1]);
-            //u_int32_t *c3 = (u_int32_t *) (col->pointer + col->stride * indices[i + 2]);
-            //float hit[3] = {0, 0, 0};
-
-
-            float h = collision_surface_down(plF, pl, v1, v2, v3);
-
-            if (h > peakY) {
-                peakY = h;
-                scale = mulFactorF;
-            }
-            
-            /*float length;
-            float vert0[3] = {v1[0], v1[1], v1[2]};
-            float vert1[3] = {v2[0], v2[1], v2[2]};
-            float vert2[3] = {v3[0], v3[1], v3[2]};
-
-            for (int k = 0; k < 3; k++) {
-                vert0[k] /= scale;
-                vert1[k] /= scale;
-                vert2[k] /= scale;
-            }
-            
-            //c1 = 0xFFFFFFFF;
-            //c2 = 0xFFFFFFFF;
-            //c3 = 0xFFFFFFFF;
-                //debugf("Obj: X: %2.2f, Y: %2.2f, Z: %2.2f\n", tempP[0], tempP[1], tempP[2]);
-                //debugf("Tri %d: (X1: %2.2f, Y1: %2.2f, Z1: %2.2f), (X2: %2.2f, Y2: %2.2f, Z2: %2.2f), (X3: %2.2f, Y3: %2.2f, Z3: %2.2f)\n", i / 3, vert0[0], vert0[1], vert0[2], vert1[0], vert1[1], vert1[2], vert2[0], vert2[1], vert2[2]);
-            int surf = ray_surface_intersect(tempP, dir, dirLen, hit, &length, vert0, vert1, vert2);
-            if (surf) {
-                //debugf("Hit %d: %2.2f, %2.2f, %2.2f\n", i / 3, hit[0], hit[1], hit[2]);
-                //c1 = 0xFF0000FF;
-                //c2 = 0xFF0000FF;
-                //c3 = 0xFF0000FF;
-                //obj->pos[0] = hit[0];
-                //obj->pos[1] = hit[1];
-                if (hit[1] > peakY) {
-                    peakY = hit[1];
-                }
-                //obj->yVel = 0.0f;
-                //obj->floorHeight = (hit[2] * 5);
-            }*/
+    while (chunk) {
+        SceneMesh *mesh = chunk->meshList;
+        if (obj->pos[0] < chunk->bounds[0][0] || obj->pos[0] > chunk->bounds[1][0] || 
+            obj->pos[1] < chunk->bounds[0][1] || obj->pos[1] > chunk->bounds[1][1] || 
+            obj->pos[2] < chunk->bounds[0][2] || obj->pos[2] > chunk->bounds[1][2]) {
+            chunk = chunk->next;
+            i++;
+            continue;
         }
-        mesh = mesh->next;
+        while (mesh) {
+            ModelPrim *prim = (ModelPrim *) mesh->mesh;
+            int numTris = prim->num_indices;
+            attribute_t *attr = &prim->position;
+            //attribute_t *col = &prim->color;
+            float mulFactorF = (int) (1 << (prim->vertex_precision));
+            //float dir[3];
+            //float tempP[3] = {obj->pos[0] / 5, (obj->pos[1] / 5) + 25.0f, obj->pos[2] / 5};
+            //dir[0] = tempP[0];// + ((obj->forwardVel * sins(obj->moveAngle[2])) / 20.0f);
+            //dir[1] = tempP[1] - (50.0f);// - ((obj->forwardVel * coss(obj->moveAngle[2])) / 20.0f);
+            //dir[2] = tempP[2];
+            //vec3f_normalize(dir);
+            //float dirLen = sqrtf(SQR(dir[0]) + SQR(dir[1]) + SQR(dir[2]));
+            float plF[3] = {((obj->pos[0]) * mulFactorF) / 5, (((obj->pos[1]) + 15) * mulFactorF) / 5, ((obj->pos[2]) * mulFactorF) / 5};
+            int16_t pl[3] = {plF[0], plF[1], plF[2]};
+
+            //typedef int16_t u_int16_t __attribute__((aligned(1)));
+            //typedef int32_t u_int32_t __attribute__((aligned(1)));
+
+            for (int i = 0; i < numTris; i += 3) {
+                uint16_t *indices = (uint16_t *) prim->indices;
+                u_int16_t *v1 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 0]);
+                u_int16_t *v2 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 1]);
+                u_int16_t *v3 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 2]);
+                //u_int32_t *c1 = (u_int32_t *) (col->pointer + col->stride * indices[i + 0]);
+                //u_int32_t *c2 = (u_int32_t *) (col->pointer + col->stride * indices[i + 1]);
+                //u_int32_t *c3 = (u_int32_t *) (col->pointer + col->stride * indices[i + 2]);
+                //float hit[3] = {0, 0, 0};
+
+
+                float h = collision_surface_down(plF, pl, v1, v2, v3);
+
+                if (h > peakY) {
+                    peakY = h;
+                    scale = mulFactorF;
+                }
+                
+                /*float length;
+                float vert0[3] = {v1[0], v1[1], v1[2]};
+                float vert1[3] = {v2[0], v2[1], v2[2]};
+                float vert2[3] = {v3[0], v3[1], v3[2]};
+
+                for (int k = 0; k < 3; k++) {
+                    vert0[k] /= scale;
+                    vert1[k] /= scale;
+                    vert2[k] /= scale;
+                }
+                
+                //c1 = 0xFFFFFFFF;
+                //c2 = 0xFFFFFFFF;
+                //c3 = 0xFFFFFFFF;
+                    //debugf("Obj: X: %2.2f, Y: %2.2f, Z: %2.2f\n", tempP[0], tempP[1], tempP[2]);
+                    //debugf("Tri %d: (X1: %2.2f, Y1: %2.2f, Z1: %2.2f), (X2: %2.2f, Y2: %2.2f, Z2: %2.2f), (X3: %2.2f, Y3: %2.2f, Z3: %2.2f)\n", i / 3, vert0[0], vert0[1], vert0[2], vert1[0], vert1[1], vert1[2], vert2[0], vert2[1], vert2[2]);
+                int surf = ray_surface_intersect(tempP, dir, dirLen, hit, &length, vert0, vert1, vert2);
+                if (surf) {
+                    //debugf("Hit %d: %2.2f, %2.2f, %2.2f\n", i / 3, hit[0], hit[1], hit[2]);
+                    //c1 = 0xFF0000FF;
+                    //c2 = 0xFF0000FF;
+                    //c3 = 0xFF0000FF;
+                    //obj->pos[0] = hit[0];
+                    //obj->pos[1] = hit[1];
+                    if (hit[1] > peakY) {
+                        peakY = hit[1];
+                    }
+                    //obj->yVel = 0.0f;
+                    //obj->floorHeight = (hit[2] * 5);
+                }*/
+            }
+            i++;
+            mesh = mesh->next;
+        }
+        chunk = chunk->next;
     }
     obj->floorHeight = (peakY / scale) * 5;
     if (peakY == -30000.0f) {

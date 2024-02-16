@@ -309,6 +309,30 @@ static void mtx_scale(Matrix *mtx, float scaleX, float scaleY, float scaleZ) {
     }
 }
 
+static inline void linear_mtxf_mul_vec3f_and_translate(Matrix m, float dst[3], float v[3]) {
+    for (int i = 0; i < 3; i++) {
+        dst[i] = ((m.m[0][i] * v[0]) + (m.m[1][i] * v[1]) + (m.m[2][i] * v[2]) +  m.m[3][i]);
+    }
+}
+
+#define VALIDDEPTHMIDDLE (-19920.0f / 2.0f)
+#define VALIDDEPTHRANGE (19900.0f / 2.0f)
+
+static inline int render_inside_view(float width, float height, float screenPos[3]) {
+    float hScreenEdge = -screenPos[2] * gHalfFovHor;
+    if (fabsf(screenPos[0]) > hScreenEdge + width) {
+        return false;
+    }
+    float vScreenEdge = -screenPos[2] * gHalfFovVert;
+    if (fabsf(screenPos[1]) > vScreenEdge + height) {
+        return false;
+    }
+    if (fabsf(screenPos[2] - VALIDDEPTHMIDDLE) >= VALIDDEPTHRANGE + (width)) {
+        return false;
+    }
+    return true;
+}
+
 static inline void *render_alloc(int size, int layer) {
     gSortPos[layer] -= size;
     return (void *) gSortPos[layer];
@@ -361,6 +385,7 @@ static void project_camera(void) {
     glLoadIdentity();
     mtx_lookat(c->pos[0], c->pos[1], c->pos[2], c->focus[0], c->focus[1], c->focus[2], 0.0f, 1.0f, 0.0f);
     float aspect = display_get_width() / display_get_height();
+    //glDepthRange(50.0f, 500.0f);
 
     gHalfFovVert = (gCamera->fov + 2.0f) * 180.0f + 0.5f;
     gHalfFovHor = aspect * gHalfFovVert;
@@ -833,25 +858,67 @@ static void render_particles(void) {
     get_time_snapshot(PP_RENDERPARTICLES, DEBUG_SNAPSHOT_1_END);
 }
 
+static int render_world_visible(SceneChunk *c) {
+    DEBUG_SNAPSHOT_1();
+    float screenPos[3];
+    float pos[3];
+    float size[3];
+    float width;
+    size[0] = c->bounds[1][0] - c->bounds[0][0];
+    size[1] = c->bounds[1][1] - c->bounds[0][1];
+    size[2] = c->bounds[1][2] - c->bounds[0][2];
+    pos[0] = c->bounds[0][0] + size[0];
+    pos[1] = c->bounds[0][1] + size[1];
+    pos[2] = c->bounds[0][2] + size[2];
+    width = MAX(size[0], size[2]);
+
+    float dist = DIST2_Z(gCamera->pos, pos);
+
+    if (dist > (width + 750.0f) * (width + 750.0f)) {
+        return false;
+    }
+
+    pos[1] -= 1000.0f;
+    linear_mtxf_mul_vec3f_and_translate(gViewMatrix, screenPos, pos);
+    if (render_inside_view(width * 1.25f, 10000.0f, screenPos)) {
+        get_time_snapshot(PP_CULLING, DEBUG_SNAPSHOT_1_END);
+        return true;
+    } else {
+        get_time_snapshot(PP_CULLING, DEBUG_SNAPSHOT_1_END);
+        return false;
+    }
+
+
+    return true;
+}
+
 static void render_world(void) {
     DEBUG_SNAPSHOT_1();
+    int i = 0;
     if (sCurrentScene && sCurrentScene->model) {
-        SceneMesh *s = sCurrentScene->meshList;
+        SceneChunk *s = sCurrentScene->chunkList;
 
         while (s != NULL) {
-            int layer;
-            if (s->material->flags & MATERIAL_DECAL) {
-                layer = DRAW_DECAL;
-            } else if (s->material->flags & MATERIAL_XLU) {
-                layer = DRAW_XLU;
-            } else {
-                layer = DRAW_OPA;
-            }
+            if (render_world_visible(s)) {
+                i++;
+                SceneMesh *c = s->meshList;
+                while (c != NULL) {
+                    int layer;
+                    if (c->material->flags & MATERIAL_DECAL) {
+                        layer = DRAW_DECAL;
+                    } else if (c->material->flags & MATERIAL_XLU) {
+                        layer = DRAW_XLU;
+                    } else {
+                        layer = DRAW_OPA;
+                    }
 
-            RenderNode *entry = (RenderNode *) render_alloc(sizeof(RenderNode), layer);
-            entry->matrix = NULL;
-            Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : s->material;
-            add_render_node(entry, s->renderBlock, mat, s->material->flags, layer);
+                    RenderNode *entry = (RenderNode *) render_alloc(sizeof(RenderNode), layer);
+                    entry->matrix = NULL;
+                    Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : c->material;
+                    add_render_node(entry, c->renderBlock, mat, c->material->flags, layer);
+                    c = c->next;
+                }
+            }
             s = s->next;
         }
     }
@@ -1091,30 +1158,6 @@ void clear_dynamic_shadows(void) {
     }
 }
 
-#define VALIDDEPTHMIDDLE (-19920.0f / 2.0f)
-#define VALIDDEPTHRANGE (19900.0f / 2.0f)
-
-static inline int render_inside_view(float width, float height, float screenPos[3]) {
-    float hScreenEdge = -screenPos[2] * gHalfFovHor;
-    if (fabsf(screenPos[0]) > hScreenEdge + width) {
-        return false;
-    }
-    float vScreenEdge = -screenPos[2] * gHalfFovVert;
-    if (fabsf(screenPos[1]) > vScreenEdge + height) {
-        return false;
-    }
-    if (fabsf(screenPos[2] - VALIDDEPTHMIDDLE) >= VALIDDEPTHRANGE + (width)) {
-        return false;
-    }
-    return true;
-}
-
-static inline void linear_mtxf_mul_vec3f_and_translate(Matrix m, float dst[3], float v[3]) {
-    for (int i = 0; i < 3; i++) {
-        dst[i] = ((m.m[0][i] * v[0]) + (m.m[1][i] * v[1]) + (m.m[2][i] * v[2]) +  m.m[3][i]);
-    }
-}
-
 static void render_determine_visible(void) {
     DEBUG_SNAPSHOT_1();
     ObjectList *list = gObjectListHead;
@@ -1187,7 +1230,7 @@ void render_game(int updateRate, float updateRateF) {
         set_light(lightNeutral);
         render_determine_visible();
         render_world();
-        apply_anti_aliasing(AA_NONE);
+        apply_anti_aliasing(AA_GEO);
         render_object_shadows();
         apply_anti_aliasing(AA_GEO);
         render_clutter();
