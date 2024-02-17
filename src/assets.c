@@ -303,6 +303,18 @@ void shadow_generate(Object *obj) {
     debugf(" Time: %2.3fs.\n", ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
 }
 
+static void object_model_clear(ModelList *entry) {
+    ObjectModel *m = entry->entry;
+    while (m) {
+        if (m->block) {
+            rspq_block_free(m->block);
+            m->block = NULL;
+        }
+        m = m->next;
+    }
+    entry->active = false;
+}
+
 void asset_cycle(int updateRate) {
     DEBUG_SNAPSHOT_1();
     if (gMaterialListHead == NULL) {
@@ -317,7 +329,7 @@ void asset_cycle(int updateRate) {
         if (curList->loadTimer <= 0) {
             debugf("Freeing texture: %s.\n", gTextureIDs[curList->textureID].file);
             free_material(curList);
-            break;
+            //break;
         }
     }
 #ifdef PUPPYPRINT_DEBUG
@@ -338,6 +350,17 @@ void asset_cycle(int updateRate) {
         }
     }
     get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
+
+    ModelList *modelList = gModelIDListHead;
+
+    while (modelList) {
+        modelList->timer -= updateRate;
+        if (modelList->timer <= 0) {
+            object_model_clear(modelList);
+            //break;
+        }
+        modelList = modelList->next;
+    }
 }
 
 void sky_texture_generate(Environment *e) {
@@ -474,7 +497,9 @@ void check_unused_model(Object *obj) {
     while (curMesh) {
         ObjectModel *m = curMesh;
         curMesh = curMesh->next;
-        rspq_block_free(m->block);
+        if (m->block) {
+            rspq_block_free(m->block);
+        }
         free(m);
     }
     model64_free(obj->gfx->listEntry->model64);
@@ -622,6 +647,23 @@ static int temp_matrix_grabber(int modelID) {
     return MTX_TRANSLATE_ROTATE_SCALE;
 }
 
+void object_model_generate(Object *obj) {
+    ObjectModel *m = obj->gfx->listEntry->entry;
+    while (m) {
+        rspq_block_begin();
+        //glScalef(10.0f, 9.0f, 10.0f);
+        if (obj->gfx->modelID == 1) {
+            glScalef(0.95f, 1.33f, 1.33f);
+        } else {
+            glScalef(1.0f, 1.0f, 1.0f);
+        }
+        model64_draw_primitive(m->prim);
+        m->block = rspq_block_end();
+        m = m->next;
+    }
+    obj->gfx->listEntry->active = true;
+}
+
 static void load_object_model(Object *obj, int objectID) {
     DEBUG_SNAPSHOT_1();
     obj->gfx = malloc(sizeof(ObjectGraphics));
@@ -664,6 +706,7 @@ static void load_object_model(Object *obj, int objectID) {
     debugf("Loading model [%s].", gModelIDs[modelID - 1]);
     list->model64 = model64_load(asset_dir(gModelIDs[modelID - 1], DFS_MODEL64));
     list->entry = NULL;
+    list->active = false;
     int numMeshes = model64_get_mesh_count(list->model64);
     ObjectModel *tail = NULL;
     for (int i = 0; i < numMeshes; i++) {
@@ -671,7 +714,7 @@ static void load_object_model(Object *obj, int objectID) {
         int primCount = model64_get_primitive_count(mesh);
         for (int j = 0; j < primCount; j++) {
             ObjectModel *m = malloc(sizeof(ObjectModel));
-            primitive_t *prim = model64_get_primitive(mesh, j);
+            m->prim = model64_get_primitive(mesh, j);
             if (modelID == 1) {
                 m->material.flags = playerModelFlags[i][j] | MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_LIGHTING;
                 m->material.textureID = playerModelTextures[i][j];
@@ -692,15 +735,7 @@ static void load_object_model(Object *obj, int objectID) {
             } else {
                 m->matrixBehaviour = 0;
             }
-            rspq_block_begin();
-            //glScalef(10.0f, 9.0f, 10.0f);
-            if (modelID == 1) {
-                glScalef(0.95f, 1.33f, 1.33f);
-            } else {
-                glScalef(1.0f, 1.0f, 1.0f);
-            }
-            model64_draw_primitive(prim);
-            m->block = rspq_block_end();
+            m->block = NULL;
 
             if (list->entry == NULL) {
                 list->entry = m;

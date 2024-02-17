@@ -32,8 +32,10 @@ typedef struct SceneMesh {
 typedef struct SceneChunk {
     struct SceneChunk *next;
     SceneMesh *meshList;
-    int flags;
+    short flags;
+    short chunkID;
     float bounds[2][3];
+    unsigned char *visibility;
 } SceneChunk;
 
 typedef struct ObjectMap {
@@ -72,3 +74,5 @@ extern char gSceneUpdate;
 extern char *sSceneTable[SCENE_TOTAL];
 
 void load_scene(int sceneID);
+void scene_clear_chunk(SceneChunk *c);
+void scene_generate_chunk(SceneMesh *s);

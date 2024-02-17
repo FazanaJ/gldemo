@@ -99,6 +99,7 @@ typedef struct ObjectModel {
 	struct ObjectModel *next;
 	void (*func)(struct Object *obj, int updateRate, float updateRateF);
 	rspq_block_t *block;
+	primitive_t *prim;
 	char matrixBehaviour;
 	char pad[3];
 } ObjectModel;
@@ -231,7 +232,8 @@ typedef struct ModelList {
 	struct ModelList *next;
 	struct ModelList *prev;
 	short id;
-	short timer;
+	char timer;
+	char active;
 } ModelList;
 
 typedef struct ObjectEntry {

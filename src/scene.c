@@ -92,7 +92,9 @@ static void clear_scene(void) {
                 SceneMesh *m = curMesh;
                 curMesh = curMesh->next;
                 free(m->material);
-                rspq_block_free(m->renderBlock);
+                if (m->renderBlock) {
+                    rspq_block_free(m->renderBlock);
+                }
                 free(m);
             }
             SceneChunk *c = curChunk;
@@ -184,6 +186,27 @@ static void scene_mesh_boundbox(SceneChunk *c, SceneMesh *m) {
     }
 }
 
+void scene_clear_chunk(SceneChunk *c) {
+    SceneMesh *m = c->meshList;
+    while (m) {
+        if (m->renderBlock) {
+            rspq_block_free(m->renderBlock);
+            m->renderBlock = NULL;
+        }
+        m = m->next;
+    }
+    c->flags &= ~CHUNK_HAS_MODEL;
+}
+
+void scene_generate_chunk(SceneMesh *s) {
+    rspq_block_begin();
+    glPushMatrix();
+    glScalef(5.0f, 5.0f, 5.0f);
+    model64_draw_primitive(s->mesh);
+    glPopMatrix();
+    s->renderBlock = rspq_block_end();
+}
+
 void load_scene(int sceneID) {
     DEBUG_SNAPSHOT_1();
     rspq_wait();
@@ -211,6 +234,7 @@ void load_scene(int sceneID) {
             int primCount = model64_get_primitive_count(mesh);
             c->meshList = NULL;
             c->flags = 0;
+            c->chunkID = i;
             c->next = NULL;
             c->bounds[0][0] = 9999999.0f;
             c->bounds[0][1] = 9999999.0f;
@@ -218,6 +242,7 @@ void load_scene(int sceneID) {
             c->bounds[1][0] = -9999999.0f;
             c->bounds[1][1] = -9999999.0f;
             c->bounds[1][2] = -9999999.0f;
+            c->visibility = NULL;
             for (int j = 0; j < primCount; j++) {
                 SceneMesh *m = malloc(sizeof(SceneMesh));
                 m->mesh = model64_get_primitive(mesh, j);
@@ -227,12 +252,7 @@ void load_scene(int sceneID) {
                 m->material->flags = sSceneMeshFlags[sCurrentScene->sceneID][j];
                 scene_mesh_boundbox(c, m);
                 m->next = NULL;
-                rspq_block_begin();
-                glPushMatrix();
-                glScalef(5.0f, 5.0f, 5.0f);
-                model64_draw_primitive(m->mesh);
-                glPopMatrix();
-                m->renderBlock = rspq_block_end();
+                m->renderBlock = NULL;
                 if (c->meshList == NULL) {
                     c->meshList = m;
                 } else {

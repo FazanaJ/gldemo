@@ -874,11 +874,11 @@ static int render_world_visible(SceneChunk *c) {
 
     float dist = DIST2_Z(gCamera->pos, pos);
 
-    if (dist > (width + 750.0f) * (width + 750.0f)) {
+    if (dist > (width + 500.0f) * (width + 500.0f)) {
         return false;
     }
 
-    pos[1] -= 1000.0f;
+    pos[1] -= 2500.0f;
     linear_mtxf_mul_vec3f_and_translate(gViewMatrix, screenPos, pos);
     if (render_inside_view(width * 1.25f, 10000.0f, screenPos)) {
         get_time_snapshot(PP_CULLING, DEBUG_SNAPSHOT_1_END);
@@ -892,14 +892,14 @@ static int render_world_visible(SceneChunk *c) {
     return true;
 }
 
-static void render_world(void) {
+static void render_world(int updateRate) {
     DEBUG_SNAPSHOT_1();
     int i = 0;
     if (sCurrentScene && sCurrentScene->model) {
         SceneChunk *s = sCurrentScene->chunkList;
 
         while (s != NULL) {
-            if (render_world_visible(s)) {
+            if (gScreenshotStatus != SCREENSHOT_SHOW && render_world_visible(s)) {
                 i++;
                 SceneMesh *c = s->meshList;
                 while (c != NULL) {
@@ -911,12 +911,20 @@ static void render_world(void) {
                     } else {
                         layer = DRAW_OPA;
                     }
-
+                    
+                    if (c->renderBlock == NULL) {
+                        scene_generate_chunk(c);
+                    }
                     RenderNode *entry = (RenderNode *) render_alloc(sizeof(RenderNode), layer);
                     entry->matrix = NULL;
                     Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : c->material;
                     add_render_node(entry, c->renderBlock, mat, c->material->flags, layer);
                     c = c->next;
+                }
+                s->flags |= CHUNK_HAS_MODEL;
+            } else {
+                if (s->flags & CHUNK_HAS_MODEL) {
+                    scene_clear_chunk(s);
                 }
             }
             s = s->next;
@@ -1044,6 +1052,9 @@ static void render_objects(void) {
             ObjectModel *m = obj->gfx->listEntry->entry;
             Matrix *prevMtx = NULL;
             obj->gfx->listEntry->timer = 10;
+            if (obj->gfx->listEntry->active == false) {
+                object_model_generate(obj);
+            }
             while (m) {
                 int layer;
                 if (m->material.flags & MATERIAL_DECAL || m->material.flags & MATERIAL_XLU) {
@@ -1123,6 +1134,9 @@ static void generate_dynamic_shadows(void) {
             mtx_lookat(-11.0f, 7.0f, 0.0f, 11.0f, 7.0f, 0.0f, 0.0f, 1.0f, 0.0f);
             obj->gfx->dynamicShadow->staleTimer = 10;
             ObjectModel *m = obj->gfx->listEntry->entry;
+            if (obj->gfx->listEntry->active == false) {
+                object_model_generate(obj);
+            }
             while (m) {
                 Matrix matrix;
                 if (m->matrixBehaviour != MTX_NONE) {
@@ -1229,7 +1243,7 @@ void render_game(int updateRate, float updateRateF) {
         apply_render_settings();
         set_light(lightNeutral);
         render_determine_visible();
-        render_world();
+        render_world(updateRate);
         apply_anti_aliasing(AA_GEO);
         render_object_shadows();
         apply_anti_aliasing(AA_GEO);
@@ -1245,6 +1259,7 @@ void render_game(int updateRate, float updateRateF) {
             clear_dynamic_shadows();
         }
     } else if (gScreenshotStatus == SCREENSHOT_SHOW) {
+        render_world(updateRate);
         render_end();
         gl_context_end();
         if (gScreenshotType == FMT_RGBA16) {

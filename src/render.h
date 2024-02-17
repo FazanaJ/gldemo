@@ -14,6 +14,10 @@ enum DrawLayer {
     DRAW_TOTAL
 };
 
+enum ChunkFlags {
+    CHUNK_HAS_MODEL = (1 << 0),
+};
+
 typedef struct {
 
     const GLfloat color[4];
