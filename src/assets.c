@@ -343,6 +343,7 @@ void asset_cycle(int updateRate) {
         if (gEnvironment->skyTimer <= 0) {
             debugf("Freeing texture: %s.\n", gTextureIDs[gEnvironment->skyboxTextureID].file);
             for (int i = 0; i < 32; i++) {
+                gNumTextures--;
                 glDeleteTextures(1, &gEnvironment->textureSegments[i]);
             }
             sprite_free(gEnvironment->skySprite);
@@ -375,6 +376,7 @@ void sky_texture_generate(Environment *e) {
             y += 64;
             x = 0;
         }
+        gNumTextures++;
         glGenTextures(1, &e->textureSegments[i]);
         glBindTexture(GL_TEXTURE_2D, e->textureSegments[i]);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -457,6 +459,14 @@ static void init_object_behaviour(Object *obj, int objectID) {
     if (entry->data) {
         obj->data = malloc(entry->data);
         bzero(obj->data, entry->data);
+    }
+    if (obj->flags & OBJ_FLAG_COLLISION) {
+        obj->collision = malloc(sizeof(ObjectCollision));
+        bzero(obj->collision, sizeof(ObjectCollision));
+    }
+    if (obj->flags & OBJ_FLAG_MOVE) {
+        obj->movement = malloc(sizeof(ObjectMovement));
+        bzero(obj->movement, sizeof(ObjectMovement));
     }
     if (entry->initFunc) {
         (*entry->initFunc)(obj);
@@ -804,6 +814,12 @@ void free_object(Object *obj) {
     if (obj->data) {
         free(obj->data);
     }
+    if (obj->collision) {
+        free(obj->collision);
+    }
+    if (obj->movement) {
+        free(obj->movement);
+    }
     if (obj->gfx) {
         if (obj->gfx->dynamicShadow) {
             free_dynamic_shadow(obj);
@@ -882,9 +898,6 @@ Object *spawn_object_pos(int objectID, float x, float y, float z) {
     obj->faceAngle[0] = 0;
     obj->faceAngle[1] = 0;
     obj->faceAngle[2] = 0;
-    obj->moveAngle[0] = 0;
-    obj->moveAngle[1] = 0;
-    obj->moveAngle[2] = 0;
     obj->scale[0] = 1.0f;
     obj->scale[1] = 1.0f;
     obj->scale[2] = 1.0f;
@@ -901,9 +914,6 @@ Object *spawn_object_pos_angle(int objectID, float x, float y, float z, short pi
     obj->faceAngle[0] = pitch;
     obj->faceAngle[1] = roll;
     obj->faceAngle[2] = yaw;
-    obj->moveAngle[0] = pitch;
-    obj->moveAngle[1] = roll;
-    obj->moveAngle[2] = yaw;
     obj->objectID = objectID;
     set_object_functions(obj, objectID);
     return obj;
@@ -917,9 +927,6 @@ Object *spawn_object_pos_angle_scale(int objectID, float x, float y, float z, sh
     obj->faceAngle[0] = pitch;
     obj->faceAngle[1] = roll;
     obj->faceAngle[2] = yaw;
-    obj->moveAngle[0] = pitch;
-    obj->moveAngle[1] = roll;
-    obj->moveAngle[2] = yaw;
     obj->scale[0] = scaleX;
     obj->scale[1] = scaleY;
     obj->scale[2] = scaleZ;

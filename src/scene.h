@@ -22,11 +22,21 @@ enum EnvironmentFlags {
     ENV_SKYBOX_BOTTOM = (1 << 2),
 };
 
+enum MeshFlags {
+    MESH_INTANGIBLE = (1 << 0),
+    MESH_INVISIBLE = (1 << 1),
+    MESH_CAMERA_ONLY = (1 << 2),
+    MESH_CAMERA_BLOCK = (1 << 3),
+};
+
 typedef struct SceneMesh {
     struct SceneMesh *next;
     primitive_t *mesh;
     Material *material;
     rspq_block_t *renderBlock;
+    unsigned int primC;
+    unsigned char step;
+    unsigned char flags;
 } SceneMesh;
 
 typedef struct SceneChunk {

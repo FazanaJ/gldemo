@@ -338,7 +338,7 @@ static inline void *render_alloc(int size, int layer) {
     return (void *) gSortPos[layer];
 }
 
-static void set_draw_matrix(Matrix *mtx, int matrixType, float *pos, u_uint16_t *angle, float *scale) {
+static void set_draw_matrix(Matrix *mtx, int matrixType, float *pos, unsigned short *angle, float *scale) {
     DEBUG_SNAPSHOT_1();
     switch (matrixType) {
     case MTX_TRANSLATE:
@@ -924,7 +924,7 @@ static void render_world(int updateRate) {
                 s->flags |= CHUNK_HAS_MODEL;
             } else {
                 if (s->flags & CHUNK_HAS_MODEL) {
-                    scene_clear_chunk(s);
+                    rspq_call_deferred((void *) scene_clear_chunk, s);
                 }
             }
             s = s->next;
@@ -966,9 +966,9 @@ static void render_object_shadows(void) {
             DynamicShadow *d = obj->gfx->dynamicShadow;
             Matrix matrix;
             glPushMatrix();
-            float floorHeight = MAX(obj->floorHeight, obj->hitboxHeight);
+            float floorHeight = MAX(obj->collision->floorHeight, obj->collision->hitboxHeight);
             float pos[3] = {obj->pos[0], floorHeight + 0.1f, obj->pos[2]};
-            u_uint16_t angle[3] = {0, d->angle[1] + 0x4000, 0};
+            unsigned short angle[3] = {0, d->angle[1] + 0x4000, 0};
             set_draw_matrix(&matrix, MTX_TRANSLATE_ROTATE_SCALE, pos, angle, obj->scale);
             glMultMatrixf((GLfloat *) &matrix.m);
             glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
@@ -1140,7 +1140,7 @@ static void generate_dynamic_shadows(void) {
             while (m) {
                 Matrix matrix;
                 if (m->matrixBehaviour != MTX_NONE) {
-                    u_uint16_t angle[3] = {obj->faceAngle[0], obj->faceAngle[1] + obj->gfx->dynamicShadow->angle[1], obj->faceAngle[2]};
+                    unsigned short angle[3] = {obj->faceAngle[0], obj->faceAngle[1] + obj->gfx->dynamicShadow->angle[1], obj->faceAngle[2]};
                     set_draw_matrix(&matrix, m->matrixBehaviour, pos, angle, scale);
                     glMultMatrixf((GLfloat *) &matrix.m);
                 }

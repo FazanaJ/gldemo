@@ -170,7 +170,7 @@ static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
 
 static void camera_update_photo(Camera *c, int updateRate, float updateRateF) {
     float stickMag = input_stick_mag(STICK_LEFT);
-    u_uint16_t stickAngle = input_stick_angle(STICK_LEFT);
+    unsigned short stickAngle = input_stick_angle(STICK_LEFT);
     
     c->pos[0] += ((stickMag * sins(c->yaw + stickAngle)) / 2.0f) * updateRateF;
     c->pos[2] += ((stickMag * coss(c->yaw + stickAngle)) / 2.0f) * updateRateF;

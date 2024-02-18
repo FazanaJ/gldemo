@@ -24,14 +24,14 @@ char *sSceneTable[SCENE_TOTAL] = {
     "testarea3",
 };
 
-char sSceneTexIDs[SCENE_TOTAL][6] = {
+char sSceneTexIDs[SCENE_TOTAL][7] = {
     {TEXTURE_INTROSIGN, TEXTURE_KITCHENTILE, TEXTURE_INTEROSIGN2},
     {TEXTURE_STONE, TEXTURE_GRASS0, TEXTURE_WATER},
-    {TEXTURE_HEALTH, TEXTURE_KITCHENTILE, TEXTURE_RAILING, TEXTURE_WATER, TEXTURE_WOODWALL, TEXTURE_INTROSIGN},
+    {TEXTURE_HEALTH, TEXTURE_KITCHENTILE, TEXTURE_RAILING, TEXTURE_WATER, TEXTURE_WOODWALL, TEXTURE_INTROSIGN, TEXTURE_NONE},
     {TEXTURE_MOUNTAINSIDEBOTTOM, TEXTURE_KITCHENTILE, TEXTURE_WOODWALL, TEXTURE_WATER, TEXTURE_STONE},
 };
 
-int sSceneMeshFlags[SCENE_TOTAL][6] = {
+int sSceneMeshFlags[SCENE_TOTAL][7] = {
     {MATERIAL_DEPTH_READ, 
     MATERIAL_DEPTH_READ,
     MATERIAL_DEPTH_READ},
@@ -45,7 +45,8 @@ int sSceneMeshFlags[SCENE_TOTAL][6] = {
     MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL | MATERIAL_CUTOUT,
     MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_XLU,
     MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL,
-    MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL, },
+    MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL,
+    MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL | MATERIAL_XLU },
 
     {MATERIAL_DEPTH_READ | MATERIAL_VTXCOL, 
     MATERIAL_DEPTH_READ | MATERIAL_VTXCOL, 
@@ -159,7 +160,7 @@ static void scene_mesh_boundbox(SceneChunk *c, SceneMesh *m) {
     float mulFactorF = (int) (1 << (prim->vertex_precision));
 
     for (int i = 0; i < numTris; i += 3) {
-        uint16_t *indices = (uint16_t *) prim->indices;
+        unsigned short *indices = (unsigned short *) prim->indices;
         u_int16_t *v1 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 0]);
         u_int16_t *v2 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 1]);
         u_int16_t *v3 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 2]);
@@ -222,6 +223,7 @@ void load_scene(int sceneID) {
     s->overlay = dlopen(asset_dir(sSceneTable[sceneID], DFS_OVERLAY), RTLD_LOCAL);
     SceneHeader *header = dlsym(s->overlay, "header");
     SceneChunk *tailC = NULL;
+    int chunkCount = 0;
     s->model = NULL;
     if (header->model) {
         s->model = model64_load(asset_dir(header->model, DFS_MODEL64));
@@ -235,6 +237,7 @@ void load_scene(int sceneID) {
             c->meshList = NULL;
             c->flags = 0;
             c->chunkID = i;
+            chunkCount++;
             c->next = NULL;
             c->bounds[0][0] = 9999999.0f;
             c->bounds[0][1] = 9999999.0f;
@@ -298,6 +301,6 @@ void load_scene(int sceneID) {
     camera_init();
     gSceneUpdate = 0;
 #ifdef PUPPYPRINT_DEBUG
-    debugf("Scene [%s] loaded in %2.3fs.\n", sSceneTable[sceneID], ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
+    debugf("Scene [%s] loaded in %2.3fs. Chunks: %d\n", sSceneTable[sceneID], ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f, chunkCount);
 #endif
 }

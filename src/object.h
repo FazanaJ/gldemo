@@ -90,7 +90,7 @@ typedef struct DynamicShadow {
 	unsigned char acrossY;
 	unsigned char texCount;
 	signed char staleTimer;
-	u_uint16_t angle[3];
+	unsigned short angle[3];
 	GLuint tex[9];
 } DynamicShadow;
 
@@ -118,31 +118,42 @@ typedef struct ObjectGraphics {
 	float yOffset;
 } ObjectGraphics;
 
+typedef struct ObjectCollision {
+	struct Object *platform;
+	float hitboxHeight;
+	float floorHeight;
+	float floorNorm;
+} ObjectCollision;
+
+typedef struct ObjectMovement {
+	float vel[3];
+	float yVelMax;
+	float forwardVel;
+	float weight;
+	unsigned short moveAngle[3];
+	// pad: 0x02
+} ObjectMovement;
+
 typedef struct Object {
 	ObjectGraphics *gfx;
 	float pos[3];
 	Hitbox *hitbox;
 	struct ObjectList *entry;
-	uint16_t faceAngle[3];
+	unsigned short faceAngle[3];
 	short objectID;
 	struct ObjectEntry *header;
 	struct VoidList *overlay;
 	void (*loopFunc)(struct Object *obj, int updateRate, float updateRateF);
 	struct Object *parent;
-	struct Object *platform;
-	float hitboxHeight;
-	float floorHeight;
-	float cameraDist;
 	float viewDist;
-	float yVel;
-	float yVelMax;
-	float weight;
-	float scale[3];
-	float forwardVel;
+	float cameraDist;
 	float prevPos[3];
-	u_uint32_t flags;
+	float scale[3];
+	unsigned int flags;
 	void *data;
-	uint16_t moveAngle[3];
+	ObjectCollision *collision;
+	ObjectMovement *movement;
+	
 	unsigned char animID;
 } Object;
 
@@ -157,12 +168,12 @@ typedef struct Clutter {
 	float pos[3];
 	Hitbox *hitbox;
 	struct ClutterList *entry;
-	uint16_t faceAngle[3];
+	unsigned short faceAngle[3];
 	short objectID;
 	float cameraDist;
 	float viewDist;
 	float scale[3];
-	u_uint32_t flags;
+	unsigned int flags;
 } Clutter;
 
 typedef struct ClutterList {
@@ -197,7 +208,7 @@ typedef struct Particle {
 	Material *material;
 	struct ParticleList *entry;
 	float pos[3];
-	u_uint32_t flags;
+	unsigned int flags;
 
 	short timer;
 	float forwardVel;

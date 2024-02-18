@@ -32,16 +32,16 @@ short gNumOverlays = 0;
 char gGamePaused = false;
 
 static void object_move(Object *obj, float updateRateF) {
-    if (obj->forwardVel != 0.0f) {
-        float vel = obj->forwardVel / 20.0f;
-        obj->pos[0] += (vel * sins(obj->moveAngle[1])) * updateRateF;
-        obj->pos[2] += (vel * coss(obj->moveAngle[1])) * updateRateF;
+    if (obj->movement->forwardVel != 0.0f) {
+        float vel = obj->movement->forwardVel / 20.0f;
+        obj->pos[0] += (vel * sins(obj->movement->moveAngle[1])) * updateRateF;
+        obj->pos[2] += (vel * coss(obj->movement->moveAngle[1])) * updateRateF;
     }
 }
 
 static void object_platform_displacement(Object *obj) {
-    Object *p = obj->platform;
-    if (obj->yVel <= 0.0f && obj->pos[1] <= obj->hitboxHeight + 1.5f) {
+    Object *p = obj->collision->platform;
+    if (obj->movement->vel[1] <= 0.0f && obj->pos[1] <= obj->collision->hitboxHeight + 1.5f) {
         float diff[3];
         diff[0] = p->pos[0] - p->prevPos[0];
         diff[1] = p->pos[1] - p->prevPos[1];
@@ -53,19 +53,24 @@ static void object_platform_displacement(Object *obj) {
 }
 
 static void object_gravity(Object *obj, float updateRateF) {
-    float weightMax = -(obj->weight * 10.0f);
-    if (obj->yVel > weightMax) {
-        obj->yVel -= (obj->weight / 10.0f) * updateRateF;
-        if (obj->yVel < weightMax) {
-            obj->yVel = weightMax;
+    float weightMax = -(obj->movement->weight * 10.0f);
+    if (obj->movement->vel[1] > weightMax) {
+        obj->movement->vel[1] -= (obj->movement->weight / 10.0f) * updateRateF;
+        if (obj->movement->vel[1] < weightMax) {
+            obj->movement->vel[1] = weightMax;
         }
     }
-    if (obj->yVel != 0.0f) {
-        float height = MAX(obj->floorHeight, obj->hitboxHeight);
-        obj->pos[1] += (obj->yVel / 10.0f) * updateRateF;
-        if (obj->yVel < 0.0f && obj->pos[1] - height < 1.5f) {
+    if (obj->movement->vel[1] != 0.0f) {
+        float height;
+        if (obj->flags & OBJ_FLAG_COLLISION) {
+            height = MAX(obj->collision->floorHeight, obj->collision->hitboxHeight);
+        } else {
+            height = -30000.0f;
+        }
+        obj->pos[1] += (obj->movement->vel[1] / 10.0f) * updateRateF;
+        if (obj->movement->vel[1] < 0.0f && obj->pos[1] - height < 1.5f) {
             obj->pos[1] = height;
-            obj->yVel = 0.0f;
+            obj->movement->vel[1] = 0.0f;
         }
     }
 }
@@ -123,6 +128,8 @@ Object *find_nearest_object(Object *obj, int objectID, float baseDist) {
 }
 
 float gHitboxSize[2][3];
+float gHitboxHeight;
+Object *gObjectPlatform; 
 Object *sPrevPlatform;
 #define COLLISION_CAP (sizeof(obj->hitbox->collideObj) / sizeof(int *))
 
@@ -160,8 +167,8 @@ static int object_hit_platform_flat(Object *obj, Object *testObj) {
     if (h2->solid) {
         if (obj->pos[1] + heightScale >= testObj->pos[1] + (heightScale2 + gHitboxSize[1][1]) || 
             (sPrevPlatform == testObj && obj->pos[1] + heightScale >= testObj->pos[1] + heightScale2)) {
-            obj->hitboxHeight = testObj->pos[1] + gHitboxSize[1][1] + heightScale2;
-            obj->platform = testObj;
+            gHitboxHeight = testObj->pos[1] + gHitboxSize[1][1] + heightScale2;
+            gObjectPlatform = testObj;
             return true;
         }
     }
@@ -186,8 +193,8 @@ static int object_hit_platform_round(Object *obj, Object *testObj) {
             float relZ = obj->pos[2] - testObj->pos[2];
             float dist = (SQR(relX) + SQR(relZ)) / ((gHitboxSize[0][0] + gHitboxSize[1][0]) * (gHitboxSize[0][2] + gHitboxSize[1][2]));
             float height = testObj->pos[1] + heightScale2 + (midPoint * (2.0f - dist));
-            obj->hitboxHeight = height;
-            obj->platform = testObj;
+            gHitboxHeight = height;
+            gObjectPlatform = testObj;
             return true;
         }
     }
@@ -399,9 +406,11 @@ static void object_hitbox(Object *obj) {
     }
     ObjectList *objList = gObjectListHead;
     Object *testObj;
-    sPrevPlatform = obj->platform;
-    obj->hitboxHeight = -30000;
-    obj->platform = NULL;
+    if (obj->flags & OBJ_FLAG_COLLISION) {
+        sPrevPlatform = obj->collision->platform;
+        gHitboxHeight = -30000.0f;
+        gObjectPlatform = NULL;
+    }
     gHitboxSize[0][0] = obj->hitbox->width * obj->scale[0];
     gHitboxSize[0][1] = obj->hitbox->height * obj->scale[1];
     gHitboxSize[0][2] = obj->hitbox->length * obj->scale[2];
@@ -420,6 +429,10 @@ static void object_hitbox(Object *obj) {
         }
         next:
         objList = objList->next;
+    }
+    if (obj->flags & OBJ_FLAG_COLLISION) {
+        obj->collision->hitboxHeight = gHitboxHeight;
+        obj->collision->platform = gObjectPlatform;
     }
     get_time_snapshot(PP_HITBOXES, DEBUG_SNAPSHOT_1_END);
 }
@@ -480,9 +493,9 @@ static void update_objects(int updateRate, float updateRateF) {
         }
         if (obj->flags & OBJ_FLAG_MOVE) {
             object_move(obj, updateRateF);
-        }
-        if (obj->flags & OBJ_FLAG_GRAVITY) {
-            object_gravity(obj, updateRateF);
+            if (obj->flags & OBJ_FLAG_GRAVITY) {
+                object_gravity(obj, updateRateF);
+            }
         }
         if (obj->hitbox && obj->flags & OBJ_FLAG_TANGIBLE) {
             object_hitbox(obj);
@@ -503,7 +516,7 @@ static void update_objects(int updateRate, float updateRateF) {
     while (objList) {
         DEBUG_SNAPSHOT_2();
         obj = objList->obj;
-        if (obj->platform) {
+        if (obj->flags & OBJ_FLAG_COLLISION && obj->collision->platform) {
             object_platform_displacement(obj);
         }
         objList = objList->next;

@@ -19,7 +19,7 @@ void init(Object *obj) {
     data->healthMax = data->healthBase;
     data->health = data->healthBase;
     data->cameraAngle = 0;
-    obj->weight = 3.0f;
+    obj->movement->weight = 3.0f;
 }
 
 void loop(Object *obj, int updateRate, float updateRateF) {
@@ -68,15 +68,15 @@ void loop(Object *obj, int updateRate, float updateRateF) {
     if (input_pressed(INPUT_B, 0) && gGameTimer > 120) {
         play_sound_spatial(SOUND_LASER, obj->pos);
         Object *bullet = spawn_object_pos(OBJ_PROJECTILE, obj->pos[0], obj->pos[1] + 5.0f, obj->pos[2]);
-        bullet->forwardVel = 20.0f;
-        bullet->moveAngle[1] = obj->faceAngle[1];
+        bullet->movement->forwardVel = 20.0f;
+        bullet->movement->moveAngle[1] = obj->faceAngle[1];
         input_rumble(3);
     }
 
     if (input_pressed(INPUT_A, 0) && gGameTimer > 120) {
         if (input_held(INPUT_Z)) {
-            if (obj->yVel == 0.0f) {
-                obj->yVel = 7.5f;
+            if (obj->movement->vel[1] == 0.0f) {
+                obj->movement->vel[1] = 7.5f;
             }
         } else {
             Particle *part;
@@ -117,10 +117,10 @@ void loop(Object *obj, int updateRate, float updateRateF) {
         float moveLerp;
         INCREASE_VAR(c->moveTimer, updateRate, moveTicks);
         moveLerp = 1.0f - (((float) (moveTicks - c->moveTimer)) / (float) moveTicks);
-        obj->moveAngle[1] = lerp_short(obj->moveAngle[1], intendedYaw + c->yawTarget, 0.25f * updateRateF);
+        obj->movement->moveAngle[1] = lerp_short(obj->movement->moveAngle[1], intendedYaw + c->yawTarget, 0.25f * updateRateF);
         if (gZTargetTimer == 0) {
             c->yawTarget -= (float) (stickX * ((2.0f * updateRateF) * moveLerp));
-            obj->faceAngle[1] = lerp_short(obj->faceAngle[1], obj->moveAngle[1], 0.1f * updateRateF);
+            obj->faceAngle[1] = lerp_short(obj->faceAngle[1], obj->movement->moveAngle[1], 0.1f * updateRateF);
             data->cameraAngle = obj->faceAngle[1];
         } else {
             if (data->zTarget) {
@@ -133,7 +133,7 @@ void loop(Object *obj, int updateRate, float updateRateF) {
             model64_anim_set_loop(obj->gfx->listEntry->model64, MODEL64_ANIM_SLOT_0, true);
             obj->animID = 2;
         }
-        model64_anim_set_speed(obj->gfx->listEntry->model64, MODEL64_ANIM_SLOT_0, (updateRateF * obj->forwardVel) * 0.5f);
+        model64_anim_set_speed(obj->gfx->listEntry->model64, MODEL64_ANIM_SLOT_0, (updateRateF * obj->movement->forwardVel) * 0.5f);
     } else {
         DECREASE_VAR(c->moveTimer, updateRate * 2, 0);
         intendedMag = 0.0f;
@@ -146,15 +146,15 @@ void loop(Object *obj, int updateRate, float updateRateF) {
     }
     model64_update(obj->gfx->listEntry->model64, 1.0f / 60.0f);
 
-    if (obj->forwardVel < 8.0f * intendedMag) {
-        obj->forwardVel += (updateRateF * 1.0f) * intendedMag;
+    if (obj->movement->forwardVel < 8.0f * intendedMag) {
+        obj->movement->forwardVel += (updateRateF * 1.0f) * intendedMag;
     }
-    if (obj->forwardVel > 8.0f * intendedMag) {
-        DECREASE_VAR(obj->forwardVel, updateRateF * 0.5f, 0);
+    if (obj->movement->forwardVel > 8.0f * intendedMag) {
+        DECREASE_VAR(obj->movement->forwardVel, updateRateF * 0.5f, 0);
     }
 
-    if (obj->forwardVel > 0.0f) {
-        DECREASE_VAR(obj->forwardVel, updateRateF * 0.25f, 0);
+    if (obj->movement->forwardVel > 0.0f) {
+        DECREASE_VAR(obj->movement->forwardVel, updateRateF * 0.25f, 0);
     }
 
     get_time_snapshot(PP_PLAYER, DEBUG_SNAPSHOT_1_END);

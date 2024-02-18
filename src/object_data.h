@@ -9,6 +9,8 @@ typedef struct PlayerData {
 	short healthMax;
 	short cameraAngle;
 	struct Object *zTarget;
+	struct Object *heldObj;
+	struct Object *riddenObj;
 	char action;
 
 
