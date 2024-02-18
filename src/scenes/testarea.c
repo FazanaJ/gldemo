@@ -34,4 +34,5 @@ SceneHeader header = {
     /*Sky Bottom*/      {143, 95, 50},
     /*Flags*/           ENV_FOG,
     /*Sky Texture*/     TEXTURE_SKYBOX1,
+    /*Model Count*/     1,
 };

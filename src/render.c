@@ -610,9 +610,10 @@ static void render_sky_texture(Environment *e) {
         glEnable(GL_TEXTURE_2D);
         glDisable(GL_CULL_FACE);
         glColor3f(1, 1, 1);
+        int base = gCamera->yaw + 0x8000;
         if (gCamera->viewPitch >= 0x2C00 || gCamera->mode == CAMERA_PHOTO) {
             for (int i = 0; i < 16; i++) {
-                short rot = (((gCamera->yaw) % 0xFFFF - 0x8000) - ((((0x10000 / 16) * i) + 0x8000)) % 0xFFFF - 0x8000);
+                short rot = base - ((0x10000 / 16) * i);
                 if (fabs(rot) >= 0x4000) {
                     continue;
                 }
@@ -636,7 +637,7 @@ static void render_sky_texture(Environment *e) {
         }
         
         for (int i = 0; i < 16; i++) {
-            short rot = (((gCamera->yaw) % 0xFFFF - 0x8000) - ((((0x10000 / 16) * i) + 0x8000)) % 0xFFFF - 0x8000);
+            short rot = base - ((0x10000 / 16) * i);
             if (fabs(rot) >= 0x4000) {
                 continue;
             }
@@ -730,6 +731,9 @@ static void apply_anti_aliasing(int mode) {
 
 static void apply_render_settings(void) {
     int targetPos;
+    gPrevTextureID = -1;
+    gPrevCombiner = -1;
+    gPrevRenderFlags = -1;
     rspq_block_run(sBeginModeBlock);
     if (gConfig.regionMode == TV_PAL) {
         targetPos = gZTargetTimer * (1.5f * 1.2f);
@@ -840,6 +844,8 @@ static void render_particles(void) {
     Particle *particle;
 
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    glEnable(GL_DEPTH_TEST);
+    gRenderSettings.depthRead = true;
     
     while (list) {
         particle = list->particle;
@@ -858,6 +864,17 @@ static void render_particles(void) {
     get_time_snapshot(PP_RENDERPARTICLES, DEBUG_SNAPSHOT_1_END);
 }
 
+static inline int render_inside_view_world(float width, float screenPos[3]) {
+    float hScreenEdge = -screenPos[2] * gHalfFovHor;
+    if (fabsf(screenPos[0]) > hScreenEdge + width) {
+        return false;
+    }
+    if (fabsf(screenPos[2] - VALIDDEPTHMIDDLE) >= VALIDDEPTHRANGE + (width)) {
+        return false;
+    }
+    return true;
+}
+
 static int render_world_visible(SceneChunk *c) {
     DEBUG_SNAPSHOT_1();
     float screenPos[3];
@@ -867,20 +884,20 @@ static int render_world_visible(SceneChunk *c) {
     size[0] = c->bounds[1][0] - c->bounds[0][0];
     size[1] = c->bounds[1][1] - c->bounds[0][1];
     size[2] = c->bounds[1][2] - c->bounds[0][2];
-    pos[0] = c->bounds[0][0] + size[0];
-    pos[1] = c->bounds[0][1] + size[1];
-    pos[2] = c->bounds[0][2] + size[2];
+    pos[0] = c->bounds[0][0] + (size[0] / 2);
+    pos[1] = c->bounds[0][1] + (size[1] / 2);
+    pos[2] = c->bounds[0][2] + (size[2] / 2);
     width = MAX(size[0], size[2]);
 
-    float dist = DIST2_Z(gCamera->pos, pos);
+    float dist = DIST2_Z(gCamera->focus, pos);
 
-    if (dist > (width + 500.0f) * (width + 500.0f)) {
+
+    if (dist > (width + 400.0f) * (width + 400.0f)) {
         return false;
     }
 
-    pos[1] -= 2500.0f;
     linear_mtxf_mul_vec3f_and_translate(gViewMatrix, screenPos, pos);
-    if (render_inside_view(width * 1.25f, 10000.0f, screenPos)) {
+    if (render_inside_view_world(width, screenPos)) {
         get_time_snapshot(PP_CULLING, DEBUG_SNAPSHOT_1_END);
         return true;
     } else {

@@ -69,6 +69,7 @@ typedef struct SceneHeader {
     unsigned char skyBottom[3];
     int flags;
     Texture skyTexture;
+    unsigned short chunkCount;
 } SceneHeader;
 
 typedef struct SceneBlock {

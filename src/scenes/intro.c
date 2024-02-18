@@ -18,4 +18,5 @@ SceneHeader header = {
     /*Sky Bottom*/      {0xFF, 0xFF, 0xFF},
     /*Flags*/           ENV_NONE,
     /*Sky Texture*/     -1,
+    /*Model Count*/     1,
 };

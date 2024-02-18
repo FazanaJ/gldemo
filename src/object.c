@@ -139,11 +139,12 @@ Object *find_nearest_object_facing(Object *obj, int objectID, float baseDist, in
     Object *listObj;
     Object *bestObj = NULL;
     float dist;
+    int base = angle + 0x8000;
 
     while (objList) {
         listObj = objList->obj;
         if (listObj->objectID == objectID) {
-            short rot = (((angle) % 0xFFFF - 0x8000) - (atan2s(obj->pos[2] - listObj->pos[2], obj->pos[0] - listObj->pos[0]) + 0x8000) % 0xFFFF - 0x8000);
+            short rot = base - atan2s(obj->pos[2] - listObj->pos[2], obj->pos[0] - listObj->pos[0]);
             if (fabs(rot) < range) {
                 dist = DIST3(obj->pos, listObj->pos);
                 if (dist < bestDist) {
