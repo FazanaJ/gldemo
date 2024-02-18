@@ -30,7 +30,7 @@ assets_conv = $(addprefix filesystem/,$(notdir $(assets_ttf:%.ttf=%.font64))) \
 MKSPRITE_FLAGS ?=
 MKFONT_FLAGS ?=
 AUDIOCONV_FLAGS ?= --wav-compress 1
-COMPRESS_LEVEL ?= --compress 2
+COMPRESS_LEVEL ?= --compress 3
 
 all: gldemo.z64
 

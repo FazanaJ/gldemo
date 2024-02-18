@@ -154,7 +154,10 @@ typedef struct Object {
 	ObjectCollision *collision;
 	ObjectMovement *movement;
 	
-	unsigned char animID;
+	unsigned short animID;
+	unsigned short animIDPrev;
+	float animSpeed;
+	char *animName;
 } Object;
 
 typedef struct ObjectList {

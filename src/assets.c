@@ -772,6 +772,7 @@ void set_object_functions(Object *obj, int objectID) {
     if (gObjectModels[objectID]) {
         load_object_model(obj, objectID);
     }
+    obj->animID = ANIM_NONE;
 }
 
 void free_dynamic_shadow(Object *obj) {

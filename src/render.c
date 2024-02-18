@@ -1052,6 +1052,9 @@ static void render_objects(void) {
             ObjectModel *m = obj->gfx->listEntry->entry;
             Matrix *prevMtx = NULL;
             obj->gfx->listEntry->timer = 10;
+            if (obj->animID != ANIM_NONE) {
+                model64_update(obj->gfx->listEntry->model64, 1.0f / 60.0f);
+            }
             if (obj->gfx->listEntry->active == false) {
                 object_model_generate(obj);
             }

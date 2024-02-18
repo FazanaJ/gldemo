@@ -437,6 +437,15 @@ static void object_hitbox(Object *obj) {
     get_time_snapshot(PP_HITBOXES, DEBUG_SNAPSHOT_1_END);
 }
 
+static void object_animate(Object *obj, float updateRateF) {
+    if (obj->animID != obj->animIDPrev) {
+        model64_anim_play(obj->gfx->listEntry->model64, obj->animName, MODEL64_ANIM_SLOT_0, false, 0.0f);
+        model64_anim_set_loop(obj->gfx->listEntry->model64, MODEL64_ANIM_SLOT_0, true);
+        obj->animID = obj->animIDPrev;
+    }
+    model64_anim_set_speed(obj->gfx->listEntry->model64, MODEL64_ANIM_SLOT_0, obj->animSpeed * updateRateF);
+}
+
 /**
  * Loop through every element in the object list and run their loop function.
 */
@@ -496,6 +505,9 @@ static void update_objects(int updateRate, float updateRateF) {
             if (obj->flags & OBJ_FLAG_GRAVITY) {
                 object_gravity(obj, updateRateF);
             }
+        }
+        if (obj->animID != ANIM_NONE) {
+            object_animate(obj, updateRateF);
         }
         if (obj->hitbox && obj->flags & OBJ_FLAG_TANGIBLE) {
             object_hitbox(obj);
