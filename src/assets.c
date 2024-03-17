@@ -97,6 +97,7 @@ void init_materials(void) {
     gNumTextureLoads = 0;
 #endif
     rspq_block_begin();
+#ifdef OPENGL
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_BLEND);
     glDepthMask(GL_FALSE);
@@ -104,9 +105,11 @@ void init_materials(void) {
     glDisable(GL_COLOR_MATERIAL);
     glDepthFunc(GL_LESS);
     glEnable(GL_CULL_FACE);
+#endif
     gParticleMaterialBlock = rspq_block_end();
 }
 
+#ifdef OPENGL
 void bind_new_texture(MaterialList *material) {
     int repeatH;
     int repeatV;
@@ -141,11 +144,16 @@ void bind_new_texture(MaterialList *material) {
 
     glSpriteTextureN64(GL_TEXTURE_2D, material->sprite, &(rdpq_texparms_t){.s.repeats = repeatH, .t.repeats = repeatV, .s.mirror = mirrorH, .t.mirror = mirrorV});
 }
+#endif
 
 static char *sFileFormatString[] = {
     "sprite",
     "wav64",
+#ifdef OPENGL
     "model64",
+#else
+    "model",
+#endif
     "xm64",
     "font64",
     "dso"
@@ -201,8 +209,10 @@ int load_texture(Material *material) {
     debugf("Loading texture: %s.", gTextureIDs[material->textureID].file);
     list->sprite = sprite_load(asset_dir(gTextureIDs[material->textureID].file, DFS_SPRITE));
     list->textureID = material->textureID;
+#ifdef OPENGL
     glGenTextures(1, &list->texture);
     bind_new_texture(list);
+#endif
     list->loadTimer = 10;
     material->index = list;
     debugf(" Time: %2.3fs.\n", ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
@@ -233,7 +243,9 @@ static void free_material(MaterialList *material) {
         }
     }
     sprite_free(material->sprite);
+#ifdef OPENGL
     glDeleteTextures(1, &material->texture);
+#endif
     free(material);
 #ifdef PUPPYPRINT_DEBUG
     gNumTextures--;
@@ -289,12 +301,14 @@ void shadow_generate(Object *obj) {
     for (int i = 0; i < h; i++) {
         x = 0;
         for (int j = 0; j < w; j++) {
+#ifdef OPENGL
             glGenTextures(1, &d->tex[texLoads]);
             glBindTexture(GL_TEXTURE_2D, d->tex[texLoads--]);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             surface_t surf = surface_make_sub(&d->surface, x, y, stepW, stepH);
             glSurfaceTexImageN64(GL_TEXTURE_2D, 0, &surf, &(rdpq_texparms_t){.s.repeats = true, .t.repeats = true});
+#endif
             x += stepW;
         }
         y += stepH;
@@ -344,7 +358,9 @@ void asset_cycle(int updateRate) {
             debugf("Freeing texture: %s.\n", gTextureIDs[gEnvironment->skyboxTextureID].file);
             for (int i = 0; i < 32; i++) {
                 gNumTextures--;
+#ifdef OPENGL
                 glDeleteTextures(1, &gEnvironment->textureSegments[i]);
+#endif
             }
             sprite_free(gEnvironment->skySprite);
             gEnvironment->texGen = false;
@@ -377,12 +393,14 @@ void sky_texture_generate(Environment *e) {
             x = 0;
         }
         gNumTextures++;
+#ifdef OPENGL
         glGenTextures(1, &e->textureSegments[i]);
         glBindTexture(GL_TEXTURE_2D, e->textureSegments[i]);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         surface_t surfPiece = surface_make_sub(&surf, x, y, 32, 64);
         glSurfaceTexImageN64(GL_TEXTURE_2D, 0, &surfPiece, &(rdpq_texparms_t){.s.repeats = false, .t.repeats = false});
+#endif
         x += 32;
     }
     debugf(" Time: %2.3fs.\n", ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
@@ -392,9 +410,12 @@ rspq_block_t *sky_gradient_generate(Environment *e) {
     int width = display_get_width();
     int height = display_get_height();
     rspq_block_begin();
+#ifdef OPENGL
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_MULTISAMPLE_ARB);
+#endif
     matrix_ortho();
+#ifdef OPENGL
     glBegin(GL_QUADS);
     glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
     glVertex2i(0, 0);
@@ -405,6 +426,7 @@ rspq_block_t *sky_gradient_generate(Environment *e) {
     glVertex2i(width, 0);
     glColor3f(1, 1, 1);
     glEnd();
+#endif
     return rspq_block_end();
 }
 
@@ -512,7 +534,9 @@ void check_unused_model(Object *obj) {
         }
         free(m);
     }
+#ifdef OPENGL
     model64_free(obj->gfx->listEntry->model64);
+#endif
     free(obj->gfx->listEntry);
 #ifdef PUPPYPRINT_DEBUG
         gNumModels--;
@@ -661,6 +685,7 @@ void object_model_generate(Object *obj) {
     ObjectModel *m = obj->gfx->listEntry->entry;
     while (m) {
         rspq_block_begin();
+#ifdef OPENGL
         //glScalef(10.0f, 9.0f, 10.0f);
         if (obj->gfx->modelID == 1) {
             glScalef(0.95f, 1.33f, 1.33f);
@@ -668,6 +693,7 @@ void object_model_generate(Object *obj) {
             glScalef(1.0f, 1.0f, 1.0f);
         }
         model64_draw_primitive(m->prim);
+#endif
         m->block = rspq_block_end();
         m = m->next;
     }
@@ -714,9 +740,10 @@ static void load_object_model(Object *obj, int objectID) {
     gModelIDListTail = list;
 
     debugf("Loading model [%s].", gModelIDs[modelID - 1]);
-    list->model64 = model64_load(asset_dir(gModelIDs[modelID - 1], DFS_MODEL64));
     list->entry = NULL;
     list->active = false;
+#ifdef OPENGL
+    list->model64 = model64_load(asset_dir(gModelIDs[modelID - 1], DFS_MODEL64));
     int numMeshes = model64_get_mesh_count(list->model64);
     ObjectModel *tail = NULL;
     for (int i = 0; i < numMeshes; i++) {
@@ -755,10 +782,11 @@ static void load_object_model(Object *obj, int objectID) {
             tail = m;
         }
     }
+#endif
     debugf(" Time: %2.3fs.\n", ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
 
 #ifdef PUPPYPRINT_DEBUG
-        gNumModels++;
+    gNumModels++;
 #endif
     list->next = NULL;
     list->timer = 10;
@@ -780,7 +808,9 @@ void free_dynamic_shadow(Object *obj) {
     debugf("Freeing dynamic shadow for [%s] object.\n", sObjectOverlays[obj->objectID]);
     surface_free(&d->surface);
     for (int i = 0; i < d->texCount; i++) {
+#ifdef OPENGL
         glDeleteTextures(1, &d->tex[i]);
+#endif
     }
     free(obj->gfx->dynamicShadow);
     obj->gfx->dynamicShadow = NULL;

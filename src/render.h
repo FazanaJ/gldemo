@@ -6,6 +6,20 @@
 #include "assets.h"
 #include "object.h"
 
+#ifdef OPENGL
+#define MATRIX_PUSH() glPushMatrix()
+#define MATRIX_POP() glPopMatrix()
+#define MATRIX_MUL(x) glMultMatrixf((GLfloat *) x)
+#elif defined(TINY3D)
+#define MATRIX_PUSH()
+#define MATRIX_POP()
+#define MATRIX_MUL(x)
+#else
+#define MATRIX_PUSH()
+#define MATRIX_POP()
+#define MATRIX_MUL(x)
+#endif
+
 enum DrawLayer {
     DRAW_OPA,
     DRAW_DECAL,

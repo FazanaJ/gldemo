@@ -8,94 +8,7 @@
 #include "debug.h"
 #include "math_util.h"
 
-typedef struct CollisionInfo {
-    float incline;
-    float normal[3];
-    int flags;
-} CollisionInfo;
-
-static void vec3f_cross(float dest[3], float a[3], float b[3]) {
-    dest[0] = a[1] * b[2] - b[1] * a[2];
-    dest[1] = a[2] * b[0] - b[2] * a[0];
-    dest[2] = a[0] * b[1] - b[0] * a[1];
-}
-
-static void vec3f_normalize(float dest[3]) {
-    float size = (dest[0] * dest[0] + dest[1] * dest[1] + dest[2] * dest[2]);
-    float invsqrt;
-    if (size > 0.01f) {
-
-        invsqrt = sqrtf(size);
-
-        dest[0] *= invsqrt;
-        dest[1] *= invsqrt;
-        dest[2] *= invsqrt;
-    } else {
-        dest[0] = 0.0f;
-        ((unsigned int *)dest)[1] = 0x3F800000;
-        dest[2] = 0.0f;
-    }
-}
-
-/**************************************************
- *                    RAYCASTING                  *
- **************************************************/
-
- /// Multiply vector 'dest' by a
-static void vec3f_mul(float dest[3], float a) {
-    dest[0] *= a;
-    dest[1] *= a;
-    dest[2] *= a;
-}
-
-static void vec3f_sum(float dest[3], float a[3], float b[3]) {
-    dest[0] = a[0] + b[0];
-    dest[1] = a[1] + b[1];
-    dest[2] = a[2] + b[2];
-}
-
-/// Make 'dest' the difference of vectors a and b.
-static void vec3f_diff(float dest[3], float a[3], float b[3]) {
-    dest[0] = a[0] - b[0];
-    dest[1] = a[1] - b[1];
-    dest[2] = a[2] - b[2];
-}
-
-static float vec3f_dot(float a[3], float b[3]) {
-    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-}
-
-static int ray_surface_intersect(float orig[3], float dir[3], float dir_length, float *hit_pos, float *length, float v0[3], float v1[3], float v2[3]) {
-    float e1[3];
-    vec3f_diff(e1, v1, v0);
-    float e2[3];
-    vec3f_diff(e2, v2, v0);
-    float h[3];
-    vec3f_cross(h, dir, e2);
-    float det = vec3f_dot(e1, h);
-    if (det > -0.0001f && det < 0.0001f) return false;
-    float f = 1.0f / det; // invDet
-    float s[3];
-    vec3f_diff(s, orig, v0);
-    float u = f * vec3f_dot(s, h);
-    if (u < 0.0f || u > 1.0f) return false;
-    float q[3];
-    vec3f_cross(q, s, e1);
-    float v = f * vec3f_dot(dir, q);
-    if (v < 0.0f || (u + v) > 1.0f) return false;
-    *length = f * vec3f_dot(e2, q);
-    if (*length <= 0.01f || *length > dir_length) return false;
-    float add_dir[3];
-    add_dir[0] = dir[0];
-    add_dir[1] = dir[1];
-    add_dir[2] = dir[2];
-    vec3f_mul(add_dir, *length);
-    vec3f_sum(hit_pos, orig, add_dir);
-    return true;
-}
-
 typedef int16_t u_int16_t __attribute__((aligned(1)));
-typedef float u_flt __attribute__((aligned(1)));
 
 static void collision_normals(u_int16_t *v0, u_int16_t *v1, u_int16_t *v2, float *normals, int w) {
     float nx, ny, nz;
@@ -115,7 +28,6 @@ static void collision_normals(u_int16_t *v0, u_int16_t *v1, u_int16_t *v2, float
     y3 = v2[1];
     z3 = v2[2];
 
-    // (v2 - v1) x (v3 - v2)
     nx = (y2 - y1) * (z3 - z2) - (z2 - z1) * (y3 - y2);
     ny = (z2 - z1) * (x3 - x2) - (x2 - x1) * (z3 - z2);
     nz = (x2 - x1) * (y3 - y2) - (y2 - y1) * (x3 - x2);
@@ -176,6 +88,73 @@ static float collision_surface_down(float *posF, int16_t *pos, u_int16_t *v0, u_
     }
 }
 
+static void collision_surface_side(float *posF, int16_t *pos, u_int16_t *v0, u_int16_t *v1, u_int16_t *v2, float size, Object *obj, float mulFactorF) {
+    int posCheck = pos[1] + 15;
+    if (posCheck < v0[1] && posCheck < v1[1] && posCheck < v2[1]) {
+        return;
+    }
+
+    float normal[4];
+    collision_normals(v0, v1, v2, normal, true);
+
+    float offset = normal[0] * posF[0] + normal[1] * posF[1] + normal[2] * posF[2] + normal[3];
+
+
+    if (fabsf(offset) > size) {
+        return;
+    }
+
+    int px = pos[0];
+    int pz = pos[2];
+
+    float norm;
+    float ppz;
+    int w1;
+    int w2;
+    int w3;
+    if (fabsf(normal[0]) > 0.707f) {
+        w1 = -v0[2];
+        w2 = -v1[2];
+        w3 = -v2[2];
+        norm = normal[0];
+        ppz = -pz;
+    } else {
+        w1 = v0[0];
+        w2 = v1[0];
+        w3 = v2[0];
+        norm = normal[2];
+        ppz = px;
+    }
+
+    if (norm > 0.0f) {
+        if ((v0[1] - pos[1]) * (w2 - w1) - (w1 - ppz) * (v1[1] - v0[1]) > 0.0f) {
+            return;
+        }
+        if ((v1[1] - pos[1]) * (w3 - w2) - (w2 - ppz) * (v2[1] - v1[1]) > 0.0f) {
+            return;
+        }
+        if ((v2[1] - pos[1]) * (w1 - w3) - (w3 - ppz) * (v0[1] - v2[1]) > 0.0f) {
+            return;
+        }
+    } else {
+        if ((v0[1] - pos[1]) * (w2 - w1) - (w1 - ppz) * (v1[1] - v0[1]) < 0.0f) {
+            return;
+        }
+        if ((v1[1] - pos[1]) * (w3 - w2) - (w2 - ppz) * (v2[1] - v1[1]) < 0.0f) {
+            return;
+        }
+        if ((v2[1] - pos[1]) * (w1 - w3) - (w3 - ppz) * (v0[1] - v2[1]) < 0.0f) {
+            return;
+        }
+    }
+
+    float of = ((size - offset) / mulFactorF) * 5.0f;
+
+    obj->pos[0] += normal[0] * of;
+    obj->pos[2] += normal[2] * of;
+}
+
+#ifdef OPENGL
 typedef struct attribute_s {
     uint32_t size;                  ///< Number of components per vertex. If 0, this attribute is not defined
     uint32_t type;                  ///< The data type of each component (for example GL_FLOAT)
@@ -201,7 +180,10 @@ typedef struct ModelPrim {
     void *indices;                  ///< Pointer to the first index value. If NULL, indices are not used
 } ModelPrim;
 
+#endif
+
 void object_collide(Object *obj) {
+    #ifdef OPENGL
     DEBUG_SNAPSHOT_1();
     SceneChunk *chunk = sCurrentScene->chunkList;
     float peakY = -30000.0f;
@@ -221,29 +203,28 @@ void object_collide(Object *obj) {
             ModelPrim *prim = (ModelPrim *) mesh->mesh;
             int numTris = prim->num_indices;
             attribute_t *attr = &prim->position;
-            //attribute_t *col = &prim->color;
             float mulFactorF = (int) (1 << (prim->vertex_precision));
             float plF[3] = {((obj->pos[0]) * mulFactorF) / 5, (((obj->pos[1]) + 15 - (10 * obj->collision->floorNorm)) * mulFactorF) / 5, ((obj->pos[2]) * mulFactorF) / 5};
             int16_t pl[3] = {plF[0], plF[1], plF[2]};
-
-            //typedef int16_t u_int16_t __attribute__((aligned(1)));
-            //typedef int32_t u_int32_t __attribute__((aligned(1)));
 
             for (int i = 0; i < numTris; i += 3) {
                 unsigned short *indices = (unsigned short *) prim->indices;
                 u_int16_t *v1 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 0]);
                 u_int16_t *v2 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 1]);
                 u_int16_t *v3 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 2]);
-                //u_int32_t *c1 = (u_int32_t *) (col->pointer + col->stride * indices[i + 0]);
-                //u_int32_t *c2 = (u_int32_t *) (col->pointer + col->stride * indices[i + 1]);
-                //u_int32_t *c3 = (u_int32_t *) (col->pointer + col->stride * indices[i + 2]);
-                float h = collision_surface_down(plF, pl, v1, v2, v3, &normY);
-
-                if (h > peakY) {
-                    peakY = h;
-                    scale = mulFactorF;
-                    recordNorm = normY;
+                float normals[3];
+                collision_normals(v1, v2, v3, normals, false);
+                if (fabsf(normals[1] < 0.3f)) {
+                    collision_surface_side(plF, pl, v1, v2, v3, (4.0f * mulFactorF) / 5.0f, obj, mulFactorF);
+                } else {
+                    float h = collision_surface_down(plF, pl, v1, v2, v3, &normY);
+                    if (h > peakY) {
+                        peakY = h;
+                        scale = mulFactorF;
+                        recordNorm = normY;
+                    }
                 }
+
             }
             mesh = mesh->next;
         }
@@ -251,13 +232,6 @@ void object_collide(Object *obj) {
     }
     obj->collision->floorHeight = (peakY / scale) * 5;
     obj->collision->floorNorm = recordNorm;
-    if (peakY == -30000.0f) {
-        obj->pos[0] = obj->prevPos[0];
-        obj->pos[1] = obj->prevPos[1];
-        obj->pos[2] = obj->prevPos[2];
-    }
-    //obj->collision->floorHeight = peakY * 5;
-    //obj->pos[1] = peakY;
-
     get_time_snapshot(PP_COLLISION, DEBUG_SNAPSHOT_1_END);
+    #endif
 }

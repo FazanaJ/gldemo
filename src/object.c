@@ -440,11 +440,15 @@ static void object_hitbox(Object *obj) {
 
 static void object_animate(Object *obj, float updateRateF) {
     if (obj->animID != obj->animIDPrev) {
+#ifdef OPENGL
         model64_anim_play(obj->gfx->listEntry->model64, obj->animName, MODEL64_ANIM_SLOT_0, false, 0.0f);
         model64_anim_set_loop(obj->gfx->listEntry->model64, MODEL64_ANIM_SLOT_0, true);
+#endif
         obj->animID = obj->animIDPrev;
     }
+#ifdef OPENGL
     model64_anim_set_speed(obj->gfx->listEntry->model64, MODEL64_ANIM_SLOT_0, obj->animSpeed * updateRateF);
+#endif
 }
 
 /**

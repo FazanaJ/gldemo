@@ -11,8 +11,6 @@
 #include "hud.h"
 #include "screenshot.h"
 
-#define static
-
 SceneBlock *sCurrentScene;
 Environment *gEnvironment;
 char gSceneUpdate;
@@ -42,7 +40,7 @@ int sSceneMeshFlags[SCENE_TOTAL][7] = {
 
     {MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL | MATERIAL_DECAL | MATERIAL_CUTOUT, 
     MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL, 
-    MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL | MATERIAL_CUTOUT,
+    MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL | MATERIAL_CUTOUT | MATERIAL_BACKFACE,
     MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_XLU,
     MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL,
     MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL,
@@ -73,9 +71,11 @@ static void setup_fog(SceneHeader *header) {
     gEnvironment->fogNear = header->fogNear;
     gEnvironment->fogFar = header->fogFar;
     gEnvironment->skyboxTextureID = header->skyTexture;
+#ifdef OPENGL
     glFogf(GL_FOG_START, gEnvironment->fogNear);
     glFogf(GL_FOG_END, gEnvironment->fogFar);
     glFogfv(GL_FOG_COLOR, gEnvironment->fogColour);
+#endif
 }
 
 static void clear_scene(void) {
@@ -116,7 +116,9 @@ static void clear_scene(void) {
         //free(gEnvironment);
     }
     if (sCurrentScene->model) {
+#ifdef OPENGL
         model64_free(sCurrentScene->model);
+#endif
     }
     if (sCurrentScene->overlay) {
         dlclose(sCurrentScene->overlay);
@@ -124,6 +126,7 @@ static void clear_scene(void) {
     free(sCurrentScene);
 }
 
+#ifdef OPENGL
 typedef struct attribute_s {
     uint32_t size;                  ///< Number of components per vertex. If 0, this attribute is not defined
     uint32_t type;                  ///< The data type of each component (for example GL_FLOAT)
@@ -186,6 +189,7 @@ static void scene_mesh_boundbox(SceneChunk *c, SceneMesh *m) {
         }
     }
 }
+#endif
 
 void scene_clear_chunk(SceneChunk *c) {
     SceneMesh *m = c->meshList;
@@ -201,10 +205,12 @@ void scene_clear_chunk(SceneChunk *c) {
 
 void scene_generate_chunk(SceneMesh *s) {
     rspq_block_begin();
-    glPushMatrix();
+    MATRIX_PUSH();
+#ifdef OPENGL
     glScalef(5.0f, 5.0f, 5.0f);
     model64_draw_primitive(s->mesh);
-    glPopMatrix();
+#endif
+    MATRIX_POP();
     s->renderBlock = rspq_block_end();
 }
 
@@ -225,6 +231,7 @@ void load_scene(int sceneID) {
     SceneChunk *tailC = NULL;
     int chunkCount = 0;
     s->model = NULL;
+#ifdef OPENGL
     if (header->model) {
         s->model = model64_load(asset_dir(header->model, DFS_MODEL64));
         s->sceneID = sceneID;
@@ -273,6 +280,7 @@ void load_scene(int sceneID) {
             tailC = c;
         }
     }
+#endif
     
     if (header->objectMap) {
         int i = 0;

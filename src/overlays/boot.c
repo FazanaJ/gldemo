@@ -32,6 +32,7 @@ void read_config(void) {
     }
     ConfigBits config;
     eepfs_read("config.dat", &config, sizeof(ConfigBits));
+    debugf("Magic Number is: 0x%X\n", config.magic);
     if (config.magic != SAVE_MAGIC_NUMBER) {
         bzero(&config, sizeof(ConfigBits));
         gConfig.regionMode = region;
@@ -88,8 +89,8 @@ void init_save_data(void) {
     if (eepfs_verify_signature() == 0) {
         /* If not, erase it and start from scratch */
         debugf("Filesystem signature is invalid!\n");
-        debugf("Wiping EEPROM...\n" );
-        eepfs_wipe();
+        //debugf("Wiping EEPROM...\n" );
+        //eepfs_wipe();
     }
 
     int fileSize = 0;
@@ -114,7 +115,9 @@ void init_debug(void) {
     gDebugData = malloc(sizeof(DebugData));
     bzero(gDebugData, sizeof(DebugData));
     gDebugData->enabled = false;
+#ifdef OPENGL
     gDebugData->debugMeshes[0] = model64_load(asset_dir("debugcylinder", DFS_MODEL64));
+#endif
 }
 #endif
 

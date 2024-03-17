@@ -1,6 +1,18 @@
 BUILD_DIR=build
 include $(N64_INST)/include/n64.mk
 
+T3D_INST = ../t3d
+
+GFXUCODE := opengl
+
+$(eval $(call validate-option,GFXUCODE,opengl tiny3d))
+ifeq ($(GFXUCODE),opengl)
+DEFINES += OPENGL=1
+else ifeq ($(GFXUCODE),tiny3d)
+DEFINES += TINY3D=1
+include $(T3D_INST)/t3d.mk
+endif
+
 src = $(wildcard src/*.c)
 src += $(wildcard assets/*.c)
 overlay = $(wildcard src/overlays/*.c)
@@ -14,6 +26,8 @@ assets_gltf = $(wildcard assets/models/*.glb) $(wildcard assets/archives/*.glb)
 assets_xm1 = $(wildcard assets/xm/*.xm)
 assets_opus = $(wildcard assets/opus/*.wav)
 
+C_DEFINES := $(foreach d,$(DEFINES),-D$(d))
+DEF_INC_CFLAGS := $(foreach i,$(INCLUDE_DIRS),-I$(i)) $(C_DEFINES)
 
 MAIN_ELF_EXTERNS := $(BUILD_DIR)/gldemo.externs
 DSO_MODULES = boot.dso projectile.dso player.dso npc.dso intro.dso testarea.dso testarea2.dso crate.dso barrel.dso testsphere.dso testarea3.dso
@@ -23,9 +37,12 @@ assets_conv = $(addprefix filesystem/,$(notdir $(assets_ttf:%.ttf=%.font64))) \
               $(addprefix filesystem/,$(notdir $(assets_png:%.png=%.sprite))) \
               $(addprefix filesystem/,$(notdir $(assets_wav:%.wav=%.wav64))) \
 			  $(addprefix filesystem/,$(notdir $(assets_xm1:%.xm=%.xm64))) \
-              $(addprefix filesystem/,$(notdir $(assets_gltf:%.glb=%.model64))) \
               $(addprefix filesystem/,$(notdir $(assets_opus:%.wav=%.wav64))) \
 			  $(addprefix filesystem/, $(DSO_MODULES))
+
+ifeq ($(GFXUCODE),opengl)
+	assets_conv += $(addprefix filesystem/,$(notdir $(assets_gltf:%.glb=%.model64)))
+endif
 
 MKSPRITE_FLAGS ?=
 MKFONT_FLAGS ?=
@@ -101,6 +118,7 @@ filesystem/%.xm64: assets/xm/%.xm
 	@echo "    [AUDIO] $@"
 	@$(N64_AUDIOCONV) --wav-compress 1 -o filesystem "$<"
 
+ifeq ($(GFXUCODE),opengl)
 filesystem/%.model64: assets/models/%.glb
 	@mkdir -p $(dir $@)
 	@echo "    [MODEL] $@"
@@ -110,6 +128,7 @@ filesystem/%.model64: assets/archives/%.glb
 	@mkdir -p $(dir $@)
 	@echo "    [MODEL] $@"
 	@$(N64_MKMODEL) $(COMPRESS_LEVEL) -o filesystem $<
+endif
 
 $(BUILD_DIR)/gldemo.dfs: $(assets_conv) $(DSO_LIST)
 $(BUILD_DIR)/gldemo.elf: $(src:%.c=$(BUILD_DIR)/%.o) $(MAIN_ELF_EXTERNS)

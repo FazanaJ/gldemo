@@ -74,6 +74,7 @@ const short sLayerSizes[DRAW_TOTAL] = {
 
 static void init_particles(void) {
     rspq_block_begin();
+#ifdef OPENGL
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
     glVertex3f(-5, 5, 0);
@@ -84,10 +85,12 @@ static void init_particles(void) {
     glTexCoord2f(1.024f, 0);
     glVertex3f(5, 5, 0);
     glEnd();
+#endif
     sParticleBlock = rspq_block_end();
 }
 
 static inline void setup_light(light_t light) {
+#ifdef OPENGL
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, light.color);
     glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
 
@@ -97,6 +100,7 @@ static inline void setup_light(light_t light) {
     glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 1.0f/(light.radius*light.radius));
 
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, light.diffuse);
+#endif
 }
 
 void init_renderer(void) {
@@ -105,6 +109,7 @@ void init_renderer(void) {
     init_particles();
 
     rspq_block_begin();
+#ifdef OPENGL
     glAlphaFunc(GL_GREATER, 0.5f);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDepthFunc(GL_LESS);
@@ -115,9 +120,11 @@ void init_renderer(void) {
     glShadeModel(GL_SMOOTH);
     glDepthMask(GL_TRUE);
     glEnable(GL_SCISSOR_TEST);
+#endif
     sBeginModeBlock = rspq_block_end();
 
     rspq_block_begin();
+#ifdef OPENGL
     glDisable(GL_MULTISAMPLE_ARB);
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_LIGHTING);
@@ -129,6 +136,7 @@ void init_renderer(void) {
     glDisable(GL_BLEND);
     glDepthMask(GL_FALSE);
     glScissor(0, 0, display_get_width(), display_get_height());
+#endif
     sRenderEndBlock = rspq_block_end();
 
     for (int i = 0; i < DRAW_TOTAL; i++) {
@@ -148,7 +156,7 @@ static inline void set_frustrum(float l, float r, float b, float t, float n, flo
         {(r+l)/(r-l), (t+b)/(t-b), -(f+n)/(f-n), -1.f},
         {0.f, 0.f, -(2*f*n)/(f-n), 0.f},
     }};
-    glMultMatrixf(frustum.m[0]);
+    MATRIX_MUL(frustum.m[0]);
     get_time_snapshot(PP_MATRIX, DEBUG_SNAPSHOT_1_END);
 }
 
@@ -215,7 +223,7 @@ static void mtx_lookat(float eyex, float eyey, float eyez, float centerx, float 
 
     memcpy(&gViewMatrix, &m, sizeof(Matrix));
 
-    glMultMatrixf(&m[0][0]);
+    MATRIX_MUL(&m[0][0]);
     get_time_snapshot(PP_MATRIX, DEBUG_SNAPSHOT_1_END);
 };
 
@@ -315,7 +323,13 @@ static inline void linear_mtxf_mul_vec3f_and_translate(Matrix m, float dst[3], f
     }
 }
 
-#define VALIDDEPTHMIDDLE (-19920.0f / 2.0f)
+static inline void linear_mtxf_mul_vec2f_and_translate(Matrix m, float dst[3], float v[3]) {
+    for (int i = 0; i < 3; i+=2) {
+        dst[i] = ((m.m[0][i] * v[0]) + (m.m[1][i] * v[1]) + (m.m[2][i] * v[2]) +  m.m[3][i]);
+    }
+}
+
+#define VALIDDEPTHMIDDLE (-19919.0f / 2.0f)
 #define VALIDDEPTHRANGE (19900.0f / 2.0f)
 
 static inline int render_inside_view(float width, float height, float screenPos[3]) {
@@ -327,7 +341,7 @@ static inline int render_inside_view(float width, float height, float screenPos[
     if (fabsf(screenPos[1]) > vScreenEdge + height) {
         return false;
     }
-    if (fabsf(screenPos[2] - VALIDDEPTHMIDDLE) >= VALIDDEPTHRANGE + (width)) {
+    if (screenPos[2] - VALIDDEPTHMIDDLE >= VALIDDEPTHRANGE + width) {
         return false;
     }
     return true;
@@ -363,12 +377,14 @@ static void set_draw_matrix(Matrix *mtx, int matrixType, float *pos, unsigned sh
 }
 
 static void set_light(light_t light) {
-    glPushMatrix();
+    MATRIX_PUSH();
     Matrix mtx;
     mtx_rotate(&mtx, light.direction[0], light.direction[1], light.direction[2]);
-    glMultMatrixf(mtx.m[0]);
+    MATRIX_MUL(mtx.m[0]);
+#ifdef OPENGL
     glLightfv(GL_LIGHT0, GL_POSITION, light.position);
-    glPopMatrix();
+#endif
+    MATRIX_POP();
 }
 
 static void project_camera(void) {
@@ -377,12 +393,16 @@ static void project_camera(void) {
     float farClip = 1000.0f;
     float fov = gCamera->fov / 50.0f;
 
+#ifdef OPENGL
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
+#endif
     gAspectRatio = (float) display_get_width() / (float) (display_get_height()) * fov;
     set_frustrum(-nearClip * gAspectRatio, nearClip * gAspectRatio, -nearClip * fov, nearClip * fov, nearClip, farClip);
+#ifdef OPENGL
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+#endif
     mtx_lookat(c->pos[0], c->pos[1], c->pos[2], c->focus[0], c->focus[1], c->focus[2], 0.0f, 1.0f, 0.0f);
     float aspect = display_get_width() / display_get_height();
     //glDepthRange(50.0f, 500.0f);
@@ -399,11 +419,13 @@ static void project_camera(void) {
 }
 
 void matrix_ortho(void) {
+#ifdef OPENGL
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(0.0f, display_get_width(), display_get_height(), 0.0f, -1.0f, 1.0f);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+#endif
 }
 
 void set_particle_render_settings(void) {
@@ -416,6 +438,7 @@ void set_particle_render_settings(void) {
     gRenderSettings.decal = false;
     gRenderSettings.backface = false;
     gRenderSettings.texture = true;
+#ifdef OPENGL
     if (gEnvironment->flags & ENV_FOG) {
         if (!gRenderSettings.fog) {
             glEnable(GL_FOG);
@@ -427,9 +450,11 @@ void set_particle_render_settings(void) {
             gRenderSettings.fog = false;
         }
     }
+#endif
 }
 
 static void material_mode(int flags) {
+#ifdef OPENGL
     if (flags & MATERIAL_CUTOUT) {
         if (!gRenderSettings.cutout) {
             glEnable(GL_ALPHA_TEST);
@@ -528,6 +553,7 @@ static void material_mode(int flags) {
             gRenderSettings.decal = false;
         }
     }
+#endif
     gPrevRenderFlags = flags;
 }
 
@@ -538,18 +564,24 @@ static void material_texture(Material *m) {
         }
             
         if (!gRenderSettings.texture) {
+#ifdef OPENGL
             glEnable(GL_TEXTURE_2D);
+#endif
             gRenderSettings.texture = true;
         }
         m->index->loadTimer = 10;
+#ifdef OPENGL
         glBindTexture(GL_TEXTURE_2D, m->index->texture);
+#endif
         gPrevTextureID = m->textureID;
 #ifdef PUPPYPRINT_DEBUG
         gNumTextureLoads++;
 #endif
     } else {
         if (gRenderSettings.texture) {
+#ifdef OPENGL
             glDisable(GL_TEXTURE_2D);
+#endif
             gRenderSettings.texture = false;
         }
     }
@@ -604,12 +636,14 @@ static void render_sky_texture(Environment *e) {
         e->texGen = true;
     } else {
         Matrix mtx;
-        glPushMatrix();
+        MATRIX_PUSH();
         mtx_translate(&mtx, gCamera->pos[0], gCamera->pos[1] + 50.0f, gCamera->pos[2]);
-        glMultMatrixf((GLfloat *) mtx.m);
+        MATRIX_MUL(mtx.m);
+#ifdef OPENGL
         glEnable(GL_TEXTURE_2D);
         glDisable(GL_CULL_FACE);
         glColor3f(1, 1, 1);
+#endif
         int base = gCamera->yaw + 0x8000;
         if (gCamera->viewPitch >= 0x2C00 || gCamera->mode == CAMERA_PHOTO) {
             for (int i = 0; i < 16; i++) {
@@ -617,21 +651,25 @@ static void render_sky_texture(Environment *e) {
                 if (fabs(rot) >= 0x4000) {
                     continue;
                 }
-                glBindTexture(GL_TEXTURE_2D, e->textureSegments[15 - i]);
                 float pX = 100.0f * sins((0x10000 / 16) * i);
                 float pZ = 100.0f * coss((0x10000 / 16) * i);
+#ifdef OPENGL
+                glBindTexture(GL_TEXTURE_2D, e->textureSegments[15 - i]);
                 glBegin(GL_QUADS);
                 glTexCoord2f(1.024f, 0.0f);
                 glVertex3f(pX * 0.66f, 75, pZ * 0.66f);
                 glTexCoord2f(1.024f, 1.024f);
                 glVertex3f(pX, 0.0f, pZ);
+#endif
                 pX = 100.0f * sins((0x10000 / 16) * (i + 1));
                 pZ = 100.0f * coss((0x10000 / 16) * (i + 1));
+#ifdef OPENGL
                 glTexCoord2f(0.0f, 1.024f);
                 glVertex3f(pX, 0.0f, pZ);
                 glTexCoord2f(0.0f, 0.0f);
                 glVertex3f(pX * 0.66f, 75, pZ * 0.66f);
                 glEnd();
+#endif
                 gNumTextureLoads++;
             }
         }
@@ -641,30 +679,35 @@ static void render_sky_texture(Environment *e) {
             if (fabs(rot) >= 0x4000) {
                 continue;
             }
-            glBindTexture(GL_TEXTURE_2D, e->textureSegments[31 - i]);
             float pX = 100.0f * sins((0x10000 / 16) * i);
             float pZ = 100.0f * coss((0x10000 / 16) * i);
+#ifdef OPENGL
+            glBindTexture(GL_TEXTURE_2D, e->textureSegments[31 - i]);
             glBegin(GL_QUADS);
             glTexCoord2f(1.024f, 0.0f);
             glVertex3f(pX, 0.0f, pZ);
             glTexCoord2f(1.024f, 1.024f);
             glVertex3f(pX * 0.66f, -75, pZ * 0.66f);
+#endif
             pX = 100.0f * sins((0x10000 / 16) * (i + 1));
             pZ = 100.0f * coss((0x10000 / 16) * (i + 1));
+#ifdef OPENGL
             glTexCoord2f(0.0f, 1.024f);
             glVertex3f(pX * 0.66f, -75, pZ * 0.66f);
             glTexCoord2f(0.0f, 0.0f);
             glVertex3f(pX, 0.0f, pZ);
             glEnd();
+#endif
             gNumTextureLoads++;
         }
-        glPopMatrix();
+        MATRIX_POP();
     }
     get_time_snapshot(PP_BG, DEBUG_SNAPSHOT_1_END);
 }
 
 static void render_bush(void) {
     Environment *e = gEnvironment;
+#ifdef OPENGL
     glBegin(GL_QUADS);
     glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
     glTexCoord2f(0, 0);
@@ -678,6 +721,7 @@ static void render_bush(void) {
     glTexCoord2f(2.048f, 0);
     glVertex3f(5, 10, 0);
     glEnd();
+#endif
 }
 
 static inline void render_end(void) {
@@ -688,7 +732,8 @@ rspq_block_t *sBushBlock;
 rspq_block_t *sShadowBlock;
 
 static void render_shadow(float pos[3]) {
-    glPushMatrix();
+    MATRIX_PUSH();
+#ifdef OPENGL
     glTranslatef(pos[0], pos[1] + 0.1f, pos[2]);
     if (sShadowBlock == NULL) {
         rspq_block_begin();
@@ -703,27 +748,34 @@ static void render_shadow(float pos[3]) {
         sShadowBlock = rspq_block_end();
     }
     rspq_block_run(sShadowBlock);
-    glPopMatrix();
+#endif
+    MATRIX_POP();
 }
 
 static void apply_anti_aliasing(int mode) {
     switch (gConfig.graphics) {
     case G_PERFORMANCE:
+#ifdef OPENGL
         glDisable(GL_MULTISAMPLE_ARB);
+#endif
         rdpq_mode_antialias(AA_NONE);
         break;
     case G_DEFAULT:
         if (mode == AA_ACTOR) {
             goto mrFancyPants;
         }
+#ifdef OPENGL
         glEnable(GL_MULTISAMPLE_ARB);
         glHint(GL_MULTISAMPLE_HINT_N64, GL_FASTEST);
+#endif
         rdpq_mode_antialias(AA_REDUCED);
         break;
     case G_BEAUTIFUL:
         mrFancyPants:
+#ifdef OPENGL
         glEnable(GL_MULTISAMPLE_ARB);
         glHint(GL_MULTISAMPLE_HINT_N64, GL_NICEST);
+#endif
         rdpq_mode_antialias(AA_STANDARD);
         break;
     }
@@ -740,7 +792,9 @@ static void apply_render_settings(void) {
     } else {
         targetPos = gZTargetTimer * 1.5f;
     }
+#ifdef OPENGL
     glScissor(0, targetPos, display_get_width(), display_get_height() - (targetPos * 2));
+#endif
     if (gConfig.graphics == G_BEAUTIFUL) {
         *(volatile uint32_t*)0xA4400000 |= 0x10000;
     } else {
@@ -813,15 +867,15 @@ static void pop_render_list(int layer) {
     }
     RenderNode *renderList = gRenderNodeHead[layer];
     while (renderList) {
-        glPushMatrix();
+    MATRIX_PUSH();
         if (renderList->matrix) {
-            glMultMatrixf((GLfloat *) renderList->matrix->m);
+            MATRIX_MUL(renderList->matrix->m);
         }
         if (renderList->material) {
             material_set(renderList->material, renderList->flags, 0);
         }
         rspq_block_run(renderList->block);
-        glPopMatrix();
+        MATRIX_POP();
         renderList = renderList->next;
     }
     gRenderNodeHead[layer] = NULL;
@@ -843,22 +897,24 @@ static void render_particles(void) {
     ParticleList *list = gParticleListHead;
     Particle *particle;
 
+#ifdef OPENGL
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
     glEnable(GL_DEPTH_TEST);
+#endif
     gRenderSettings.depthRead = true;
     
     while (list) {
         particle = list->particle;
-        glPushMatrix();
+        MATRIX_PUSH();
         if (particle->material) {
             material_set(particle->material, 0, 0);
         }
         Matrix mtx;
         mtx_billboard(&mtx, particle->pos[0], particle->pos[1], particle->pos[2]);
         mtx_scale(&mtx, particle->scale[0], particle->scale[1], particle->scale[2]);
-        glMultMatrixf((GLfloat *) mtx.m);
+        MATRIX_MUL(mtx.m);
         rspq_block_run(sParticleBlock);
-        glPopMatrix();
+        MATRIX_POP();
         list = list->next;
     }
     get_time_snapshot(PP_RENDERPARTICLES, DEBUG_SNAPSHOT_1_END);
@@ -869,7 +925,7 @@ static inline int render_inside_view_world(float width, float screenPos[3]) {
     if (fabsf(screenPos[0]) > hScreenEdge + width) {
         return false;
     }
-    if (fabsf(screenPos[2] - VALIDDEPTHMIDDLE) >= VALIDDEPTHRANGE + (width)) {
+    if (screenPos[2] - VALIDDEPTHMIDDLE >= VALIDDEPTHRANGE + width) {
         return false;
     }
     return true;
@@ -896,7 +952,7 @@ static int render_world_visible(SceneChunk *c) {
         return false;
     }
 
-    linear_mtxf_mul_vec3f_and_translate(gViewMatrix, screenPos, pos);
+    linear_mtxf_mul_vec2f_and_translate(gViewMatrix, screenPos, pos);
     if (render_inside_view_world(width, screenPos)) {
         get_time_snapshot(PP_CULLING, DEBUG_SNAPSHOT_1_END);
         return true;
@@ -976,20 +1032,23 @@ static void render_object_shadows(void) {
 
     list = gObjectListHead;
     material_set(&gBlankMaterial, MATERIAL_DECAL | MATERIAL_XLU | MATERIAL_DEPTH_READ, 0);
+#ifdef OPENGL
     glEnable(GL_TEXTURE_2D);
+#endif
     while (list) {
         obj = list->obj;
         if (obj->flags & OBJ_FLAG_SHADOW_DYNAMIC && obj->flags & OBJ_FLAG_IN_VIEW && obj->gfx && obj->gfx->dynamicShadow) {
             DynamicShadow *d = obj->gfx->dynamicShadow;
             Matrix matrix;
-            glPushMatrix();
+            MATRIX_PUSH();
             float floorHeight = MAX(obj->collision->floorHeight, obj->collision->hitboxHeight);
             float pos[3] = {obj->pos[0], floorHeight + 0.1f, obj->pos[2]};
             unsigned short angle[3] = {0, d->angle[1] + 0x4000, 0};
             set_draw_matrix(&matrix, MTX_TRANSLATE_ROTATE_SCALE, pos, angle, obj->scale);
-            glMultMatrixf((GLfloat *) &matrix.m);
+            MATRIX_MUL(&matrix.m);
+#ifdef OPENGL
             glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
-            
+#endif
             float width = d->planeW / d->acrossX;
             float height = d->planeH / d->acrossY;
             float offset = d->offset;
@@ -999,20 +1058,24 @@ static void render_object_shadows(void) {
             for (int i = 0; i < d->acrossY; i++) {
                 x = 0.0f - (d->planeW / 2);
                 for (int j = 0; j < d->acrossX; j++) {
+#ifdef OPENGL
                     glBindTexture(GL_TEXTURE_2D, d->tex[texLoads++]);
+#endif
                     gNumTextureLoads++;
+#ifdef OPENGL
                     glBegin(GL_QUADS);
                     glTexCoord2f(0.0f, 1.024f);        glVertex3f(x + width, 0.0f, y);
                     glTexCoord2f(1.024f, 1.024f);             glVertex3f(x, 0.0f, y);
                     glTexCoord2f(1.024f, 0.0f);        glVertex3f(x, 0.0f, y + height);
                     glTexCoord2f(0.0f, 0.0f);   glVertex3f(x + width, 0.0f, y + height);
                     glEnd();
+#endif
                     x += width;
                 }
                 y += height;
             }
 
-            glPopMatrix();
+            MATRIX_POP();
         }
         list = list->next;
     }
@@ -1070,7 +1133,9 @@ static void render_objects(void) {
             Matrix *prevMtx = NULL;
             obj->gfx->listEntry->timer = 10;
             if (obj->animID != ANIM_NONE) {
+#ifdef OPENGL
                 model64_update(obj->gfx->listEntry->model64, 1.0f / 60.0f);
+#endif
             }
             if (obj->gfx->listEntry->active == false) {
                 object_model_generate(obj);
@@ -1111,13 +1176,19 @@ static void reset_shadow_perspective(void) {
         float nearClip = 5.0f;
         float farClip = 500.0f;
         rspq_block_begin();
+#ifdef OPENGL
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
+#endif
         set_frustrum(-nearClip, nearClip, -nearClip, nearClip, nearClip, farClip);
+#ifdef OPENGL
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
+#endif
         material_set(&gBlankMaterial, MATERIAL_CAM_ONLY, 0);
+#ifdef OPENGL
         glEnable(GL_RDPQ_MATERIAL_N64);
+#endif
         rdpq_mode_antialias(AA_NONE);
         rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
         rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
@@ -1149,8 +1220,10 @@ static void generate_dynamic_shadows(void) {
             }
             rdpq_attach(&obj->gfx->dynamicShadow->surface, NULL);
             rdpq_clear(RGBA32(0, 0, 0, 0));
+#ifdef OPENGL
             gl_context_begin();
-            glPushMatrix();
+#endif
+            MATRIX_PUSH();
             mtx_lookat(-11.0f, 7.0f, 0.0f, 11.0f, 7.0f, 0.0f, 0.0f, 1.0f, 0.0f);
             obj->gfx->dynamicShadow->staleTimer = 10;
             ObjectModel *m = obj->gfx->listEntry->entry;
@@ -1162,20 +1235,24 @@ static void generate_dynamic_shadows(void) {
                 if (m->matrixBehaviour != MTX_NONE) {
                     unsigned short angle[3] = {obj->faceAngle[0], obj->faceAngle[1] + obj->gfx->dynamicShadow->angle[1], obj->faceAngle[2]};
                     set_draw_matrix(&matrix, m->matrixBehaviour, pos, angle, scale);
-                    glMultMatrixf((GLfloat *) &matrix.m);
+                    MATRIX_MUL(&matrix.m);
                 }
-                glPushMatrix();
+                MATRIX_PUSH();
                 rspq_block_run(m->block);
-                glPopMatrix();
+                MATRIX_POP();
                 m = m->next;
             }
-            glPopMatrix();
+            MATRIX_POP();
+#ifdef OPENGL
             gl_context_end();
+#endif
             rdpq_detach();
         }
         list = list->next;
     }
+#ifdef OPENGL
     glDisable(GL_RDPQ_MATERIAL_N64);
+#endif
     get_time_snapshot(PP_SHADOWS, DEBUG_SNAPSHOT_1_END);
     profiler_wait();
 }
@@ -1249,8 +1326,10 @@ void render_game(int updateRate, float updateRateF) {
     } else {
         rdpq_attach(gFrameBuffers, &gZBuffer);
     }
+#ifdef OPENGL
     gl_context_begin();
     glClear(GL_DEPTH_BUFFER_BIT);
+#endif
     if (gScreenshotStatus != SCREENSHOT_SHOW) {
         if (gEnvironment->skyboxTextureID == -1 || gConfig.graphics == G_PERFORMANCE) {
             render_sky_gradient(gEnvironment);
@@ -1274,14 +1353,18 @@ void render_game(int updateRate, float updateRateF) {
         set_particle_render_settings();
         render_particles();
         render_end();
+#ifdef OPENGL
         gl_context_end();
+#endif
         if (gScreenshotStatus == SCREENSHOT_GENERATE) {
             clear_dynamic_shadows();
         }
     } else if (gScreenshotStatus == SCREENSHOT_SHOW) {
         render_world(updateRate);
         render_end();
+#ifdef OPENGL
         gl_context_end();
+#endif
         if (gScreenshotType == FMT_RGBA16) {
             rdpq_set_mode_copy(false);
         } else {

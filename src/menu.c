@@ -175,6 +175,7 @@ static void menu_set_forward(int menuID) {
     sMenuSwapTimer = 30;
     gMenuStatus = menuID;
     sMenuStackPos++;
+    assertf(sMenuStackPos < NUM_MENU_PREVS, "sMenuStackPos exceeded limit.\n Limit: %d", NUM_MENU_PREVS);
     free_menu_display();
 }
 
