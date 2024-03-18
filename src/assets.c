@@ -3,7 +3,7 @@
 #include <GL/glu.h>
 #include <GL/gl_integration.h>
 #include <malloc.h>
-//#include <t3d/t3d.h>
+#include <t3d/t3d.h>
 
 #include "assets.h"
 #include "../include/global.h"
@@ -98,7 +98,7 @@ void init_materials(void) {
     gNumTextureLoads = 0;
 #endif
     rspq_block_begin();
-#ifdef OPENGL
+#if OPENGL
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_BLEND);
     glDepthMask(GL_FALSE);
@@ -110,7 +110,7 @@ void init_materials(void) {
     gParticleMaterialBlock = rspq_block_end();
 }
 
-#ifdef OPENGL
+#if OPENGL
 void bind_new_texture(MaterialList *material) {
     int repeatH;
     int repeatV;
@@ -150,9 +150,9 @@ void bind_new_texture(MaterialList *material) {
 static char *sFileFormatString[] = {
     "sprite",
     "wav64",
-#ifdef OPENGL
+#if OPENGL
     "model64",
-#elif defined(TINY3D)
+#elif TINY3D
     "t3dm",
 #endif
     "xm64",
@@ -210,7 +210,7 @@ int load_texture(Material *material) {
     debugf("Loading texture: %s.", gTextureIDs[material->textureID].file);
     list->sprite = sprite_load(asset_dir(gTextureIDs[material->textureID].file, DFS_SPRITE));
     list->textureID = material->textureID;
-#ifdef OPENGL
+#if OPENGL
     glGenTextures(1, &list->texture);
     bind_new_texture(list);
 #endif
@@ -244,7 +244,7 @@ static void free_material(MaterialList *material) {
         }
     }
     sprite_free(material->sprite);
-#ifdef OPENGL
+#if OPENGL
     glDeleteTextures(1, &material->texture);
 #endif
     free(material);
@@ -302,7 +302,7 @@ void shadow_generate(Object *obj) {
     for (int i = 0; i < h; i++) {
         x = 0;
         for (int j = 0; j < w; j++) {
-#ifdef OPENGL
+#if OPENGL
             glGenTextures(1, &d->tex[texLoads]);
             glBindTexture(GL_TEXTURE_2D, d->tex[texLoads--]);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -359,7 +359,7 @@ void asset_cycle(int updateRate) {
             debugf("Freeing texture: %s.\n", gTextureIDs[gEnvironment->skyboxTextureID].file);
             for (int i = 0; i < 32; i++) {
                 gNumTextures--;
-#ifdef OPENGL
+#if OPENGL
                 glDeleteTextures(1, &gEnvironment->textureSegments[i]);
 #endif
             }
@@ -394,7 +394,7 @@ void sky_texture_generate(Environment *e) {
             x = 0;
         }
         gNumTextures++;
-#ifdef OPENGL
+#if OPENGL
         glGenTextures(1, &e->textureSegments[i]);
         glBindTexture(GL_TEXTURE_2D, e->textureSegments[i]);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -411,14 +411,14 @@ rspq_block_t *sky_gradient_generate(Environment *e) {
     int width = display_get_width();
     int height = display_get_height();
     rspq_block_begin();
-#ifdef OPENGL
+#if OPENGL
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_MULTISAMPLE_ARB);
-#elif defined(TINY3D)
+#elif TINY3D
     rdpq_mode_combiner(RDPQ_COMBINER_SHADE);
     t3d_state_set_drawflags(T3D_FLAG_SHADED | T3D_FLAG_DEPTH);
     e->skyVerts = malloc_uncached(sizeof(T3DVertPacked) * 2);
-    uint16_t norm = t3d_vert_pack_normal(&(T3DVec3){{ 0, 0, 1}}); // normals are packed in a 5.5.5 format
+    uint16_t norm = t3d_vert_pack_normal(&(T3DVec3){{ 0, 0, 1}});
     unsigned int colourT = (e->skyColourTop[0] << 24) + (e->skyColourTop[1] << 16) + (e->skyColourTop[2] << 8) + 255;
     unsigned int colourB = (e->skyColourBottom[0] << 24) + (e->skyColourBottom[1] << 16) + (e->skyColourBottom[2] << 8) + 255;
     e->skyVerts[0] = (T3DVertPacked) {
@@ -431,7 +431,7 @@ rspq_block_t *sky_gradient_generate(Environment *e) {
     };
 #endif
     matrix_ortho();
-#ifdef OPENGL
+#if OPENGL
     glBegin(GL_QUADS);
     glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
     glVertex2i(0, 0);
@@ -442,7 +442,7 @@ rspq_block_t *sky_gradient_generate(Environment *e) {
     glVertex2i(width, 0);
     glColor3f(1, 1, 1);
     glEnd();
-#elif defined(TINY3D)
+#elif TINY3D
     t3d_vert_load(e->skyVerts, 4);
     t3d_tri_draw(0, 1, 2);
     t3d_tri_draw(2, 3, 0);
@@ -703,7 +703,7 @@ void object_model_generate(Object *obj) {
     ObjectModel *m = obj->gfx->listEntry->entry;
     while (m) {
         rspq_block_begin();
-#ifdef OPENGL
+#if OPENGL
         //glScalef(10.0f, 9.0f, 10.0f);
         if (obj->gfx->modelID == 1) {
             glScalef(0.95f, 1.33f, 1.33f);
@@ -760,8 +760,8 @@ static void load_object_model(Object *obj, int objectID) {
     debugf("Loading model [%s].", gModelIDs[modelID - 1]);
     list->entry = NULL;
     list->active = false;
-#ifdef OPENGL
     list->model64 = MODEL_LOAD(gModelIDs[modelID - 1]);
+#if OPENGL
     int numMeshes = model64_get_mesh_count(list->model64);
     ObjectModel *tail = NULL;
     for (int i = 0; i < numMeshes; i++) {
@@ -801,7 +801,6 @@ static void load_object_model(Object *obj, int objectID) {
         }
     }
 #elif defined(TINYT3D)
-    list->model64 = t3d_model_load(asset_dir(gModelIDs[modelID - 1], DFS_MODEL64));
 #endif
     debugf(" Time: %2.3fs.\n", ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
 
@@ -828,7 +827,7 @@ void free_dynamic_shadow(Object *obj) {
     debugf("Freeing dynamic shadow for [%s] object.\n", sObjectOverlays[obj->objectID]);
     surface_free(&d->surface);
     for (int i = 0; i < d->texCount; i++) {
-#ifdef OPENGL
+#if OPENGL
         glDeleteTextures(1, &d->tex[i]);
 #endif
     }

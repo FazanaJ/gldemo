@@ -1,7 +1,7 @@
 #pragma once
 
 #include <GL/gl.h>
-//#include <t3d/t3d.h>
+#include <t3d/t3dmodel.h>
 
 typedef struct RenderSettings {
     unsigned cutout : 1;
@@ -21,7 +21,7 @@ typedef struct MaterialList {
     struct MaterialList *next;
     struct MaterialList *prev;
     sprite_t *sprite;
-#ifdef OPENGL
+#if OPENGL
     GLuint texture;
 #endif
     short loadTimer;
@@ -36,33 +36,31 @@ typedef struct Material {
 } Material;
 
 typedef struct Environment {
-#ifdef OPENGL
+#if OPENGL
     GLfloat fogColour[3];
     GLfloat skyColourTop[3];
     GLfloat skyColourBottom[3];
-    GLfloat fogNear;
-    GLfloat fogFar;
-#elif defined(TINY3D)
+#elif TINY3D
     unsigned char fogColour[3];
     unsigned char skyColourTop[3];
     unsigned char skyColourBottom[3];
-    unsigned short fogNear;
-    unsigned short fogFar;
 #endif
+    GLfloat fogNear;
+    GLfloat fogFar;
     int flags;
     sprite_t *skySprite;
     Texture skyboxTextureID;
     unsigned char texGen;
     char skyTimer;
-#ifdef OPENGL
+#if OPENGL
     GLuint textureSegments[32];
-#elif defined(TINY3D)
+#elif TINY3D
     T3DVertPacked *skyVerts;
 #endif
 } Environment;
 
-#ifdef OPENGL
+#if OPENGL
 typedef model64_t Model3D;
-#elif defined(TINY3D)
+#elif TINY3D
 typedef T3DModel Model3D;
 #endif

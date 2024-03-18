@@ -54,9 +54,9 @@ int sSceneMeshFlags[SCENE_TOTAL][7] = {
 };
 
 // OpenGL uses floats for its' colours.
-#ifdef OPENGL
+#if OPENGL
 #define SKYDIVFACTOR 255.0f
-#elif defined(TINY3D)
+#elif TINY3D
 #define SKYDIVFACTOR 1.0f
 #endif
 
@@ -78,13 +78,14 @@ static void setup_fog(SceneHeader *header) {
     gEnvironment->fogNear = header->fogNear;
     gEnvironment->fogFar = header->fogFar;
     gEnvironment->skyboxTextureID = header->skyTexture;
-#ifdef OPENGL
+#if OPENGL
     glFogf(GL_FOG_START, gEnvironment->fogNear);
     glFogf(GL_FOG_END, gEnvironment->fogFar);
     glFogfv(GL_FOG_COLOR, gEnvironment->fogColour);
-#elif defined(TINY3D)
+#elif TINY3D
     rdpq_mode_fog(RDPQ_FOG_STANDARD);
     rdpq_set_fog_color((color_t){gEnvironment->fogColour[0], gEnvironment->fogColour[1], gEnvironment->fogColour[2], 0xFF});
+    t3d_fog_set_range(gEnvironment->fogNear, gEnvironment->fogFar);
 #endif
 }
 
@@ -118,9 +119,11 @@ static void clear_scene(void) {
     }
     if (gEnvironment) {
         if (gEnvironment->texGen) {
+#if OPENGL
             for (int i = 0; i < 32; i++) {
                 glDeleteTextures(1, &gEnvironment->textureSegments[i]);
             }
+#endif
             sprite_free(gEnvironment->skySprite);
         }
         //free(gEnvironment);
@@ -134,7 +137,7 @@ static void clear_scene(void) {
     free(sCurrentScene);
 }
 
-#ifdef OPENGL
+#if OPENGL
 typedef struct attribute_s {
     uint32_t size;                  ///< Number of components per vertex. If 0, this attribute is not defined
     uint32_t type;                  ///< The data type of each component (for example GL_FLOAT)
@@ -214,7 +217,7 @@ void scene_clear_chunk(SceneChunk *c) {
 void scene_generate_chunk(SceneMesh *s) {
     rspq_block_begin();
     MATRIX_PUSH();
-#ifdef OPENGL
+#if OPENGL
     glScalef(5.0f, 5.0f, 5.0f);
     model64_draw_primitive(s->mesh);
 #endif
@@ -239,7 +242,7 @@ void load_scene(int sceneID) {
     SceneChunk *tailC = NULL;
     int chunkCount = 0;
     s->model = NULL;
-#ifdef OPENGL
+#if OPENGL
     if (header->model) {
         s->model = MODEL_LOAD(header->model);
         s->sceneID = sceneID;

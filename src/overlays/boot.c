@@ -133,10 +133,11 @@ void set_region_type(int region) {
     gZBuffer.height = display_get_height();
     gZBuffer.stride = TEX_FORMAT_PIX2BYTES(FMT_RGBA16, display_get_width());
     gZBuffer.buffer = (void *) ((0x80800000 - 0x10000) - ((display_get_width() * display_get_height()) * 2));
-#ifdef OPENGL
+#if OPENGL
     gl_init();
-#elif defined(TINY3D)
+#elif TINY3D
     t3d_init();
+    rdpq_init();
 #endif
     init_renderer();
 }

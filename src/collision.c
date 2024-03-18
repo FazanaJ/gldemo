@@ -154,7 +154,7 @@ static void collision_surface_side(float *posF, int16_t *pos, u_int16_t *v0, u_i
     obj->pos[2] += normal[2] * of;
 }
 
-#ifdef OPENGL
+#if OPENGL
 typedef struct attribute_s {
     uint32_t size;                  ///< Number of components per vertex. If 0, this attribute is not defined
     uint32_t type;                  ///< The data type of each component (for example GL_FLOAT)
@@ -183,7 +183,7 @@ typedef struct ModelPrim {
 #endif
 
 void object_collide(Object *obj) {
-    #ifdef OPENGL
+    #if OPENGL
     DEBUG_SNAPSHOT_1();
     SceneChunk *chunk = sCurrentScene->chunkList;
     float peakY = -30000.0f;
