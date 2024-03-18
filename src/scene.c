@@ -53,20 +53,27 @@ int sSceneMeshFlags[SCENE_TOTAL][7] = {
     MATERIAL_DEPTH_READ | MATERIAL_VTXCOL | MATERIAL_FOG, },
 };
 
+// OpenGL uses floats for its' colours.
+#ifdef OPENGL
+#define SKYDIVFACTOR 255.0f
+#elif defined(TINY3D)
+#define SKYDIVFACTOR 1.0f
+#endif
+
 static void setup_fog(SceneHeader *header) {
     if (gEnvironment == NULL) {
         gEnvironment = malloc(sizeof(Environment));
     }
     bzero(gEnvironment, sizeof(Environment));
-    gEnvironment->fogColour[0] = ((float) header->fogColour[0]) / 255.0f;
-    gEnvironment->fogColour[1] = ((float) header->fogColour[1]) / 255.0f;
-    gEnvironment->fogColour[2] = ((float) header->fogColour[2]) / 255.0f;
-    gEnvironment->skyColourBottom[0] = ((float) header->skyBottom[0]) / 255.0f;
-    gEnvironment->skyColourBottom[1] = ((float) header->skyBottom[1]) / 255.0f;
-    gEnvironment->skyColourBottom[2] = ((float) header->skyBottom[2]) / 255.0f;
-    gEnvironment->skyColourTop[0] = ((float) header->skyTop[0]) / 255.0f;
-    gEnvironment->skyColourTop[1] = ((float) header->skyTop[1]) / 255.0f;
-    gEnvironment->skyColourTop[2] = ((float) header->skyTop[2]) / 255.0f;
+    gEnvironment->fogColour[0] = ((float) header->fogColour[0]) / SKYDIVFACTOR;
+    gEnvironment->fogColour[1] = ((float) header->fogColour[1]) / SKYDIVFACTOR;
+    gEnvironment->fogColour[2] = ((float) header->fogColour[2]) / SKYDIVFACTOR;
+    gEnvironment->skyColourBottom[0] = ((float) header->skyBottom[0]) / SKYDIVFACTOR;
+    gEnvironment->skyColourBottom[1] = ((float) header->skyBottom[1]) / SKYDIVFACTOR;
+    gEnvironment->skyColourBottom[2] = ((float) header->skyBottom[2]) / SKYDIVFACTOR;
+    gEnvironment->skyColourTop[0] = ((float) header->skyTop[0]) / SKYDIVFACTOR;
+    gEnvironment->skyColourTop[1] = ((float) header->skyTop[1]) / SKYDIVFACTOR;
+    gEnvironment->skyColourTop[2] = ((float) header->skyTop[2]) / SKYDIVFACTOR;
     gEnvironment->flags = header->flags;
     gEnvironment->fogNear = header->fogNear;
     gEnvironment->fogFar = header->fogFar;
@@ -75,6 +82,9 @@ static void setup_fog(SceneHeader *header) {
     glFogf(GL_FOG_START, gEnvironment->fogNear);
     glFogf(GL_FOG_END, gEnvironment->fogFar);
     glFogfv(GL_FOG_COLOR, gEnvironment->fogColour);
+#elif defined(TINY3D)
+    rdpq_mode_fog(RDPQ_FOG_STANDARD);
+    rdpq_set_fog_color((color_t){gEnvironment->fogColour[0], gEnvironment->fogColour[1], gEnvironment->fogColour[2], 0xFF});
 #endif
 }
 
@@ -116,9 +126,7 @@ static void clear_scene(void) {
         //free(gEnvironment);
     }
     if (sCurrentScene->model) {
-#ifdef OPENGL
-        model64_free(sCurrentScene->model);
-#endif
+        MODEL_FREE(sCurrentScene->model);
     }
     if (sCurrentScene->overlay) {
         dlclose(sCurrentScene->overlay);
@@ -233,7 +241,7 @@ void load_scene(int sceneID) {
     s->model = NULL;
 #ifdef OPENGL
     if (header->model) {
-        s->model = model64_load(asset_dir(header->model, DFS_MODEL64));
+        s->model = MODEL_LOAD(header->model);
         s->sceneID = sceneID;
         int numMeshes = model64_get_mesh_count(s->model);
         SceneMesh *tailM = NULL;

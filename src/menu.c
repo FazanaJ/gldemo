@@ -101,8 +101,8 @@ static void add_menu_text(char *text, int index, unsigned int colour, int flags)
         newList->prev = NULL;
     }
     int textLen = strlen(text);
-    newList->text = malloc(textLen);
-    sprintf(newList->text, "%s", text);
+    newList->text = malloc(textLen + 2);
+    sprintf(newList->text, "%s\n", text);
     newList->colour[0] = (colour >> 24) & 0xFF;
     newList->colour[1] = (colour >> 16) & 0xFF;
     newList->colour[2] = (colour >> 8) & 0xFF;

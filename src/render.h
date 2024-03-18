@@ -9,15 +9,21 @@
 #ifdef OPENGL
 #define MATRIX_PUSH() glPushMatrix()
 #define MATRIX_POP() glPopMatrix()
-#define MATRIX_MUL(x) glMultMatrixf((GLfloat *) x)
+#define MATRIX_MUL(stackPos, x) glMultMatrixf((GLfloat *) x)
+#define MODEL_LOAD(x) model64_load(asset_dir(x, DFS_MODEL64))
+#define MODEL_FREE(x) model64_free(x)
 #elif defined(TINY3D)
 #define MATRIX_PUSH()
 #define MATRIX_POP()
-#define MATRIX_MUL(x)
+#define MATRIX_MUL(stackPos, x) t3d_matrix_set_mul(matrixF, stackPos, x)
+#define MODEL_LOAD(x) t3d_model_load(asset_dir(x, DFS_MODEL64))
+#define MODEL_FREE(x) t3d_model_free(x)
 #else
 #define MATRIX_PUSH()
 #define MATRIX_POP()
-#define MATRIX_MUL(x)
+#define MATRIX_MUL(stackPos, x)
+#define MODEL_LOAD(x) 0
+#define MODEL_FREE(x)
 #endif
 
 enum DrawLayer {
@@ -33,15 +39,13 @@ enum ChunkFlags {
 };
 
 typedef struct {
-
-    const GLfloat color[4];
+    const GLfloat colour[4];
     const GLfloat diffuse[4];
 
     const GLfloat position[4];
     const short direction[3];
 
     const float radius;
-
 } light_t;
 
 typedef struct {

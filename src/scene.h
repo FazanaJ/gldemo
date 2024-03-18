@@ -60,8 +60,8 @@ typedef struct ObjectMap {
 typedef struct SceneHeader {
     char *model;
     struct ObjectMap *objectMap;
-    short fogNear;
-    short fogFar;
+    unsigned short fogNear;
+    unsigned short fogFar;
     unsigned char fogColour[3];
     unsigned char lightColour[3];
     unsigned char lightAmbient[3];
@@ -73,7 +73,7 @@ typedef struct SceneHeader {
 } SceneHeader;
 
 typedef struct SceneBlock {
-    model64_t *model;
+    Model3D *model;
     SceneChunk *chunkList;
     int sceneID;
     void *overlay;

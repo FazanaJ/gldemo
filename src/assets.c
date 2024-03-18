@@ -3,6 +3,7 @@
 #include <GL/glu.h>
 #include <GL/gl_integration.h>
 #include <malloc.h>
+//#include <t3d/t3d.h>
 
 #include "assets.h"
 #include "../include/global.h"
@@ -151,8 +152,8 @@ static char *sFileFormatString[] = {
     "wav64",
 #ifdef OPENGL
     "model64",
-#else
-    "model",
+#elif defined(TINY3D)
+    "t3dm",
 #endif
     "xm64",
     "font64",
@@ -413,6 +414,21 @@ rspq_block_t *sky_gradient_generate(Environment *e) {
 #ifdef OPENGL
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_MULTISAMPLE_ARB);
+#elif defined(TINY3D)
+    rdpq_mode_combiner(RDPQ_COMBINER_SHADE);
+    t3d_state_set_drawflags(T3D_FLAG_SHADED | T3D_FLAG_DEPTH);
+    e->skyVerts = malloc_uncached(sizeof(T3DVertPacked) * 2);
+    uint16_t norm = t3d_vert_pack_normal(&(T3DVec3){{ 0, 0, 1}}); // normals are packed in a 5.5.5 format
+    unsigned int colourT = (e->skyColourTop[0] << 24) + (e->skyColourTop[1] << 16) + (e->skyColourTop[2] << 8) + 255;
+    unsigned int colourB = (e->skyColourBottom[0] << 24) + (e->skyColourBottom[1] << 16) + (e->skyColourBottom[2] << 8) + 255;
+    e->skyVerts[0] = (T3DVertPacked) {
+        .posA = {0, 0, 0}, .rgbaA = colourT, .normA = norm,
+        .posB = {0, height, 0}, .rgbaB = colourT, .normB = norm,
+    };
+    e->skyVerts[1] = (T3DVertPacked) {
+        .posA = {width, height, 0}, .rgbaA = colourB, .normA = norm,
+        .posB = {width, 0, 0}, .rgbaB = colourB, .normB = norm,
+    };
 #endif
     matrix_ortho();
 #ifdef OPENGL
@@ -426,6 +442,10 @@ rspq_block_t *sky_gradient_generate(Environment *e) {
     glVertex2i(width, 0);
     glColor3f(1, 1, 1);
     glEnd();
+#elif defined(TINY3D)
+    t3d_vert_load(e->skyVerts, 4);
+    t3d_tri_draw(0, 1, 2);
+    t3d_tri_draw(2, 3, 0);
 #endif
     return rspq_block_end();
 }
@@ -534,9 +554,7 @@ void check_unused_model(Object *obj) {
         }
         free(m);
     }
-#ifdef OPENGL
-    model64_free(obj->gfx->listEntry->model64);
-#endif
+    MODEL_FREE(obj->gfx->listEntry->model64);
     free(obj->gfx->listEntry);
 #ifdef PUPPYPRINT_DEBUG
         gNumModels--;
@@ -743,7 +761,7 @@ static void load_object_model(Object *obj, int objectID) {
     list->entry = NULL;
     list->active = false;
 #ifdef OPENGL
-    list->model64 = model64_load(asset_dir(gModelIDs[modelID - 1], DFS_MODEL64));
+    list->model64 = MODEL_LOAD(gModelIDs[modelID - 1]);
     int numMeshes = model64_get_mesh_count(list->model64);
     ObjectModel *tail = NULL;
     for (int i = 0; i < numMeshes; i++) {
@@ -782,6 +800,8 @@ static void load_object_model(Object *obj, int objectID) {
             tail = m;
         }
     }
+#elif defined(TINYT3D)
+    list->model64 = t3d_model_load(asset_dir(gModelIDs[modelID - 1], DFS_MODEL64));
 #endif
     debugf(" Time: %2.3fs.\n", ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
 

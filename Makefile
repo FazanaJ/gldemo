@@ -1,16 +1,16 @@
 BUILD_DIR=build
-include $(N64_INST)/include/n64.mk
-
 T3D_INST = ../t3d
+include $(N64_INST)/include/n64.mk
+include $(T3D_INST)/t3d.mk
+
 
 GFXUCODE := opengl
 
 $(eval $(call validate-option,GFXUCODE,opengl tiny3d))
 ifeq ($(GFXUCODE),opengl)
-DEFINES += OPENGL=1
+  DEFINES += OPENGL=1
 else ifeq ($(GFXUCODE),tiny3d)
-DEFINES += TINY3D=1
-include $(T3D_INST)/t3d.mk
+  DEFINES += TINY3D=1
 endif
 
 src = $(wildcard src/*.c)
@@ -29,6 +29,7 @@ assets_opus = $(wildcard assets/opus/*.wav)
 C_DEFINES := $(foreach d,$(DEFINES),-D$(d))
 DEF_INC_CFLAGS := $(foreach i,$(INCLUDE_DIRS),-I$(i)) $(C_DEFINES)
 
+N64_CFLAGS += -Ofast $(DEF_INC_CFLAGS)
 MAIN_ELF_EXTERNS := $(BUILD_DIR)/gldemo.externs
 DSO_MODULES = boot.dso projectile.dso player.dso npc.dso intro.dso testarea.dso testarea2.dso crate.dso barrel.dso testsphere.dso testarea3.dso
 DSO_LIST = $(addprefix filesystem/, $(DSO_MODULES))
@@ -42,6 +43,8 @@ assets_conv = $(addprefix filesystem/,$(notdir $(assets_ttf:%.ttf=%.font64))) \
 
 ifeq ($(GFXUCODE),opengl)
 	assets_conv += $(addprefix filesystem/,$(notdir $(assets_gltf:%.glb=%.model64)))
+else ifeq ($(GFXUCODE),tiny3d)
+	assets_conv += $(addprefix filesystem/,$(notdir $(assets_gltf:%.glb=%.t3dm)))
 endif
 
 MKSPRITE_FLAGS ?=
@@ -127,7 +130,19 @@ filesystem/%.model64: assets/models/%.glb
 filesystem/%.model64: assets/archives/%.glb
 	@mkdir -p $(dir $@)
 	@echo "    [MODEL] $@"
-	@$(N64_MKMODEL) $(COMPRESS_LEVEL) -o filesystem $<
+	@$(N64_MKMODEL) --compress 3 -o filesystem $<
+else ifeq ($(GFXUCODE),tiny3d)
+filesystem/%.t3dm: assets/models/%.glb
+	@mkdir -p $(dir $@)
+	@echo "    [MODEL] $@"
+	$(T3D_GLTF_TO_3D) "$<" $@
+	$(N64_BINDIR)/mkasset $(COMPRESS_LEVEL) -o filesystem $@
+
+filesystem/%.t3dm: assets/archives/%.glb
+	@mkdir -p $(dir $@)
+	@echo "    [MODEL] $@"
+	$(T3D_GLTF_TO_3D) "$<" $@
+	$(N64_BINDIR)/mkasset --compress 3 -o filesystem $@
 endif
 
 $(BUILD_DIR)/gldemo.dfs: $(assets_conv) $(DSO_LIST)

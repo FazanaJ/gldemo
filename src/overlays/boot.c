@@ -115,9 +115,7 @@ void init_debug(void) {
     gDebugData = malloc(sizeof(DebugData));
     bzero(gDebugData, sizeof(DebugData));
     gDebugData->enabled = false;
-#ifdef OPENGL
-    gDebugData->debugMeshes[0] = model64_load(asset_dir("debugcylinder", DFS_MODEL64));
-#endif
+    gDebugData->debugMeshes[0] = MODEL_LOAD("debugcylinder");
 }
 #endif
 
@@ -135,7 +133,11 @@ void set_region_type(int region) {
     gZBuffer.height = display_get_height();
     gZBuffer.stride = TEX_FORMAT_PIX2BYTES(FMT_RGBA16, display_get_width());
     gZBuffer.buffer = (void *) ((0x80800000 - 0x10000) - ((display_get_width() * display_get_height()) * 2));
+#ifdef OPENGL
     gl_init();
+#elif defined(TINY3D)
+    t3d_init();
+#endif
     init_renderer();
 }
 

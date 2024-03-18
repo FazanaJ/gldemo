@@ -104,7 +104,7 @@ typedef struct DebugData {
     signed char menuPage;
     signed char menuOption;
     unsigned short matrixOps;
-    model64_t *debugMeshes[2];
+    Model3D *debugMeshes[2];
 } DebugData;
 
 extern DebugData *gDebugData;

@@ -3,6 +3,7 @@
 #include <GL/glu.h>
 #include <GL/gl_integration.h>
 #include <malloc.h>
+//#include <t3d/t3d.h>
 
 #include "render.h"
 #include "../include/global.h"
@@ -58,7 +59,7 @@ Material gTempMaterials[] = {
 };
 
 light_t lightNeutral = {
-    color: { 0.66f, 0.66f, 0.66f, 0.66f},
+    colour: {0.66f, 0.66f, 0.66f, 0.66f},
     diffuse: {1.0f, 1.0f, 1.0f, 1.0f},
     direction: {0, 0, 0x6000},
     position: {1.0f, 0.0f, 0.0f, 0.0f},
@@ -91,7 +92,7 @@ static void init_particles(void) {
 
 static inline void setup_light(light_t light) {
 #ifdef OPENGL
-    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, light.color);
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, light.colour);
     glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
 
     glEnable(GL_LIGHT0);
@@ -156,7 +157,7 @@ static inline void set_frustrum(float l, float r, float b, float t, float n, flo
         {(r+l)/(r-l), (t+b)/(t-b), -(f+n)/(f-n), -1.f},
         {0.f, 0.f, -(2*f*n)/(f-n), 0.f},
     }};
-    MATRIX_MUL(frustum.m[0]);
+    MATRIX_MUL(0, frustum.m[0]);
     get_time_snapshot(PP_MATRIX, DEBUG_SNAPSHOT_1_END);
 }
 
@@ -223,7 +224,7 @@ static void mtx_lookat(float eyex, float eyey, float eyez, float centerx, float 
 
     memcpy(&gViewMatrix, &m, sizeof(Matrix));
 
-    MATRIX_MUL(&m[0][0]);
+    MATRIX_MUL(0, &m[0][0]);
     get_time_snapshot(PP_MATRIX, DEBUG_SNAPSHOT_1_END);
 };
 
@@ -380,7 +381,7 @@ static void set_light(light_t light) {
     MATRIX_PUSH();
     Matrix mtx;
     mtx_rotate(&mtx, light.direction[0], light.direction[1], light.direction[2]);
-    MATRIX_MUL(mtx.m[0]);
+    MATRIX_MUL(0, mtx.m[0]);
 #ifdef OPENGL
     glLightfv(GL_LIGHT0, GL_POSITION, light.position);
 #endif
@@ -638,7 +639,7 @@ static void render_sky_texture(Environment *e) {
         Matrix mtx;
         MATRIX_PUSH();
         mtx_translate(&mtx, gCamera->pos[0], gCamera->pos[1] + 50.0f, gCamera->pos[2]);
-        MATRIX_MUL(mtx.m);
+        MATRIX_MUL(0, mtx.m);
 #ifdef OPENGL
         glEnable(GL_TEXTURE_2D);
         glDisable(GL_CULL_FACE);
@@ -869,7 +870,7 @@ static void pop_render_list(int layer) {
     while (renderList) {
     MATRIX_PUSH();
         if (renderList->matrix) {
-            MATRIX_MUL(renderList->matrix->m);
+            MATRIX_MUL(0, renderList->matrix->m);
         }
         if (renderList->material) {
             material_set(renderList->material, renderList->flags, 0);
@@ -912,7 +913,7 @@ static void render_particles(void) {
         Matrix mtx;
         mtx_billboard(&mtx, particle->pos[0], particle->pos[1], particle->pos[2]);
         mtx_scale(&mtx, particle->scale[0], particle->scale[1], particle->scale[2]);
-        MATRIX_MUL(mtx.m);
+        MATRIX_MUL(0, mtx.m);
         rspq_block_run(sParticleBlock);
         MATRIX_POP();
         list = list->next;
@@ -1045,7 +1046,7 @@ static void render_object_shadows(void) {
             float pos[3] = {obj->pos[0], floorHeight + 0.1f, obj->pos[2]};
             unsigned short angle[3] = {0, d->angle[1] + 0x4000, 0};
             set_draw_matrix(&matrix, MTX_TRANSLATE_ROTATE_SCALE, pos, angle, obj->scale);
-            MATRIX_MUL(&matrix.m);
+            MATRIX_MUL(0, &matrix.m);
 #ifdef OPENGL
             glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
 #endif
@@ -1235,7 +1236,7 @@ static void generate_dynamic_shadows(void) {
                 if (m->matrixBehaviour != MTX_NONE) {
                     unsigned short angle[3] = {obj->faceAngle[0], obj->faceAngle[1] + obj->gfx->dynamicShadow->angle[1], obj->faceAngle[2]};
                     set_draw_matrix(&matrix, m->matrixBehaviour, pos, angle, scale);
-                    MATRIX_MUL(&matrix.m);
+                    MATRIX_MUL(0, &matrix.m);
                 }
                 MATRIX_PUSH();
                 rspq_block_run(m->block);
@@ -1329,6 +1330,9 @@ void render_game(int updateRate, float updateRateF) {
 #ifdef OPENGL
     gl_context_begin();
     glClear(GL_DEPTH_BUFFER_BIT);
+#elif defined(TINY3D)
+    t3d_frame_start();
+    t3d_screen_clear_depth();
 #endif
     if (gScreenshotStatus != SCREENSHOT_SHOW) {
         if (gEnvironment->skyboxTextureID == -1 || gConfig.graphics == G_PERFORMANCE) {
@@ -1355,6 +1359,8 @@ void render_game(int updateRate, float updateRateF) {
         render_end();
 #ifdef OPENGL
         gl_context_end();
+#elif defined(TINY3D)
+        t3d_destroy();
 #endif
         if (gScreenshotStatus == SCREENSHOT_GENERATE) {
             clear_dynamic_shadows();
@@ -1364,6 +1370,8 @@ void render_game(int updateRate, float updateRateF) {
         render_end();
 #ifdef OPENGL
         gl_context_end();
+#elif defined(TINY3D)
+        t3d_destroy();
 #endif
         if (gScreenshotType == FMT_RGBA16) {
             rdpq_set_mode_copy(false);
