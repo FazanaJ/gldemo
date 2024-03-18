@@ -157,7 +157,7 @@ static inline void set_frustrum(float l, float r, float b, float t, float n, flo
         {(r+l)/(r-l), (t+b)/(t-b), -(f+n)/(f-n), -1.f},
         {0.f, 0.f, -(2*f*n)/(f-n), 0.f},
     }};
-    MATRIX_MUL(frustum.m[0], 1, 0);
+    MATRIX_MUL(frustum.m[0], 0, 1);
     get_time_snapshot(PP_MATRIX, DEBUG_SNAPSHOT_1_END);
 }
 

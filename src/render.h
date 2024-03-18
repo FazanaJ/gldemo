@@ -10,20 +10,20 @@
 #if OPENGL
 #define MATRIX_PUSH() glPushMatrix()
 #define MATRIX_POP() glPopMatrix()
-#define MATRIX_MUL(stackPrev, stackPos, x) glMultMatrixf((GLfloat *) x)
+#define MATRIX_MUL(x, stackPos, stackPrev) glMultMatrixf((GLfloat *) x)
 #define MODEL_LOAD(x) model64_load(asset_dir(x, DFS_MODEL64))
 #define MODEL_FREE(x) model64_free(x)
 #elif TINY3D
 #define MATRIX_PUSH()
 #define MATRIX_POP()
-//#define MATRIX_MUL(stackPrev, stackPos, x) t3d_matrix_set_mul((T3DMat4FP *) x, stackPos, stackPrev)
-#define MATRIX_MUL(stackPrev, stackPos, x)
+//#define MATRIX_MUL(x, stackPos, stackPrev) t3d_matrix_set_mul((T3DMat4FP *) x, stackPos, stackPrev)
+#define MATRIX_MUL(x, stackPos, stackPrev)
 #define MODEL_LOAD(x) t3d_model_load(asset_dir(x, DFS_MODEL64))
 #define MODEL_FREE(x) t3d_model_free(x)
 #else
 #define MATRIX_PUSH()
 #define MATRIX_POP()
-#define MATRIX_MUL(stackPrev, stackPos, x)
+#define MATRIX_MUL(x, stackPos, stackPrev)
 #define MODEL_LOAD(x) 0
 #define MODEL_FREE(x)
 #endif

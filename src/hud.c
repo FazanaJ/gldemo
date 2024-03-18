@@ -45,8 +45,6 @@ static void generate_health_block(int hpMin, int hpMax, int hpBase) {
         sHealthSprite = sprite_load(asset_dir(gTextureIDs[TEXTURE_HEALTH].file, DFS_SPRITE));
     }
 
-    rspq_block_begin();
-    glEnable(GL_MULTISAMPLE_ARB);
     int maxLine = MAX((hpMax + 3) / 4, (hpMin + 3) / 4);
     if (maxLine > 8) {
         maxLine = 8;
@@ -60,16 +58,26 @@ static void generate_health_block(int hpMin, int hpMax, int hpBase) {
             break;
         }
     }
-    glBegin(GL_QUADS);
-    glColor3f(255, 255, 255);
-    glVertex2i(12, 22 + offsetY);
-    glVertex2i(14, 24 + offsetY);
-    glVertex2i(21 + (maxLine * 12), 24 - (maxLine) + offsetY);
-    glVertex2i(18 + (maxLine * 12), 22 - (maxLine) + offsetY);
-    glEnd();
+    //rspq_block_begin();
     rdpq_mode_push();
+    rdpq_sync_pipe();
+    rdpq_mode_antialias(AA_STANDARD);
     rdpq_set_mode_standard();
-    glDisable(GL_MULTISAMPLE_ARB);
+    rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+    rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+    rdpq_mode_blender(0);
+    rdpq_triangle(&TRIFMT_FILL,
+        (float[]){12.0f, 22.0f + offsetY},
+        (float[]){14.0f, 24.0f + offsetY},
+        (float[]){21.0f + (maxLine * 12.0f), 24.0f - (maxLine) + offsetY}
+    );
+    rdpq_triangle(&TRIFMT_FILL,
+        (float[]){21.0f + (maxLine * 12.0f), 24.0f - (maxLine) + offsetY},
+        (float[]){18.0f + (maxLine * 12.0f), 22.0f - (maxLine) + offsetY},
+        (float[]){12.0f, 22.0f + offsetY}
+    );
+    rdpq_mode_antialias(AA_NONE);
+    rdpq_sync_pipe();
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
     rdpq_set_prim_color(RGBA32(c[0], c[1], c[2], 192));
     rdpq_set_combiner_raw(RDPQ_COMBINER1((TEX0,PRIM,TEX0,PRIM), (TEX0,0,PRIM,0)));
@@ -112,7 +120,7 @@ static void generate_health_block(int hpMin, int hpMax, int hpBase) {
     } else {
         i = 0;
     }
-    sHealthBlock = rspq_block_end();
+    //sHealthBlock = rspq_block_end();
     rspq_block_begin();
     rdpq_mode_blender(0);
     rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
@@ -137,6 +145,7 @@ static void generate_health_block(int hpMin, int hpMax, int hpBase) {
 }
 
 static void render_health_bg(int numHealth, int hpMax) {
+    rdpq_debug_start();
     PlayerData *data = (PlayerData *) gPlayer->data;
     int heartSpeed = (gGameTimer * 0x200);
     if (data->health <= data->healthMax / 4) {
@@ -202,7 +211,7 @@ static void render_health(float updateRateF) {
             }
             generate_health_block(data->health, data->healthMax, data->healthBase);
         }
-        rspq_block_run(sHealthBlock);
+        //rspq_block_run(sHealthBlock);
         if (data->health > 0) {
             int heartSpeed = (gGameTimer * 0x200);
             if (data->health <= data->healthMax / 4) {
@@ -244,6 +253,7 @@ static void render_health(float updateRateF) {
         }
     }
     rspq_block_run(sHealthEmptyBlock);
+    rdpq_debug_stop();
 }
 
 static void render_ztarget(void) {
@@ -544,7 +554,7 @@ void render_hud(int updateRate, float updateRateF) {
         render_ztarget();
         render_health(updateRateF);
     }
-    render_hud_subtitles();
+    /*render_hud_subtitles();
 
     if (input_pressed(INPUT_CDOWN, 0)) {
         add_subtitle("You have pressed C down!", 120);
@@ -562,6 +572,6 @@ void render_hud(int updateRate, float updateRateF) {
     if (gCurrentController == -1) {
         render_panel((gFrameBuffers->width / 2) - 64, (gFrameBuffers->height / 2) - 64, (gFrameBuffers->width / 2) + 64, (gFrameBuffers->height / 2) - 32, 0, 0xFFFFFFFF);
         rdpq_text_printf(NULL, FONT_MVBOLI, (gFrameBuffers->width / 2) - 40, (gFrameBuffers->height / 2) - 40, "Press Blart");
-    }
+    }*/
     get_time_snapshot(PP_HUD, DEBUG_SNAPSHOT_1_END);
 }
