@@ -72,9 +72,6 @@ void talk_open(int convoID) {
 
 void talk_close(void) {
     if (gTalkControl) {
-        if (gTalkControl->talkBubbleBlock) {
-            rspq_block_free(gTalkControl->talkBubbleBlock);
-        }
         free(gTalkControl);
         gTalkControl = NULL;
         if (gScreenshotStatus == SCREENSHOT_SHOW) {
@@ -177,18 +174,30 @@ void talk_update(int updateRate) {
     }
 }
 
-static void talk_generate_bubble(void) {
-    int w = display_get_width();
-    int h = display_get_height();
-    //rspq_block_begin();
-    glBegin(GL_TRIANGLE_FAN);
-    glVertex3f(w, h, 0);
+static void talk_render_bubble(void) {
+    float w = display_get_width();
+    float h = display_get_height();
+    rdpq_set_mode_standard();
+    rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+    rdpq_set_prim_color(RGBA32(255, 255, 255, 127));
+    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
     for (int i = 16; i > 0; i--) {
-        float offsetY = sins((gGlobalTimer * 0x200) + (i * 0x2000)) * 3.0f;
-        glVertex3f((w / 15) * (i - 1), h - 64 + offsetY, 0);
+        float offsetY0 = sins((gGlobalTimer * 0x200) + (i * 0x2000)) * 3.0f;
+        float offsetY1 = sins((gGlobalTimer * 0x200) + ((i + 1) * 0x2000)) * 3.0f;
+        rdpq_triangle(&TRIFMT_FILL,
+            (float[]){w, h},
+            (float[]){(w / 15) * (i - 1), h - 64 + offsetY0},
+            (float[]){(w / 15) * (i), h - 64 + offsetY1}
+        );
+        if (i == 1) {
+            rdpq_triangle(&TRIFMT_FILL,
+                (float[]){w, h},
+                (float[]){(w / 15) * (i - 1), h - 64 + offsetY0},
+                (float[]){0, h}
+            );
+        }
     }
-    glVertex3f(0, h, 0);
-    glEnd();
+    rdpq_mode_blender(0);
 }
 
 static void talk_render_text(void) {
@@ -235,9 +244,6 @@ void talk_render(void) {
         return;
     }
 
-    if (t->talkBubbleBlock == false) {
-        talk_generate_bubble();
-    }
-
+    talk_render_bubble();
     talk_render_text();
 }

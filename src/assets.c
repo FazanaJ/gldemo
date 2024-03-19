@@ -411,42 +411,20 @@ rspq_block_t *sky_gradient_generate(Environment *e) {
     int width = display_get_width();
     int height = display_get_height();
     rspq_block_begin();
-#if OPENGL
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_MULTISAMPLE_ARB);
-#elif TINY3D
+    rdpq_set_mode_standard();
     rdpq_mode_combiner(RDPQ_COMBINER_SHADE);
-    t3d_state_set_drawflags(T3D_FLAG_SHADED | T3D_FLAG_DEPTH);
-    e->skyVerts = malloc_uncached(sizeof(T3DVertPacked) * 2);
-    uint16_t norm = t3d_vert_pack_normal(&(T3DVec3){{ 0, 0, 1}});
-    unsigned int colourT = (e->skyColourTop[0] << 24) + (e->skyColourTop[1] << 16) + (e->skyColourTop[2] << 8) + 255;
-    unsigned int colourB = (e->skyColourBottom[0] << 24) + (e->skyColourBottom[1] << 16) + (e->skyColourBottom[2] << 8) + 255;
-    e->skyVerts[0] = (T3DVertPacked) {
-        .posA = {0, 0, 0}, .rgbaA = colourT, .normA = norm,
-        .posB = {0, height, 0}, .rgbaB = colourT, .normB = norm,
-    };
-    e->skyVerts[1] = (T3DVertPacked) {
-        .posA = {width, height, 0}, .rgbaA = colourB, .normA = norm,
-        .posB = {width, 0, 0}, .rgbaB = colourB, .normB = norm,
-    };
-#endif
-    matrix_ortho();
-#if OPENGL
-    glBegin(GL_QUADS);
-    glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
-    glVertex2i(0, 0);
-    glColor3f(e->skyColourBottom[0], e->skyColourBottom[1], e->skyColourBottom[2]);
-    glVertex2i(0, height);
-    glVertex2i(width, height);
-    glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
-    glVertex2i(width, 0);
-    glColor3f(1, 1, 1);
-    glEnd();
-#elif TINY3D
-    t3d_vert_load(e->skyVerts, 4);
-    t3d_tri_draw(0, 1, 2);
-    t3d_tri_draw(2, 3, 0);
-#endif
+    rdpq_mode_blender(0);
+    rdpq_mode_dithering(DITHER_SQUARE_NONE);
+    rdpq_triangle(&TRIFMT_SHADE,
+        (float[]){0.0f, 0.0f, e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2], 1.0f},
+        (float[]){0.0f, height, e->skyColourBottom[0], e->skyColourBottom[1], e->skyColourBottom[2], 1.0f},
+        (float[]){width, height, e->skyColourBottom[0], e->skyColourBottom[1], e->skyColourBottom[2], 1.0f}
+    );
+    rdpq_triangle(&TRIFMT_SHADE,
+        (float[]){width, height, e->skyColourBottom[0], e->skyColourBottom[1], e->skyColourBottom[2], 1.0f},
+        (float[]){width, 0.0f, e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2], 1.0f},
+        (float[]){0.0f, 0.0f, e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2], 1.0f}
+    );
     return rspq_block_end();
 }
 

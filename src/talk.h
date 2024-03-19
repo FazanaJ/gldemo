@@ -37,7 +37,6 @@ typedef struct TalkControl {
     unsigned char optionsVisible;
     short curOption;
     TalkText *curText;
-    rspq_block_t *talkBubbleBlock;
 } TalkControl;
 
 extern TalkControl *gTalkControl;

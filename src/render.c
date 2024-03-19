@@ -120,7 +120,6 @@ void init_renderer(void) {
     glCullFace(GL_BACK);
     glShadeModel(GL_SMOOTH);
     glDepthMask(GL_TRUE);
-    glEnable(GL_SCISSOR_TEST);
 #endif
     sBeginModeBlock = rspq_block_end();
 
@@ -132,11 +131,9 @@ void init_renderer(void) {
     glDisable(GL_COLOR_MATERIAL);
     glDisable(GL_FOG);
     glDisable(GL_DEPTH_TEST);
-    glDisable(GL_SCISSOR_TEST);
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_BLEND);
     glDepthMask(GL_FALSE);
-    glScissor(0, 0, display_get_width(), display_get_height());
 #endif
     sRenderEndBlock = rspq_block_end();
 
@@ -782,20 +779,21 @@ static void apply_anti_aliasing(int mode) {
     }
 }
 
-static void apply_render_settings(void) {
+static void render_ztarget_scissor(void) {
     int targetPos;
-    gPrevTextureID = -1;
-    gPrevCombiner = -1;
-    gPrevRenderFlags = -1;
-    rspq_block_run(sBeginModeBlock);
     if (gConfig.regionMode == TV_PAL) {
         targetPos = gZTargetTimer * (1.5f * 1.2f);
     } else {
         targetPos = gZTargetTimer * 1.5f;
     }
-#if OPENGL
-    glScissor(0, targetPos, display_get_width(), display_get_height() - (targetPos * 2));
-#endif
+    rdpq_set_scissor(0, targetPos, display_get_width(), display_get_height() - (targetPos));
+}
+
+static void apply_render_settings(void) {
+    gPrevTextureID = -1;
+    gPrevCombiner = -1;
+    gPrevRenderFlags = -1;
+    rspq_block_run(sBeginModeBlock);
     if (gConfig.graphics == G_BEAUTIFUL) {
         *(volatile uint32_t*)0xA4400000 |= 0x10000;
     } else {
@@ -1036,6 +1034,8 @@ static void render_object_shadows(void) {
 #if OPENGL
     glEnable(GL_TEXTURE_2D);
 #endif
+    rdpq_set_blend_color(RGBA32(255, 255, 255, 255));
+    rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
     while (list) {
         obj = list->obj;
         if (obj->flags & OBJ_FLAG_SHADOW_DYNAMIC && obj->flags & OBJ_FLAG_IN_VIEW && obj->gfx && obj->gfx->dynamicShadow) {
@@ -1191,6 +1191,7 @@ static void reset_shadow_perspective(void) {
         glEnable(GL_RDPQ_MATERIAL_N64);
 #endif
         rdpq_mode_antialias(AA_NONE);
+        rdpq_mode_blender(0);
         rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
         rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
         sDynamicShadowBlock = rspq_block_end();
@@ -1335,6 +1336,7 @@ void render_game(int updateRate, float updateRateF) {
     t3d_screen_clear_depth();
 #endif
     if (gScreenshotStatus != SCREENSHOT_SHOW) {
+        render_ztarget_scissor();
         if (gEnvironment->skyboxTextureID == -1 || gConfig.graphics == G_PERFORMANCE) {
             render_sky_gradient(gEnvironment);
         }
@@ -1388,7 +1390,7 @@ void render_game(int updateRate, float updateRateF) {
     }
     get_time_snapshot(PP_RENDER, DEBUG_SNAPSHOT_1_END);
     if (gScreenshotStatus <= SCREENSHOT_NONE) {
-        render_hud(updateRate, updateRateF);
+        //render_hud(updateRate, updateRateF);
         render_menus(updateRate, updateRateF);
     }
 #ifdef PUPPYPRINT_DEBUG

@@ -102,7 +102,7 @@ int main(void) {
     float updateRateF;
 
     boot_game();
-    load_scene(SCENE_TESTAREA);
+    load_scene(SCENE_INTRO);
 
     while (1) {
         reset_profiler_times();

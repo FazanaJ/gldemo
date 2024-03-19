@@ -554,7 +554,7 @@ void render_hud(int updateRate, float updateRateF) {
         render_ztarget();
         render_health(updateRateF);
     }
-    /*render_hud_subtitles();
+    render_hud_subtitles();
 
     if (input_pressed(INPUT_CDOWN, 0)) {
         add_subtitle("You have pressed C down!", 120);
@@ -572,6 +572,6 @@ void render_hud(int updateRate, float updateRateF) {
     if (gCurrentController == -1) {
         render_panel((gFrameBuffers->width / 2) - 64, (gFrameBuffers->height / 2) - 64, (gFrameBuffers->width / 2) + 64, (gFrameBuffers->height / 2) - 32, 0, 0xFFFFFFFF);
         rdpq_text_printf(NULL, FONT_MVBOLI, (gFrameBuffers->width / 2) - 40, (gFrameBuffers->height / 2) - 40, "Press Blart");
-    }*/
+    }
     get_time_snapshot(PP_HUD, DEBUG_SNAPSHOT_1_END);
 }
