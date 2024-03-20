@@ -57,6 +57,8 @@ static void free_menu_display(void) {
 static void init_menu_display(int x, int y) {
     if (sMenuDisplay == NULL) {
         sMenuDisplay = malloc(sizeof(MenuListRoot));
+    } else {
+        assertf(0, "sMenuDisplay already exists.");
     }
 
     sMenuDisplay->x = x;

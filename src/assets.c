@@ -408,22 +408,29 @@ void sky_texture_generate(Environment *e) {
 }
 
 rspq_block_t *sky_gradient_generate(Environment *e) {
-    int width = display_get_width();
-    int height = display_get_height();
+    float width = display_get_width();
+    float height = display_get_height();
     rspq_block_begin();
     rdpq_set_mode_standard();
     rdpq_mode_combiner(RDPQ_COMBINER_SHADE);
     rdpq_mode_blender(0);
     rdpq_mode_dithering(DITHER_SQUARE_NONE);
+    float col[2][3];
+    col[0][0] = e->skyColourTop[0] / 255.0f;
+    col[0][1] = e->skyColourTop[1] / 255.0f;
+    col[0][2] = e->skyColourTop[2] / 255.0f;
+    col[1][0] = e->skyColourBottom[0] / 255.0f;
+    col[1][1] = e->skyColourBottom[1] / 255.0f;
+    col[1][2] = e->skyColourBottom[2] / 255.0f;
     rdpq_triangle(&TRIFMT_SHADE,
-        (float[]){0.0f, 0.0f, e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2], 1.0f},
-        (float[]){0.0f, height, e->skyColourBottom[0], e->skyColourBottom[1], e->skyColourBottom[2], 1.0f},
-        (float[]){width, height, e->skyColourBottom[0], e->skyColourBottom[1], e->skyColourBottom[2], 1.0f}
+        (float[]){0.0f, 0.0f, col[0][0], col[0][1], col[0][2], 1.0f},
+        (float[]){0.0f, height, col[1][0], col[1][1], col[1][2], 1.0f},
+        (float[]){width, height, col[1][0], col[1][1], col[1][2], 1.0f}
     );
     rdpq_triangle(&TRIFMT_SHADE,
-        (float[]){width, height, e->skyColourBottom[0], e->skyColourBottom[1], e->skyColourBottom[2], 1.0f},
-        (float[]){width, 0.0f, e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2], 1.0f},
-        (float[]){0.0f, 0.0f, e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2], 1.0f}
+        (float[]){width, height, col[1][0], col[1][1], col[1][2], 1.0f},
+        (float[]){width, 0.0f, col[0][0], col[0][1], col[0][2], 1.0f},
+        (float[]){0.0f, 0.0f, col[0][0], col[0][1], col[0][2], 1.0f}
     );
     return rspq_block_end();
 }

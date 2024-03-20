@@ -32,10 +32,13 @@ Matrix gScaleMatrix;
 Matrix gViewMatrix;
 char gZTargetTimer = 0;
 char gUseOverrideMaterial = false;
+char gMatrixStackPos;
 static rspq_block_t *sRenderEndBlock;
 rspq_block_t *sRenderSkyBlock;
 static rspq_block_t *sBeginModeBlock;
 static rspq_block_t *sParticleBlock;
+rspq_block_t *sBushBlock;
+rspq_block_t *sShadowBlock;
 Material gOverrideMaterial;
 Material gBlankMaterial = {NULL, -1, MATERIAL_NULL};
 void *gSortHeap[DRAW_TOTAL];
@@ -154,7 +157,7 @@ static inline void set_frustrum(float l, float r, float b, float t, float n, flo
         {(r+l)/(r-l), (t+b)/(t-b), -(f+n)/(f-n), -1.f},
         {0.f, 0.f, -(2*f*n)/(f-n), 0.f},
     }};
-    MATRIX_MUL(frustum.m[0], 0, 1);
+    MATRIX_MUL(frustum.m[0], 0, 0);
     get_time_snapshot(PP_MATRIX, DEBUG_SNAPSHOT_1_END);
 }
 
@@ -221,7 +224,7 @@ static void mtx_lookat(float eyex, float eyey, float eyez, float centerx, float 
 
     memcpy(&gViewMatrix, &m, sizeof(Matrix));
 
-    MATRIX_MUL(&m[0][0], 0, 1);
+    MATRIX_MUL(&m[0][0], gMatrixStackPos, gMatrixStackPos - 1);
     get_time_snapshot(PP_MATRIX, DEBUG_SNAPSHOT_1_END);
 };
 
@@ -378,7 +381,7 @@ static void set_light(light_t light) {
     MATRIX_PUSH();
     Matrix mtx;
     mtx_rotate(&mtx, light.direction[0], light.direction[1], light.direction[2]);
-    MATRIX_MUL(mtx.m[0], 0, 1);
+    MATRIX_MUL(mtx.m[0], gMatrixStackPos, gMatrixStackPos - 1);
 #if OPENGL
     glLightfv(GL_LIGHT0, GL_POSITION, light.position);
 #endif
@@ -420,7 +423,9 @@ void matrix_ortho(void) {
 #if OPENGL
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0.0f, display_get_width(), display_get_height(), 0.0f, -1.0f, 1.0f);
+#endif
+    set_frustrum(0.0f, display_get_width(), display_get_height(), 0.0f, -1.0f, 1.0f);
+#if OPENGL
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 #endif
@@ -616,9 +621,9 @@ static void render_sky_gradient(Environment *e) {
     } else {
         int width = display_get_width();
         int height = display_get_height();
-        rdpq_set_mode_fill(RGBA32((e->skyColourTop[0] + e->skyColourBottom[0]) * 127.0f,
-                                  (e->skyColourTop[1] + e->skyColourBottom[1]) * 127.0f,
-                                  (e->skyColourTop[2] + e->skyColourBottom[2]) * 127.0f,
+        rdpq_set_mode_fill(RGBA32((e->skyColourTop[0] + e->skyColourBottom[0]) / 2,
+                                  (e->skyColourTop[1] + e->skyColourBottom[1]) / 2,
+                                  (e->skyColourTop[2] + e->skyColourBottom[2]) / 2,
                                    255));
         rdpq_fill_rectangle(0, 0, width, height);
         rdpq_set_mode_standard();
@@ -636,7 +641,7 @@ static void render_sky_texture(Environment *e) {
         Matrix mtx;
         MATRIX_PUSH();
         mtx_translate(&mtx, gCamera->pos[0], gCamera->pos[1] + 50.0f, gCamera->pos[2]);
-        MATRIX_MUL(mtx.m, 0, 1);
+        MATRIX_MUL(mtx.m, gMatrixStackPos, gMatrixStackPos - 1);
 #if OPENGL
         glEnable(GL_TEXTURE_2D);
         glDisable(GL_CULL_FACE);
@@ -724,10 +729,11 @@ static void render_bush(void) {
 
 static inline void render_end(void) {
     rspq_block_run(sRenderEndBlock);
+#if OPENGL
+        gl_context_end();
+#endif
+    rdpq_set_scissor(0, 0, display_get_width(), display_get_height());
 }
-
-rspq_block_t *sBushBlock;
-rspq_block_t *sShadowBlock;
 
 static void render_shadow(float pos[3]) {
     MATRIX_PUSH();
@@ -868,7 +874,7 @@ static void pop_render_list(int layer) {
     while (renderList) {
     MATRIX_PUSH();
         if (renderList->matrix) {
-            MATRIX_MUL(renderList->matrix->m, 0, 1);
+            MATRIX_MUL(renderList->matrix->m, gMatrixStackPos, gMatrixStackPos - 1);
         }
         if (renderList->material) {
             material_set(renderList->material, renderList->flags, 0);
@@ -911,7 +917,7 @@ static void render_particles(void) {
         Matrix mtx;
         mtx_billboard(&mtx, particle->pos[0], particle->pos[1], particle->pos[2]);
         mtx_scale(&mtx, particle->scale[0], particle->scale[1], particle->scale[2]);
-        MATRIX_MUL(mtx.m, 0, 1);
+        MATRIX_MUL(mtx.m, gMatrixStackPos, gMatrixStackPos - 1);
         rspq_block_run(sParticleBlock);
         MATRIX_POP();
         list = list->next;
@@ -1024,18 +1030,15 @@ static void render_object_shadows(void) {
     }
 
     if (gConfig.graphics == G_PERFORMANCE) {
-    get_time_snapshot(PP_SHADOWS, DEBUG_SNAPSHOT_1_END);
-    profiler_wait();
+        get_time_snapshot(PP_SHADOWS, DEBUG_SNAPSHOT_1_END);
+        profiler_wait();
         return;
     }
-
     list = gObjectListHead;
     material_set(&gBlankMaterial, MATERIAL_DECAL | MATERIAL_XLU | MATERIAL_DEPTH_READ, 0);
 #if OPENGL
     glEnable(GL_TEXTURE_2D);
 #endif
-    rdpq_set_blend_color(RGBA32(255, 255, 255, 255));
-    rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
     while (list) {
         obj = list->obj;
         if (obj->flags & OBJ_FLAG_SHADOW_DYNAMIC && obj->flags & OBJ_FLAG_IN_VIEW && obj->gfx && obj->gfx->dynamicShadow) {
@@ -1046,7 +1049,7 @@ static void render_object_shadows(void) {
             float pos[3] = {obj->pos[0], floorHeight + 0.1f, obj->pos[2]};
             unsigned short angle[3] = {0, d->angle[1] + 0x4000, 0};
             set_draw_matrix(&matrix, MTX_TRANSLATE_ROTATE_SCALE, pos, angle, obj->scale);
-            MATRIX_MUL(&matrix.m, 0, 1);
+            MATRIX_MUL(&matrix.m, gMatrixStackPos, gMatrixStackPos - 1);
 #if OPENGL
             glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
 #endif
@@ -1190,6 +1193,7 @@ static void reset_shadow_perspective(void) {
 #if OPENGL
         glEnable(GL_RDPQ_MATERIAL_N64);
 #endif
+        rdpq_set_mode_copy(false);
         rdpq_mode_antialias(AA_NONE);
         rdpq_mode_blender(0);
         rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
@@ -1237,7 +1241,7 @@ static void generate_dynamic_shadows(void) {
                 if (m->matrixBehaviour != MTX_NONE) {
                     unsigned short angle[3] = {obj->faceAngle[0], obj->faceAngle[1] + obj->gfx->dynamicShadow->angle[1], obj->faceAngle[2]};
                     set_draw_matrix(&matrix, m->matrixBehaviour, pos, angle, scale);
-                    MATRIX_MUL(&matrix.m, 0, 1);
+                    MATRIX_MUL(&matrix.m, gMatrixStackPos, gMatrixStackPos - 1);
                 }
                 MATRIX_PUSH();
                 rspq_block_run(m->block);
@@ -1334,6 +1338,7 @@ void render_game(int updateRate, float updateRateF) {
 #elif TINY3D
     t3d_frame_start();
     t3d_screen_clear_depth();
+    gMatrixStackPos = 1;
 #endif
     if (gScreenshotStatus != SCREENSHOT_SHOW) {
         render_ztarget_scissor();
@@ -1359,38 +1364,31 @@ void render_game(int updateRate, float updateRateF) {
         set_particle_render_settings();
         render_particles();
         render_end();
-#if OPENGL
-        gl_context_end();
-#endif
         if (gScreenshotStatus == SCREENSHOT_GENERATE) {
             clear_dynamic_shadows();
         }
     } else if (gScreenshotStatus == SCREENSHOT_SHOW) {
         render_world(updateRate);
         render_end();
-#if OPENGL
-        gl_context_end();
-#endif
         if (gScreenshotType == FMT_RGBA16) {
             rdpq_set_mode_copy(false);
         } else {
             int sineTime = 16 * sins(gGlobalTimer * 0x2000);
-            rdpq_set_mode_fill(RGBA32(0x97, 0x64, 0x3C, 255));
+            rdpq_set_mode_fill(RGBA32(151, 100, 60, 255));
             rdpq_fill_rectangle(0, 0, display_get_width(), display_get_height());
             rdpq_set_mode_standard();
-            rdpq_set_prim_color(RGBA32(0xEA, 0xDB,  0xCB, 239 + sineTime));
+            rdpq_set_prim_color(RGBA32(234, 219, 203, 239 + sineTime));
             rdpq_mode_combiner(RDPQ_COMBINER_TEX_FLAT);
             rdpq_mode_dithering(DITHER_NOISE_NOISE);
-            rdpq_set_combiner_raw(RDPQ_COMBINER_TEX_FLAT);
             rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
         }
         rdpq_tex_blit(&gScreenshot, 0, 0, NULL);
         rdpq_set_mode_standard();
-        rdpq_mode_dithering(DITHER_NONE_NONE);
+        rdpq_mode_dithering(DITHER_SQUARE_NONE);
     }
     get_time_snapshot(PP_RENDER, DEBUG_SNAPSHOT_1_END);
     if (gScreenshotStatus <= SCREENSHOT_NONE) {
-        //render_hud(updateRate, updateRateF);
+        render_hud(updateRate, updateRateF);
         render_menus(updateRate, updateRateF);
     }
 #ifdef PUPPYPRINT_DEBUG

@@ -53,27 +53,20 @@ int sSceneMeshFlags[SCENE_TOTAL][7] = {
     MATERIAL_DEPTH_READ | MATERIAL_VTXCOL | MATERIAL_FOG, },
 };
 
-// OpenGL uses floats for its' colours.
-#if OPENGL
-#define SKYDIVFACTOR 255.0f
-#elif TINY3D
-#define SKYDIVFACTOR 1.0f
-#endif
-
 static void setup_fog(SceneHeader *header) {
     if (gEnvironment == NULL) {
         gEnvironment = malloc(sizeof(Environment));
     }
     bzero(gEnvironment, sizeof(Environment));
-    gEnvironment->fogColour[0] = ((float) header->fogColour[0]) / SKYDIVFACTOR;
-    gEnvironment->fogColour[1] = ((float) header->fogColour[1]) / SKYDIVFACTOR;
-    gEnvironment->fogColour[2] = ((float) header->fogColour[2]) / SKYDIVFACTOR;
-    gEnvironment->skyColourBottom[0] = ((float) header->skyBottom[0]) / SKYDIVFACTOR;
-    gEnvironment->skyColourBottom[1] = ((float) header->skyBottom[1]) / SKYDIVFACTOR;
-    gEnvironment->skyColourBottom[2] = ((float) header->skyBottom[2]) / SKYDIVFACTOR;
-    gEnvironment->skyColourTop[0] = ((float) header->skyTop[0]) / SKYDIVFACTOR;
-    gEnvironment->skyColourTop[1] = ((float) header->skyTop[1]) / SKYDIVFACTOR;
-    gEnvironment->skyColourTop[2] = ((float) header->skyTop[2]) / SKYDIVFACTOR;
+    gEnvironment->fogColour[0] = ((float) header->fogColour[0]) / 255.0f;
+    gEnvironment->fogColour[1] = ((float) header->fogColour[1]) / 255.0f;
+    gEnvironment->fogColour[2] = ((float) header->fogColour[2]) / 255.0f;
+    gEnvironment->skyColourBottom[0] = header->skyBottom[0];
+    gEnvironment->skyColourBottom[1] = header->skyBottom[1];
+    gEnvironment->skyColourBottom[2] = header->skyBottom[2];
+    gEnvironment->skyColourTop[0] = header->skyTop[0];
+    gEnvironment->skyColourTop[1] = header->skyTop[1];
+    gEnvironment->skyColourTop[2] = header->skyTop[2];
     gEnvironment->flags = header->flags;
     gEnvironment->fogNear = header->fogNear;
     gEnvironment->fogFar = header->fogFar;

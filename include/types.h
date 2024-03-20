@@ -38,13 +38,11 @@ typedef struct Material {
 typedef struct Environment {
 #if OPENGL
     GLfloat fogColour[3];
-    GLfloat skyColourTop[3];
-    GLfloat skyColourBottom[3];
 #elif TINY3D
     unsigned char fogColour[3];
+#endif
     unsigned char skyColourTop[3];
     unsigned char skyColourBottom[3];
-#endif
     GLfloat fogNear;
     GLfloat fogFar;
     int flags;

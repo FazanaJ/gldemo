@@ -14,8 +14,8 @@
 #define MODEL_LOAD(x) model64_load(asset_dir(x, DFS_MODEL64))
 #define MODEL_FREE(x) model64_free(x)
 #elif TINY3D
-#define MATRIX_PUSH()
-#define MATRIX_POP()
+#define MATRIX_PUSH() gMatrixStackPos++;
+#define MATRIX_POP() gMatrixStackPos--;
 //#define MATRIX_MUL(x, stackPos, stackPrev) t3d_matrix_set_mul((T3DMat4FP *) x, stackPos, stackPrev)
 #define MATRIX_MUL(x, stackPos, stackPrev)
 #define MODEL_LOAD(x) t3d_model_load(asset_dir(x, DFS_MODEL64))
@@ -78,6 +78,7 @@ extern unsigned int gSortPos[DRAW_TOTAL];
 extern const short sLayerSizes[DRAW_TOTAL];
 extern void *gSortHeap[DRAW_TOTAL];
 extern int gSortRecord[DRAW_TOTAL];
+extern char gMatrixStackPos;
 
 void init_renderer(void);
 void render_game(int updateRate, float updateRateF);
