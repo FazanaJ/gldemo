@@ -11,13 +11,6 @@
 
 
 void loop(Object *obj, int updateRate, float updateRateF) {
-    if (input_pressed(INPUT_A, 0)) {
-        if (DIST3(obj->pos, gPlayer->pos) < 10.0f * 10.0f) {
-            input_clear(INPUT_A);
-            talk_open(0);
-            //voice_play(VOICE_NECROMANCY, true);
-        }
-    }
 }
 
 Hitbox bbox = {

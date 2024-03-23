@@ -41,7 +41,7 @@ static void object_move(Object *obj, float updateRateF) {
 
 static void object_platform_displacement(Object *obj) {
     Object *p = obj->collision->platform;
-    if (obj->movement->vel[1] <= 0.0f && obj->pos[1] <= obj->collision->hitboxHeight + 1.5f) {
+    if (obj->movement->vel[1] <= 0.0f && obj->pos[1] <= obj->collision->hitboxHeight + FLOOR_MARGIN) {
         float diff[3];
         diff[0] = p->pos[0] - p->prevPos[0];
         diff[1] = p->pos[1] - p->prevPos[1];
@@ -68,7 +68,7 @@ static void object_gravity(Object *obj, float updateRateF) {
             height = -30000.0f;
         }
         obj->pos[1] += (obj->movement->vel[1] / 10.0f) * updateRateF;
-        if (obj->movement->vel[1] < 0.0f && obj->pos[1] - height < 1.5f) {
+        if (obj->movement->vel[1] < 0.0f && obj->pos[1] - height < FLOOR_MARGIN) {
             obj->pos[1] = height;
             obj->movement->vel[1] = 0.0f;
         }
@@ -210,8 +210,8 @@ static int object_hit_platform_round(Object *obj, Object *testObj) {
 static void object_hit_block_block(Object *obj, Object *testObj) {
     if (fabsf(obj->pos[0] - testObj->pos[0]) < gHitboxSize[0][0] + gHitboxSize[1][0] &&
         fabsf(obj->pos[2] - testObj->pos[2]) < gHitboxSize[0][2] + gHitboxSize[1][2]) {
-        Hitbox *h = obj->hitbox;
-        Hitbox *h2 = testObj->hitbox;
+        //Hitbox *h = obj->hitbox;
+        //Hitbox *h2 = testObj->hitbox;
         if (object_hit_platform_flat(obj, testObj) == true) {
             return;
         }
@@ -301,11 +301,11 @@ static void object_hit_cylinder_cylinder(Object *obj, Object *testObj) {
 }
 
 static void object_hit_cylinder_sphere(Object *obj, Object *testObj) {
-        float relX = (obj->pos[0] - testObj->pos[0]);
-        float relZ = (obj->pos[2] - testObj->pos[2]);
-        float radiusX = gHitboxSize[0][0] + gHitboxSize[1][0];
-        float radiusY = gHitboxSize[0][1] + gHitboxSize[1][1];
-        float radiusZ = gHitboxSize[0][2] + gHitboxSize[1][2];
+    float relX = (obj->pos[0] - testObj->pos[0]);
+    float relZ = (obj->pos[2] - testObj->pos[2]);
+    float radiusX = gHitboxSize[0][0] + gHitboxSize[1][0];
+    //float radiusY = gHitboxSize[0][1] + gHitboxSize[1][1];
+    float radiusZ = gHitboxSize[0][2] + gHitboxSize[1][2];
     if (fabsf(relX) < radiusX && fabsf(relZ) < radiusZ) {
         Hitbox *h = obj->hitbox;
         Hitbox *h2 = testObj->hitbox;
@@ -324,7 +324,7 @@ static void object_hit_cylinder_sphere(Object *obj, Object *testObj) {
             }
             float maxWeight = MAX(h->weight, h2->weight);
             float mag = MAX(h->weight - h2->weight, 0.0f);
-            float midPoint = gHitboxSize[1][1] / 2.0f;
+            //float midPoint = gHitboxSize[1][1] / 2.0f;
             float relY = ((obj->pos[1] + gHitboxSize[0][1] + (h->offsetY * obj->scale[1])) - testObj->pos[1] + (h2->offsetY * testObj->scale[1]));
             float distV = MIN(relY / (gHitboxSize[0][1] + gHitboxSize[1][1]), 1.0f);
             float mag2 = ((maxWeight - mag) / maxWeight) * distV;

@@ -785,7 +785,7 @@ static void load_object_model(Object *obj, int objectID) {
             tail = m;
         }
     }
-#elif defined(TINYT3D)
+#elif TINY3D
 #endif
     debugf(" Time: %2.3fs.\n", ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
 

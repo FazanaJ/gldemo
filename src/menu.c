@@ -58,7 +58,7 @@ static void init_menu_display(int x, int y) {
     if (sMenuDisplay == NULL) {
         sMenuDisplay = malloc(sizeof(MenuListRoot));
     } else {
-        assertf(0, "sMenuDisplay already exists.");
+        assertf(sMenuDisplay == NULL, "sMenuDisplay already exists.");
     }
 
     sMenuDisplay->x = x;
@@ -103,8 +103,8 @@ static void add_menu_text(char *text, int index, unsigned int colour, int flags)
         newList->prev = NULL;
     }
     int textLen = strlen(text);
-    newList->text = malloc(textLen + 2);
-    sprintf(newList->text, "%s\n", text);
+    newList->text = malloc(textLen + 1);
+    sprintf(newList->text, "%s", text);
     newList->colour[0] = (colour >> 24) & 0xFF;
     newList->colour[1] = (colour >> 16) & 0xFF;
     newList->colour[2] = (colour >> 8) & 0xFF;

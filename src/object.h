@@ -5,6 +5,7 @@
 #include "render.h"
 
 #define OBJ_DIST(x) (x >> 4)
+#define FLOOR_MARGIN 1.5f
 
 enum ObjectFlags {
 	OBJ_FLAG_NONE,
@@ -18,6 +19,7 @@ enum ObjectFlags {
 	OBJ_FLAG_IN_VIEW =			(1 << 7),
 	OBJ_FLAG_TANGIBLE =			(1 << 8),
 	OBJ_FLAG_INACTIVE =			(1 << 9),
+	OBJ_FLAG_OUTLINE =			(1 << 10),
 };
 
 enum ObjectIDs {

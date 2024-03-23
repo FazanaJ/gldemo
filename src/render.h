@@ -58,7 +58,9 @@ typedef struct RenderNode {
     rspq_block_t *block;
     Matrix *matrix;
     Material *material;
-    int flags;
+    unsigned int flags;
+    color_t envColour;
+    color_t primColour;
     struct RenderNode *next;
     struct RenderNode *prev;
 } RenderNode;

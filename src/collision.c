@@ -182,6 +182,57 @@ typedef struct ModelPrim {
 
 #endif
 
+float collision_floor(float x, float y, float z, float *norm, int w) {
+    #if OPENGL
+    DEBUG_SNAPSHOT_1();
+    SceneChunk *chunk = sCurrentScene->chunkList;
+    float peakY = -30000.0f;
+    float scale = 1.0f;
+    float normY = 1.0f;
+
+    while (chunk) {
+        SceneMesh *mesh = chunk->meshList;
+        if (x < chunk->bounds[0][0] || x > chunk->bounds[1][0] || 
+            y < chunk->bounds[0][1] || y - 10.0f > chunk->bounds[1][1] || 
+            z < chunk->bounds[0][2] || z > chunk->bounds[1][2]) {
+            chunk = chunk->next;
+            continue;
+        }
+        while (mesh) {
+            ModelPrim *prim = (ModelPrim *) mesh->mesh;
+            int numTris = prim->num_indices;
+            attribute_t *attr = &prim->position;
+            float mulFactorF = (int) (1 << (prim->vertex_precision));
+            float plF[3] = {((x) * mulFactorF) / 5, (((y) + 5) * mulFactorF) / 5, ((z) * mulFactorF) / 5};
+            int16_t pl[3] = {plF[0], plF[1], plF[2]};
+
+            for (int i = 0; i < numTris; i += 3) {
+                unsigned short *indices = (unsigned short *) prim->indices;
+                u_int16_t *v1 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 0]);
+                u_int16_t *v2 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 1]);
+                u_int16_t *v3 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 2]);
+                float normals[3];
+                collision_normals(v1, v2, v3, normals, false);
+                if (fabsf(normals[1] < 0.3f)) {
+                } else {
+                    float h = collision_surface_down(plF, pl, v1, v2, v3, &normY);
+                    if (h > peakY) {
+                        peakY = h;
+                        scale = mulFactorF;
+                    }
+                }
+
+            }
+            mesh = mesh->next;
+        }
+        chunk = chunk->next;
+    }
+    float recordHeight = (peakY / scale) * 5;
+    get_time_snapshot(PP_COLLISION, DEBUG_SNAPSHOT_1_END);
+    return recordHeight;
+    #endif
+}
+
 void object_collide(Object *obj) {
     #if OPENGL
     DEBUG_SNAPSHOT_1();

@@ -15,6 +15,7 @@ typedef struct RenderSettings {
     unsigned decal : 1;
     unsigned inter : 1;
     unsigned backface : 1;
+    unsigned frontface : 1;
 } RenderSettings;
 
 typedef struct MaterialList {

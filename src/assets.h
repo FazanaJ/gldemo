@@ -24,6 +24,7 @@ enum MaterialFlags {
     MATERIAL_INTANGIBLE =   (1 << 11), // Don't collide with anything.
     MATERIAL_CAM_ONLY =     (1 << 12), // Only collide with the camera.
     MATERIAL_NO_CAM =       (1 << 13), // Don't collide with the camera.
+    MATERIAL_FRONTFACE =    (1 << 14), // Enables frontfaces
 };
 
 enum TextureFlags {

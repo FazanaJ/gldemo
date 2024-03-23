@@ -88,7 +88,7 @@ void init_save_data(void) {
     }
     if (eepfs_verify_signature() == 0) {
         /* If not, erase it and start from scratch */
-        debugf("Filesystem signature is invalid!\n");
+        //debugf("Filesystem signature is invalid!\n");
         //debugf("Wiping EEPROM...\n" );
         //eepfs_wipe();
     }
@@ -115,7 +115,7 @@ void init_debug(void) {
     gDebugData = malloc(sizeof(DebugData));
     bzero(gDebugData, sizeof(DebugData));
     gDebugData->enabled = false;
-    gDebugData->debugMeshes[0] = MODEL_LOAD("debugcylinder");
+    //gDebugData->debugMeshes[0] = MODEL_LOAD("debugcylinder");
 }
 #endif
 

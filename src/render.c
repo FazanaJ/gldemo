@@ -55,6 +55,7 @@ int gSortRecord[DRAW_TOTAL];
 #endif
 
 Material gBlobShadowMat = {NULL, TEXTURE_SHADOW, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_XLU, 0};
+Material gOutlineMat = {NULL, TEXTURE_SHADOW, MATERIAL_DEPTH_READ | MATERIAL_FOG, 0};
 
 Material gTempMaterials[] = {
     {NULL, 0, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL, 0},
@@ -440,6 +441,7 @@ void set_particle_render_settings(void) {
     gRenderSettings.inter = false;
     gRenderSettings.decal = false;
     gRenderSettings.backface = false;
+    gRenderSettings.frontface = false;
     gRenderSettings.texture = true;
 #if OPENGL
     if (gEnvironment->flags & ENV_FOG) {
@@ -535,6 +537,17 @@ static void material_mode(int flags) {
         if (gRenderSettings.backface) {
             glEnable(GL_CULL_FACE);
             gRenderSettings.backface = false;
+        }
+    }
+    if (flags & MATERIAL_FRONTFACE) {
+        if (!gRenderSettings.frontface) {
+            glCullFace(GL_FRONT); 
+            gRenderSettings.frontface = true;
+        }
+    } else {
+        if (gRenderSettings.frontface) {
+            glCullFace(GL_BACK); 
+            gRenderSettings.frontface = false;
         }
     }
     if (flags & MATERIAL_DECAL) {
@@ -879,6 +892,8 @@ static void pop_render_list(int layer) {
         if (renderList->material) {
             material_set(renderList->material, renderList->flags, 0);
         }
+        rdpq_set_prim_color(renderList->primColour);
+        rdpq_set_env_color(renderList->envColour);
         rspq_block_run(renderList->block);
         MATRIX_POP();
         renderList = renderList->next;
@@ -1161,6 +1176,18 @@ static void render_objects(void) {
                 }
                 Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &m->material;
                 add_render_node(entry, m->block, mat, MATERIAL_NULL, layer);
+                if (obj->flags & OBJ_FLAG_OUTLINE) {
+                    RenderNode *entry2 = (RenderNode *) render_alloc(sizeof(RenderNode), DRAW_XLU);
+                    entry2->matrix = (Matrix *) render_alloc(sizeof(Matrix), DRAW_XLU);
+                    if (m->matrixBehaviour != MTX_NONE) {
+                        set_draw_matrix(entry2->matrix, m->matrixBehaviour, obj->pos, obj->faceAngle, obj->scale);
+                    } else {
+                        memcpy(entry2->matrix, prevMtx, sizeof(Matrix));
+                    }
+                    mtx_scale(entry2->matrix, 1.05f, 1.00f, 1.05f);
+                    entry2->primColour = RGBA32(255, 0, 0, 192);
+                    add_render_node(entry2, m->block, &gOutlineMat, MATERIAL_FRONTFACE, DRAW_XLU);
+                }
                 m = m->next;
             }
         }
