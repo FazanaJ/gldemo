@@ -18,6 +18,7 @@ endif
 
 src = $(wildcard src/*.c)
 src += $(wildcard assets/*.c)
+objects = $(wildcard src/overlays/*.c)
 overlay = $(wildcard src/overlays/*.c)
 scene = $(wildcard src/scenes/*.c)
 assets_ttf = $(wildcard assets/fonts/*.ttf) $(wildcard assets/archives/*.ttf)
@@ -167,17 +168,17 @@ $(MAIN_ELF_EXTERNS): $(DSO_LIST)
 
 n64brew_SRC = src/overlays/boot.c
 filesystem/boot.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
-n64brew_SRC = src/overlays/projectile.c
+n64brew_SRC = src/objects/projectile.c
 filesystem/projectile.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
-n64brew_SRC = src/overlays/player.c
+n64brew_SRC = src/objects/player.c
 filesystem/player.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
-n64brew_SRC = src/overlays/npc.c
+n64brew_SRC = src/objects/npc.c
 filesystem/npc.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
-n64brew_SRC = src/overlays/crate.c
+n64brew_SRC = src/objects/crate.c
 filesystem/crate.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
-n64brew_SRC = src/overlays/barrel.c
+n64brew_SRC = src/objects/barrel.c
 filesystem/barrel.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
-n64brew_SRC = src/overlays/testsphere.c
+n64brew_SRC = src/objects/testsphere.c
 filesystem/testsphere.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 
 n64brew_SRC = src/scenes/intro.c
