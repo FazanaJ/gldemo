@@ -124,6 +124,7 @@ void init_renderer(void) {
     glCullFace(GL_BACK);
     glShadeModel(GL_SMOOTH);
     glDepthMask(GL_TRUE);
+    glDitherModeN64(DITHER_SQUARE_SQUARE);
 #endif
     sBeginModeBlock = rspq_block_end();
 
@@ -1411,7 +1412,7 @@ void render_game(int updateRate, float updateRateF) {
         }
         rdpq_tex_blit(&gScreenshot, 0, 0, NULL);
         rdpq_set_mode_standard();
-        rdpq_mode_dithering(DITHER_SQUARE_NONE);
+        rdpq_mode_dithering(DITHER_SQUARE_SQUARE);
     }
     get_time_snapshot(PP_RENDER, DEBUG_SNAPSHOT_1_END);
     if (gScreenshotStatus <= SCREENSHOT_NONE) {

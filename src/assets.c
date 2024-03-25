@@ -77,8 +77,6 @@ short playerModelFlags[][9] = {
 
 MaterialList *gMaterialListHead;
 MaterialList *gMaterialListTail;
-VoidList *gOverlayListHead = NULL;
-VoidList *gOverlayListTail = NULL;
 ModelList *gModelIDListHead = NULL;
 ModelList *gModelIDListTail = NULL;
 rdpq_font_t *gFonts[FONT_TOTAL];
@@ -216,7 +214,7 @@ int load_texture(Material *material) {
 #endif
     list->loadTimer = 10;
     material->index = list;
-    debugf(" Time: %2.3fs.\n", ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
+    debugf(" Time: %2.3fs.\n", (double) (TIMER_MICROS(DEBUG_SNAPSHOT_1_END) / 1000000.0f));
 #ifdef PUPPYPRINT_DEBUG
     gNumTextures++;
 #endif
@@ -315,7 +313,7 @@ void shadow_generate(Object *obj) {
         y += stepH;
     }
     debugf(" Texture count: %d.", d->texCount);
-    debugf(" Time: %2.3fs.\n", ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
+    debugf(" Time: %2.3fs.\n", (double) (TIMER_MICROS(DEBUG_SNAPSHOT_1_END) / 1000000.0f));
 }
 
 static void object_model_clear(ModelList *entry) {
@@ -404,7 +402,7 @@ void sky_texture_generate(Environment *e) {
 #endif
         x += 32;
     }
-    debugf(" Time: %2.3fs.\n", ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
+    debugf(" Time: %2.3fs.\n", (double) (TIMER_MICROS(DEBUG_SNAPSHOT_1_END) / 1000000.0f));
 }
 
 rspq_block_t *sky_gradient_generate(Environment *e) {
@@ -414,7 +412,7 @@ rspq_block_t *sky_gradient_generate(Environment *e) {
     rdpq_set_mode_standard();
     rdpq_mode_combiner(RDPQ_COMBINER_SHADE);
     rdpq_mode_blender(0);
-    rdpq_mode_dithering(DITHER_SQUARE_NONE);
+    rdpq_mode_dithering(DITHER_SQUARE_SQUARE);
     float col[2][3];
     col[0][0] = e->skyColourTop[0] / 255.0f;
     col[0][1] = e->skyColourTop[1] / 255.0f;
@@ -437,45 +435,17 @@ rspq_block_t *sky_gradient_generate(Environment *e) {
 
 static void init_object_behaviour(Object *obj, int objectID) {
     DEBUG_SNAPSHOT_1();
-    void *addr = NULL;
-    VoidList *list = gOverlayListHead;
-    if (gOverlayListHead) {
-        while (list) {
-            if (list->id == objectID) {
-                addr = list->addr;
-                break;
-            }
-            list = list->next;
-        }
-    }
-
-    if (addr == NULL) {
-        debugf("Loading overlay [%s].", sObjectOverlays[objectID]);
-        list = malloc(sizeof(VoidList));
-        if (gOverlayListHead == NULL) {
-            gOverlayListHead = list;
-            list->prev = NULL;
-        }
-        if (gOverlayListTail) {
-            gOverlayListTail->next = list;
-            list->prev = gOverlayListTail;
-        }
-        gOverlayListTail = list;
-        addr = dlopen(asset_dir(sObjectOverlays[objectID], DFS_OVERLAY), RTLD_LOCAL);
-        list->addr = addr;
-        list->id = objectID;
-        list->next = NULL;
-        list->timer = 10;
+    debugf("Loading overlay [%s].", sObjectOverlays[objectID]);
+    void *addr = dlopen(asset_dir(sObjectOverlays[objectID], DFS_OVERLAY), RTLD_LOCAL);
 #ifdef PUPPYPRINT_DEBUG
         gNumOverlays++;
 #endif
-        debugf(" Time: %2.3fs.\n", ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
-    }
+    debugf(" Time: %2.3fs.\n", (double) (TIMER_MICROS(DEBUG_SNAPSHOT_1_END) / 1000000.0f));
     ObjectEntry *entry = dlsym(addr, "entry");
     obj->header = entry;
     obj->loopFunc = entry->loopFunc;
     obj->flags = entry->flags;
-    obj->overlay = list;
+    obj->overlay = addr;
     obj->hitbox = entry->hitbox;
     if (entry->viewDist) {
         obj->viewDist = entry->viewDist << 4;
@@ -546,39 +516,12 @@ void check_unused_model(Object *obj) {
 #endif
 }
 
-void check_unused_overlay(Object *obj, VoidList *overlay) {
-    ObjectList *objList = gObjectListHead;
-    Object *listObj;
-
-    while (objList) {
-        listObj = objList->obj;
-        if (listObj->overlay == overlay && listObj != obj) {
-            return;
-        }
-        objList = objList->next;
+void check_unused_overlay(Object *obj) {
+    if (obj->overlay) {
+        dlclose(obj->overlay);
     }
-
-    debugf("Freeing overlay [%s]\n", sObjectOverlays[overlay->id]);
-    if (overlay == gOverlayListHead) {
-        if (gOverlayListHead->next) {
-            gOverlayListHead = gOverlayListHead->next;
-            gOverlayListHead->prev = NULL;
-        } else {
-            gOverlayListHead = NULL;
-        }
-    } else {
-        if (overlay == gOverlayListTail) {
-            gOverlayListTail = gOverlayListTail->prev;
-        }
-        overlay->prev->next = overlay->next;
-        if (overlay->next) {
-            overlay->next->prev = overlay->prev;
-        }
-    }
-    dlclose(overlay->addr);
-    free(overlay);
 #ifdef PUPPYPRINT_DEBUG
-        gNumOverlays--;
+    gNumOverlays--;
 #endif
 }
 
@@ -787,7 +730,7 @@ static void load_object_model(Object *obj, int objectID) {
     }
 #elif TINY3D
 #endif
-    debugf(" Time: %2.3fs.\n", ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f);
+    debugf(" Time: %2.3fs.\n", (double) (TIMER_MICROS(DEBUG_SNAPSHOT_1_END) / 1000000.0f));
 
 #ifdef PUPPYPRINT_DEBUG
     gNumModels++;
@@ -842,8 +785,7 @@ void free_object(Object *obj) {
         }
     }
     if (obj->overlay) {
-        rdpq_set_mode_standard();
-        check_unused_overlay(obj, obj->overlay);
+        check_unused_overlay(obj);
     }
     free(obj->entry);
     if (obj->data) {

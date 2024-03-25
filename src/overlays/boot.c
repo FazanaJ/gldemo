@@ -148,7 +148,6 @@ void init_memory(void) {
     if (get_memory_size() == 0x400000) {
         error_print("memory_error.ci8");
     }
-    asset_init_compression(2);
 }
 
 void init_controller(void) {

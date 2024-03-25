@@ -167,7 +167,7 @@ void process_profiler(void) {
 
     if ((gGlobalTimer % 120) == 0) {
         debugf("FPS: %2.2f | CPU: %dus (%d%%) | RSP: %dus (%d%%) | RDP: %dus (%d%%)\n", 
-        display_get_fps(), gDebugData->cpuTime[TIME_TOTAL], gDebugData->cpuTime[TIME_TOTAL] / 333,
+        (double ) display_get_fps(), gDebugData->cpuTime[TIME_TOTAL], gDebugData->cpuTime[TIME_TOTAL] / 333,
         gDebugData->rspTime[TIME_TOTAL], gDebugData->rspTime[TIME_TOTAL] / 333, gDebugData->rdpTime[TIME_TOTAL], gDebugData->rdpTime[TIME_TOTAL] / 333);
     }
 }
@@ -186,7 +186,7 @@ void profiler_draw_minimal(void) {
     }
     rdpq_fill_rectangle(8, 6, 96, 28 + boxHeight);
     rdpq_mode_blender(0);
-    rdpq_text_printf(NULL, FONT_ARIAL, 8, 16, "FPS: %2.2f", display_get_fps());
+    rdpq_text_printf(NULL, FONT_ARIAL, 8, 16, "FPS: %2.2f", (double ) display_get_fps());
     rdpq_text_printf(NULL, FONT_ARIAL, 8, 26, "CPU: %dus (%d%%)", gDebugData->cpuTime[TIME_TOTAL], gDebugData->cpuTime[TIME_TOTAL] / 333);
     boxHeight = 0;
     if (gDebugData->rspTime[TIME_TOTAL] > 10) {

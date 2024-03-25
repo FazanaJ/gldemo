@@ -3,7 +3,10 @@ T3D_INST = ../t3d
 include $(N64_INST)/include/n64.mk
 include $(T3D_INST)/t3d.mk
 
-
+DSO_COMPRESS_LEVEL = 2
+N64_ROM_ELFCOMPRESS = 2
+ASSET_LEVEL_COMPRESS = 2
+ARCHIVE_LEVEL_COMPRESS = 3
 GFXUCODE := opengl
 
 $(eval $(call validate-option,GFXUCODE,opengl tiny3d))
@@ -29,7 +32,20 @@ assets_opus = $(wildcard assets/opus/*.wav)
 C_DEFINES := $(foreach d,$(DEFINES),-D$(d))
 DEF_INC_CFLAGS := $(foreach i,$(INCLUDE_DIRS),-I$(i)) $(C_DEFINES)
 
-N64_CFLAGS += -Ofast $(DEF_INC_CFLAGS)
+N64_CFLAGS += $(DEF_INC_CFLAGS) \
+	-Ofast \
+	-Werror=double-promotion \
+	-mno-check-zero-division \
+	-funsafe-math-optimizations \
+	-fsingle-precision-constant \
+	-fno-unroll-loops \
+	-fno-peel-loops \
+	-falign-functions=32 \
+	-fno-merge-constants \
+    -fno-strict-aliasing \
+	-ffast-math \
+    -mips3 \
+
 MAIN_ELF_EXTERNS := $(BUILD_DIR)/gldemo.externs
 DSO_MODULES = boot.dso projectile.dso player.dso npc.dso intro.dso testarea.dso testarea2.dso crate.dso barrel.dso testsphere.dso testarea3.dso
 DSO_LIST = $(addprefix filesystem/, $(DSO_MODULES))
@@ -50,7 +66,7 @@ endif
 MKSPRITE_FLAGS ?=
 MKFONT_FLAGS ?=
 AUDIOCONV_FLAGS ?= --wav-compress 1
-COMPRESS_LEVEL ?= --compress 3
+COMPRESS_LEVEL ?= --compress $(ASSET_LEVEL_COMPRESS)
 
 all: gldemo.z64
 
@@ -64,7 +80,7 @@ filesystem/%.font64: assets/fonts/%.ttf
 filesystem/%.font64: assets/archives/%.ttf
 	@mkdir -p $(dir $@)
 	@echo "    [FONT] $@"
-	@$(N64_MKFONT) $(MKFONT_FLAGS) --compress 3 -o filesystem "$<"
+	@$(N64_MKFONT) $(MKFONT_FLAGS) --compress $(ARCHIVE_LEVEL_COMPRESS) -o filesystem "$<"
 
 filesystem/%.sprite: assets/textures/character/%.png
 	@mkdir -p $(dir $@)
@@ -130,7 +146,7 @@ filesystem/%.model64: assets/models/%.glb
 filesystem/%.model64: assets/archives/%.glb
 	@mkdir -p $(dir $@)
 	@echo "    [MODEL] $@"
-	@$(N64_MKMODEL) --compress 3 -o filesystem $<
+	@$(N64_MKMODEL) --compress $(ARCHIVE_LEVEL_COMPRESS) -o filesystem $<
 else ifeq ($(GFXUCODE),tiny3d)
 filesystem/%.t3dm: assets/models/%.glb
 	@mkdir -p $(dir $@)
@@ -142,7 +158,7 @@ filesystem/%.t3dm: assets/archives/%.glb
 	@mkdir -p $(dir $@)
 	@echo "    [MODEL] $@"
 	$(T3D_GLTF_TO_3D) "$<" $@
-	$(N64_BINDIR)/mkasset --compress 3 -o filesystem $@
+	$(N64_BINDIR)/mkasset --compress $(ARCHIVE_LEVEL_COMPRESS) -o filesystem $@
 endif
 
 $(BUILD_DIR)/gldemo.dfs: $(assets_conv) $(DSO_LIST)

@@ -90,7 +90,7 @@ void input_update(int updateRate) {
     // Cap the reading at 75, which is around three quarters of the way, then normalise the stick mag from 0-1.
     // The end result is a smooth increase from neutral to furthest, with plenty of leeway for degraded sticks.
     controller->stickX[0] = stick.stick_x;
-    if (fabs(controller->stickX[0]) < DEADZONE) {
+    if (fabs(controller->stickX[0]) < (int) DEADZONE) {
         controller->stickX[0] = 0;
     } else {
         if (controller->stickX[0] > 0) {
@@ -106,7 +106,7 @@ void input_update(int updateRate) {
         }
     }
     controller->stickY[0] = stick.stick_y;
-    if (fabs(controller->stickY[0]) < DEADZONE) {
+    if (fabs(controller->stickY[0]) < (int) DEADZONE) {
         controller->stickY[0] = 0;
     } else {
         if (controller->stickY[0] > 0) {

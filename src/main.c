@@ -89,12 +89,13 @@ static inline void update_game_time(int *updateRate, float *updateRateF) {
 }
 
 void boot_game(void) {
+    asset_init_compression(2);
     dfs_init(DFS_DEFAULT_LOCATION);
     void *bootOvl = dlopen(asset_dir("boot", DFS_OVERLAY), RTLD_LOCAL);
     void (*func)() = dlsym(bootOvl, "init_game");
     (*func)();
     dlclose(bootOvl);
-    debugf("Game booted in %2.3fs.\n", ((float) TIMER_MICROS(timer_ticks())) / 1000000.0f);
+    debugf("Game booted in %2.3fs.\n", (double) (TIMER_MICROS(timer_ticks()) / 1000000.0f));
 }
 
 int main(void) {

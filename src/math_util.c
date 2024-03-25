@@ -76,7 +76,7 @@ float timer_float(float timer) {
 static int atan2_lookup(float y, float x) {
     int ret;
 
-    if (x == 0.0f) {
+    if (fabsf(x) <= 0.001f) {
         ret = gArctanTable[0];
     } else {
         ret = gArctanTable[(int)(y / x * 1024 + 0.5f)];

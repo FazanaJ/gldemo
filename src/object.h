@@ -144,7 +144,7 @@ typedef struct Object {
 	unsigned short faceAngle[3];
 	short objectID;
 	struct ObjectEntry *header;
-	struct VoidList *overlay;
+	void *overlay;
 	void (*loopFunc)(struct Object *obj, int updateRate, float updateRateF);
 	struct Object *parent;
 	float viewDist;
@@ -233,14 +233,6 @@ typedef struct ParticleList {
 	struct ParticleList *next;
 	struct ParticleList *prev;
 } ParticleList;
-
-typedef struct VoidList {
-	void *addr;
-	struct VoidList *next;
-	struct VoidList *prev;
-	short id;
-	short timer;
-} VoidList;
 
 typedef struct ModelList {
 	void *model64;

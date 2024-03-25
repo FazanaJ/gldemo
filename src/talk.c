@@ -213,18 +213,27 @@ static void talk_render_text(void) {
         .line_spacing = -8,
     };
 
+    if (t->optionsVisible == false) {
+        rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(0, 0, 0, 127),});
+        rdpq_text_print(&parms, FONT_MVBOLI, 5, display_get_height() - 59, sTalkNames[curText[t->curLine].talkName]);
+    }
     rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(0, 0, 0, 255),});
     if (t->optionsVisible == false) {
         rdpq_text_print(&parms, FONT_MVBOLI, 4, display_get_height() - 60, sTalkNames[curText[t->curLine].talkName]);
     }
     if (t->curChar > 0) {
         if (t->optionsVisible == false) {
+            rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(0, 0, 0, 127),});
+            rdpq_text_printn(&parms, FONT_MVBOLI, 9, display_get_height() - 47, curText[t->curLine].string, t->curChar);
+            rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(0, 0, 0, 255),});
             rdpq_text_printn(&parms, FONT_MVBOLI, 8, display_get_height() - 48, curText[t->curLine].string, t->curChar);
         } else {
             TalkOptions *opt = t->curText[t->curLine].opt;
             int optCount = opt[0].nextID;
 
             for (int i = 1; i < optCount + 1; i++) {
+                rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(0, 0, 0, 127),});
+                rdpq_text_print(&parms, FONT_MVBOLI, 9, display_get_height() - 57 + (i * 10), opt[i].string);
                 if (t->curOption + 1 == i) {
                     int sineCol = 128 + (32 * sins(gGameTimer * 0x400));
                     rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, sineCol, sineCol, 255),});

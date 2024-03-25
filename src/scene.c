@@ -313,6 +313,6 @@ void load_scene(int sceneID) {
     camera_init();
     gSceneUpdate = 0;
 #ifdef PUPPYPRINT_DEBUG
-    debugf("Scene [%s] loaded in %2.3fs. Chunks: %d\n", sSceneTable[sceneID], ((float) TIMER_MICROS(DEBUG_SNAPSHOT_1_END)) / 1000000.0f, chunkCount);
+    debugf("Scene [%s] loaded in %2.3fs. Chunks: %d\n", sSceneTable[sceneID], (double) (TIMER_MICROS(DEBUG_SNAPSHOT_1_END) / 1000000.0f), chunkCount);
 #endif
 }
