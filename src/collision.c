@@ -185,7 +185,7 @@ typedef struct ModelPrim {
 float collision_floor(float x, float y, float z, float *norm, int w) {
     #if OPENGL
     DEBUG_SNAPSHOT_1();
-    SceneChunk *chunk = sCurrentScene->chunkList;
+    SceneChunk *chunk = gCurrentScene->chunkList;
     float peakY = -30000.0f;
     float scale = 1.0f;
     float normY = 1.0f;
@@ -236,7 +236,7 @@ float collision_floor(float x, float y, float z, float *norm, int w) {
 void object_collide(Object *obj) {
     #if OPENGL
     DEBUG_SNAPSHOT_1();
-    SceneChunk *chunk = sCurrentScene->chunkList;
+    SceneChunk *chunk = gCurrentScene->chunkList;
     float peakY = -30000.0f;
     float scale = 1.0f;
     float recordNorm = 1.0f;

@@ -10,8 +10,9 @@
 #include "debug.h"
 #include "hud.h"
 #include "screenshot.h"
+#include "math_util.h"
 
-SceneBlock *sCurrentScene;
+SceneBlock *gCurrentScene;
 Environment *gEnvironment;
 char gSceneUpdate;
 
@@ -83,14 +84,14 @@ static void setup_fog(SceneHeader *header) {
 }
 
 static void clear_scene(void) {
-    SceneChunk *curChunk = sCurrentScene->chunkList;
+    SceneChunk *curChunk = gCurrentScene->chunkList;
     clear_objects();
     if (sRenderSkyBlock) {
         rspq_block_free(sRenderSkyBlock);
         sRenderSkyBlock = NULL;
     }
     gPlayer = NULL;
-    if (sCurrentScene->model) {
+    if (gCurrentScene->model) {
         while (curChunk) {
             SceneMesh *curMesh = curChunk->meshList;
             while (curMesh) {
@@ -121,13 +122,13 @@ static void clear_scene(void) {
         }
         //free(gEnvironment);
     }
-    if (sCurrentScene->model) {
-        MODEL_FREE(sCurrentScene->model);
+    if (gCurrentScene->model) {
+        MODEL_FREE(gCurrentScene->model);
     }
-    if (sCurrentScene->overlay) {
-        dlclose(sCurrentScene->overlay);
+    if (gCurrentScene->overlay) {
+        dlclose(gCurrentScene->overlay);
     }
-    free(sCurrentScene);
+    free(gCurrentScene);
 }
 
 #if OPENGL
@@ -224,11 +225,11 @@ void load_scene(int sceneID) {
     if (gScreenshotStatus == -1) {
         screenshot_clear();
     }
-    if (sCurrentScene) {
+    if (gCurrentScene) {
         clear_scene();
     }
-    sCurrentScene = malloc(sizeof(SceneBlock));
-    SceneBlock *s = sCurrentScene;
+    gCurrentScene = malloc(sizeof(SceneBlock));
+    SceneBlock *s = gCurrentScene;
     s->chunkList = NULL;
     s->overlay = dlopen(asset_dir(sSceneTable[sceneID], DFS_OVERLAY), RTLD_LOCAL);
     SceneHeader *header = dlsym(s->overlay, "header");
@@ -237,6 +238,8 @@ void load_scene(int sceneID) {
     s->model = NULL;
 #if OPENGL
     if (header->model) {
+        int lowPos[3] = {9999999, 9999999, 9999999};
+        int highPos[3] = {-9999999, -9999999, -9999999};
         s->model = MODEL_LOAD(header->model);
         s->sceneID = sceneID;
         int numMeshes = model64_get_mesh_count(s->model);
@@ -262,9 +265,15 @@ void load_scene(int sceneID) {
                 m->mesh = model64_get_primitive(mesh, j);
                 m->material = malloc(sizeof(Material));
                 m->material->index = NULL;
-                m->material->textureID = sSceneTexIDs[sCurrentScene->sceneID][j];
-                m->material->flags = sSceneMeshFlags[sCurrentScene->sceneID][j];
+                m->material->textureID = sSceneTexIDs[gCurrentScene->sceneID][j];
+                m->material->flags = sSceneMeshFlags[gCurrentScene->sceneID][j];
                 scene_mesh_boundbox(c, m);
+                lowPos[0] = MIN(lowPos[0], c->bounds[0][0]);
+                lowPos[1] = MIN(lowPos[1], c->bounds[0][1]);
+                lowPos[2] = MIN(lowPos[2], c->bounds[0][2]);
+                highPos[0] = MAX(highPos[0], c->bounds[1][0]);
+                highPos[1] = MAX(highPos[1], c->bounds[1][1]);
+                highPos[2] = MAX(highPos[2], c->bounds[1][2]);
                 m->next = NULL;
                 m->renderBlock = NULL;
                 if (c->meshList == NULL) {
@@ -283,6 +292,12 @@ void load_scene(int sceneID) {
             }
             tailC = c;
         }
+        s->bounds[0][0] = lowPos[0];
+        s->bounds[0][1] = lowPos[1];
+        s->bounds[0][2] = lowPos[2];
+        s->bounds[1][0] = highPos[0];
+        s->bounds[1][1] = highPos[1];
+        s->bounds[1][2] = highPos[2];
     }
 #endif
     

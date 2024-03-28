@@ -25,7 +25,8 @@ scene = $(wildcard src/scenes/*.c)
 assets_ttf = $(wildcard assets/fonts/*.ttf) $(wildcard assets/archives/*.ttf)
 assets_png = $(wildcard assets/textures/character/*.png) $(wildcard assets/textures/environment/*.png) $(wildcard assets/archives/*.png) \
 			 $(wildcard assets/textures/hud/*.png) $(wildcard assets/textures/icons/*.png) $(wildcard assets/textures/misc/*.png) \
-			 $(wildcard assets/textures/props/*.png) $(wildcard assets/textures/skyboxes/*.png) $(wildcard assets/textures/talksprites/*.png)
+			 $(wildcard assets/textures/props/*.png) $(wildcard assets/textures/skyboxes/*.png) $(wildcard assets/textures/talksprites/*.png) \
+			 $(wildcard assets/textures/maps/*.png)
 assets_wav = $(wildcard assets/sounds/*.wav)
 assets_gltf = $(wildcard assets/models/*.glb) $(wildcard assets/archives/*.glb)
 assets_xm1 = $(wildcard assets/xm/*.xm)
@@ -61,7 +62,8 @@ DSO_MODULES = boot.dso \
 	barrel.dso \
 	testsphere.dso \
 	testarea3.dso \
-	healthbar.dso
+	healthbar.dso \
+	minimap.dso
 
 DSO_LIST = $(addprefix filesystem/, $(DSO_MODULES))
 
@@ -132,6 +134,11 @@ filesystem/%.sprite: assets/textures/skyboxes/%.png
 	@echo "    [SPRITE] $@"
 	@$(N64_MKSPRITE) $(COMPRESS_LEVEL) -o "$(dir $@)" "$<"
 
+filesystem/%.sprite: assets/textures/maps/%.png
+	@mkdir -p $(dir $@)
+	@echo "    [SPRITE] $@"
+	@$(N64_MKSPRITE) --compress 3 -o "$(dir $@)" "$<"
+
 filesystem/%.sprite: assets/archives/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
@@ -184,6 +191,8 @@ n64brew_SRC = src/overlays/boot.c
 filesystem/boot.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 n64brew_SRC = src/overlays/healthbar.c
 filesystem/healthbar.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
+n64brew_SRC = src/overlays/minimap.c
+filesystem/minimap.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 
 n64brew_SRC = src/objects/projectile.c
 filesystem/projectile.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)

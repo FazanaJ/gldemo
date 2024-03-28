@@ -57,6 +57,14 @@ typedef struct ObjectMap {
     short z;
 } ObjectMap;
 
+typedef struct SceneMap {
+    char *texture;
+    float scaleX;
+    float scaleY;
+    char offsetX;
+    char offsetY;
+} SceneMap;
+
 typedef struct SceneHeader {
     char *model;
     struct ObjectMap *objectMap;
@@ -70,6 +78,7 @@ typedef struct SceneHeader {
     int flags;
     Texture skyTexture;
     unsigned short chunkCount;
+    SceneMap *map;
 } SceneHeader;
 
 typedef struct SceneBlock {
@@ -77,9 +86,10 @@ typedef struct SceneBlock {
     SceneChunk *chunkList;
     int sceneID;
     void *overlay;
+    float bounds[2][3];
 } SceneBlock;
 
-extern SceneBlock *sCurrentScene;
+extern SceneBlock *gCurrentScene;
 extern Environment *gEnvironment;
 extern char gSceneUpdate;
 extern char *sSceneTable[SCENE_TOTAL];

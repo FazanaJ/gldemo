@@ -176,7 +176,7 @@ static void render_health_bg(int numHealth, int hpMax) {
     }    
 }
 
-void loop(float updateRateF) {
+void loop(int updateRate, float updateRateF) {
     if (gPlayer && gPlayer->data) {
         PlayerData *data = (PlayerData *) gPlayer->data;
 

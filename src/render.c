@@ -1000,8 +1000,8 @@ static int render_world_visible(SceneChunk *c) {
 static void render_world(int updateRate) {
     DEBUG_SNAPSHOT_1();
     int i = 0;
-    if (sCurrentScene && sCurrentScene->model) {
-        SceneChunk *s = sCurrentScene->chunkList;
+    if (gCurrentScene && gCurrentScene->model) {
+        SceneChunk *s = gCurrentScene->chunkList;
 
         while (s != NULL) {
             if (gScreenshotStatus != SCREENSHOT_SHOW && render_world_visible(s)) {

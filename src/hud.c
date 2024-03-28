@@ -316,10 +316,34 @@ static void render_camera_hud(void) {
 }
 
 static char sRenderHealth = false;
+static char sRenderMinimap = false;
+
+/*void overlay_run(int updateRate, int updateRateF, char *name, int var, void (**func)(float, int), void **ovl) {
+    if (var) {
+        if (*ovl == NULL) {
+            //debugf("Loading overlay: [%s]\n", name);
+            *ovl = dlopen(asset_dir(name, DFS_OVERLAY), RTLD_LOCAL);
+            void (*init)() = dlsym(*ovl, "init");
+            (*init)();
+            *func = dlsym(*ovl, "loop");
+        }
+        (**func)(updateRate, updateRateF);
+    } else {
+        if (*ovl != NULL) {
+            //debugf("Closing overlay: [%s]\n", name);
+            void (*destroy)() = dlsym(*ovl, "destroy");
+            (*destroy)();
+            dlclose(*ovl);
+            *ovl = NULL;
+        }
+    }
+}*/
 
 void hud_healthbar(float updateRateF) {
     static void *ovl = NULL;
-    static void (*func)(float);
+    static void (*func)(int, float);
+    //overlay_run(0, updateRateF, "healthbar", sRenderHealth, &func, &ovl);
+
 
     if (sRenderHealth) {
         if (ovl == NULL) {
@@ -328,7 +352,31 @@ void hud_healthbar(float updateRateF) {
             (*init)();
             func = dlsym(ovl, "loop");
         }
-        (*func)(updateRateF);
+        (*func)(0, updateRateF);
+    } else {
+        if (ovl != NULL) {
+            void (*destroy)() = dlsym(ovl, "destroy");
+            (*destroy)();
+            dlclose(ovl);
+            ovl = NULL;
+        }
+    }
+}
+
+void hud_minimap(void) {
+    static void *ovl = NULL;
+    static void (*func)(int, float);
+    //overlay_run(0, updateRateF, "healthbar", sRenderHealth, &func, &ovl);
+
+
+    if (sRenderMinimap) {
+        if (ovl == NULL) {
+            ovl = dlopen(asset_dir("minimap", DFS_OVERLAY), RTLD_LOCAL);
+            void (*init)() = dlsym(ovl, "init");
+            (*init)();
+            func = dlsym(ovl, "loop");
+        }
+        (*func)(0, 0);
     } else {
         if (ovl != NULL) {
             void (*destroy)() = dlsym(ovl, "destroy");
@@ -346,13 +394,16 @@ void render_hud(int updateRate, float updateRateF) {
         return;
     }
     sRenderHealth = false;
+    sRenderMinimap = false;
     matrix_ortho();
     if (gPlayer && gMenuStatus == MENU_CLOSED) {
         render_ztarget();
         //render_health(updateRateF);
         sRenderHealth = true;
+        sRenderMinimap = true;
     }
     hud_healthbar(updateRateF);
+    hud_minimap();
     render_hud_subtitles();
 
     if (input_pressed(INPUT_CDOWN, 0)) {
