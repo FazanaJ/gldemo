@@ -150,6 +150,17 @@ void init_renderer(void) {
     }
 }
 
+static inline void mtx_invalidate(void* addr) {
+    asm volatile (
+        "cache 0xD, 0x00(%0);"
+        "cache 0xD, 0x10(%0);"
+        "cache 0xD, 0x20(%0);"
+        "cache 0xD, 0x30(%0);"
+        :            
+        : "r"(addr)        
+    );
+}
+
 static inline void set_frustrum(float l, float r, float b, float t, float n, float f) {
     DEBUG_SNAPSHOT_1();
     DEBUG_MATRIX_OP();

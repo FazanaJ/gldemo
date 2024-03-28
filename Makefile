@@ -7,7 +7,8 @@ DSO_COMPRESS_LEVEL = 2
 N64_ROM_ELFCOMPRESS = 2
 ASSET_LEVEL_COMPRESS = 2
 ARCHIVE_LEVEL_COMPRESS = 3
-GFXUCODE := opengl
+GFXUCODE = opengl
+SAVETYPE = eeprom16k
 
 $(eval $(call validate-option,GFXUCODE,opengl tiny3d))
 ifeq ($(GFXUCODE),opengl)
@@ -18,7 +19,7 @@ endif
 
 src = $(wildcard src/*.c)
 src += $(wildcard assets/*.c)
-objects = $(wildcard src/overlays/*.c)
+objects = $(wildcard src/objects/*.c)
 overlay = $(wildcard src/overlays/*.c)
 scene = $(wildcard src/scenes/*.c)
 assets_ttf = $(wildcard assets/fonts/*.ttf) $(wildcard assets/archives/*.ttf)
@@ -48,7 +49,20 @@ N64_CFLAGS += $(DEF_INC_CFLAGS) \
     -mips3 \
 
 MAIN_ELF_EXTERNS := $(BUILD_DIR)/gldemo.externs
-DSO_MODULES = boot.dso projectile.dso player.dso npc.dso intro.dso testarea.dso testarea2.dso crate.dso barrel.dso testsphere.dso testarea3.dso
+
+DSO_MODULES = boot.dso \
+	projectile.dso \
+	player.dso \
+	npc.dso \
+	intro.dso \
+	testarea.dso \
+	testarea2.dso \
+	crate.dso \
+	barrel.dso \
+	testsphere.dso \
+	testarea3.dso \
+	healthbar.dso
+
 DSO_LIST = $(addprefix filesystem/, $(DSO_MODULES))
 
 assets_conv = $(addprefix filesystem/,$(notdir $(assets_ttf:%.ttf=%.font64))) \
@@ -168,6 +182,9 @@ $(MAIN_ELF_EXTERNS): $(DSO_LIST)
 
 n64brew_SRC = src/overlays/boot.c
 filesystem/boot.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
+n64brew_SRC = src/overlays/healthbar.c
+filesystem/healthbar.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
+
 n64brew_SRC = src/objects/projectile.c
 filesystem/projectile.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 n64brew_SRC = src/objects/player.c
@@ -191,7 +208,7 @@ n64brew_SRC = src/scenes/testarea3.c
 filesystem/testarea3.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 
 gldemo.z64: N64_ROM_TITLE="Smile Emote"
-gldemo.z64: N64_ROM_SAVETYPE = eeprom16k
+gldemo.z64: N64_ROM_SAVETYPE = $(SAVETYPE)
 gldemo.z64: $(BUILD_DIR)/gldemo.dfs $(BUILD_DIR)/gldemo.msym
 
 $(BUILD_DIR)/gldemo.msym: $(BUILD_DIR)/gldemo.elf

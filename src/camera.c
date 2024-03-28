@@ -64,6 +64,7 @@ static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
     PlayerData *data = (PlayerData *) c->parent->data;
 
     if (gMenuStatus == MENU_CLOSED) {
+        c->yawTarget -= stickX * 8.0f;
         camera_shake(c, updateRate, updateRateF);
         if (input_held(INPUT_Z)) {
             c->yawTarget = data->cameraAngle + 0x8000;

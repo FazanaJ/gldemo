@@ -250,6 +250,21 @@ void loop(Object *obj, int updateRate, float updateRateF) {
         player_input(obj, data);
     }
 
+    if (input_pressed(INPUT_DLEFT, 0)) {
+        data->health--;
+    }
+    if (input_pressed(INPUT_DRIGHT, 0)) {
+        data->health++;
+    }
+    if (input_pressed(INPUT_DDOWN, 0)) {
+        data->healthMax--;
+        if (data->health > data->healthMax) {
+            data->health = data->healthMax;
+        }
+    }
+    if (input_pressed(INPUT_DUP, 0)) {
+        data->healthMax++;
+    }
     Object *targetObj = find_nearest_object_facing(obj, OBJ_NPC, 30.0f, 0x3000, obj->faceAngle[1]);
     if (targetObj) {
         if (targetObj->objectID == OBJ_NPC && DIST3(obj->pos, targetObj->pos) < 10.0f * 10.0f) {
