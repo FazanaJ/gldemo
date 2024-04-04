@@ -15,6 +15,14 @@ ObjectMap objects[] = {
     {-1, MAP_CLU, /*Yaw*/ 0, /*X*/ 75, /*Y*/ -75, /*Z*/ 0},
 };
 
+SceneMap map = {
+    "testarea2.i4",
+    1.0f,
+    1.0f,
+    15,
+    22,
+};
+
 SceneHeader header = {
     /*Model*/           "testarea2",
     /*Objects*/         objects, 
@@ -26,6 +34,7 @@ SceneHeader header = {
     /*Sky Top*/         {108, 60, 24},
     /*Sky Bottom*/      {143, 95, 50},
     /*Flags*/           ENV_FOG,
-    /*Sky Texture*/     TEXTURE_SKYBOX1,
+    /*Sky Texture*/     -1,
     /*Model Count*/     1,
+    /*Map*/             &map,
 };

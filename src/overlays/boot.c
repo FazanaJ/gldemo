@@ -172,6 +172,7 @@ void init_audio(void) {
     for (int i = 0; i < CHANNEL_MAX_NUM; i++) {
         gChannelVol[i] = 1.0f;
     }
+    mixer_ch_set_limits(CHANNEL_VOICE, 16, 48000, 0);
 }
 
 void init_game(void) {

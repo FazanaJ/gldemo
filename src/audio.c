@@ -65,20 +65,22 @@ static void update_sequence(int updateRate) {
     if (sNextSequenceID != sCurrentSequenceID) {
         sSequenceFadeTimer -= updateRate;
         if (sSequenceFadeTimer < 0) {
-            SequenceData *s = &sSequenceTable[sNextSequenceID];
-            sSequenceFadeTimer = 0;
             if (sXMPlayer.fh) {
                 xm64player_close(&sXMPlayer);
             }
-            xm64player_open(&sXMPlayer, asset_dir(s->seqPath, DFS_XM64));
-            xm64player_set_vol(&sXMPlayer, gMusicVolume);
-            xm64player_play(&sXMPlayer, gSoundChannelNum - s->channelCount);
-            for (int i = gSoundChannelNum - s->channelCount; i < CHANNEL_MAX_NUM; i++) {
-                gChannelVol[i] = 1.0f;
+            if (sNextSequenceID != -1) {
+                SequenceData *s = &sSequenceTable[sNextSequenceID];
+                xm64player_open(&sXMPlayer, asset_dir(s->seqPath, DFS_XM64));
+                xm64player_set_vol(&sXMPlayer, gMusicVolume);
+                xm64player_play(&sXMPlayer, gSoundChannelNum - s->channelCount);
+                for (int i = gSoundChannelNum - s->channelCount; i < CHANNEL_MAX_NUM; i++) {
+                    gChannelVol[i] = 1.0f;
+                }
+                set_music_volume(gMusicVolume);
             }
-            set_music_volume(gMusicVolume);
+            sSequenceFadeTimer = 0;
             sCurrentSequenceID = sNextSequenceID;
-        } else {
+        } else if (sCurrentSequenceID != -1) {
             float fade;
             fade = ((float) sSequenceFadeTimer / (float) sSequenceFadeTimerSet) * gMusicVolume;
             if (fade < 0.0001f) {

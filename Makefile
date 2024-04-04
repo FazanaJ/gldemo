@@ -3,12 +3,18 @@ T3D_INST = ../t3d
 include $(N64_INST)/include/n64.mk
 include $(T3D_INST)/t3d.mk
 
-DSO_COMPRESS_LEVEL = 2
-N64_ROM_ELFCOMPRESS = 2
+FAST_COMPILE = true
 ASSET_LEVEL_COMPRESS = 2
 ARCHIVE_LEVEL_COMPRESS = 3
 GFXUCODE = opengl
 SAVETYPE = eeprom16k
+ifeq ($(FAST_COMPILE),true)
+  N64_ROM_ELFCOMPRESS = 1
+  DSO_COMPRESS_LEVEL = 1
+else
+  N64_ROM_ELFCOMPRESS = 3
+  DSO_COMPRESS_LEVEL = 2
+endif
 
 $(eval $(call validate-option,GFXUCODE,opengl tiny3d))
 ifeq ($(GFXUCODE),opengl)
