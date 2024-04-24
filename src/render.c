@@ -1269,7 +1269,8 @@ static void generate_dynamic_shadows(void) {
             gl_context_begin();
 #endif
             MATRIX_PUSH();
-            mtx_lookat(-11.0f, 7.0f, 0.0f, 11.0f, 7.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+            mtx_lookat(obj->gfx->dynamicShadow->camPos[0], obj->gfx->dynamicShadow->camPos[1], obj->gfx->dynamicShadow->camPos[2],
+                       obj->gfx->dynamicShadow->camFocus[0], obj->gfx->dynamicShadow->camFocus[1], obj->gfx->dynamicShadow->camFocus[2], 0.0f, 1.0f, 0.0f);
             obj->gfx->dynamicShadow->staleTimer = 10;
             ObjectModel *m = obj->gfx->listEntry->entry;
             if (obj->gfx->listEntry->active == false) {

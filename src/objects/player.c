@@ -309,7 +309,9 @@ DynamicShadowData shadow = {
     .texH = 192,
     .planeW = 20.0f,
     .planeH = 45.0f,
-    .offset = -7.0f
+    .offset = -7.0f,
+    .camPos = {-11.0f, 7.0f, 0.0f},
+    .camFocus = {11.0f, 7.0f, 0.0f},
 };
 
 Hitbox bbox = {

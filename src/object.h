@@ -79,6 +79,8 @@ typedef struct DynamicShadowData {
 	float planeW;
 	float planeH;
 	float offset;
+	float camPos[3];
+	float camFocus[3];
 } DynamicShadowData;
 
 typedef struct DynamicShadow {
@@ -93,6 +95,8 @@ typedef struct DynamicShadow {
 	unsigned char texCount;
 	signed char staleTimer;
 	unsigned short angle[3];
+	float camPos[3];
+	float camFocus[3];
 	GLuint tex[9];
 } DynamicShadow;
 

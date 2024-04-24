@@ -261,6 +261,12 @@ void shadow_generate(Object *obj) {
     d->planeW = obj->header->dynamicShadow->planeW;
     d->planeH = obj->header->dynamicShadow->planeH;
     d->offset = obj->header->dynamicShadow->offset;
+    d->camPos[0] = obj->header->dynamicShadow->camPos[0];
+    d->camPos[1] = obj->header->dynamicShadow->camPos[1];
+    d->camPos[2] = obj->header->dynamicShadow->camPos[2];
+    d->camFocus[0] = obj->header->dynamicShadow->camFocus[0];
+    d->camFocus[1] = obj->header->dynamicShadow->camFocus[1];
+    d->camFocus[2] = obj->header->dynamicShadow->camFocus[2];
     d->angle[0] = 0;
     d->angle[1] = 0;
     d->angle[2] = 0;
