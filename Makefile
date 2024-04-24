@@ -69,7 +69,8 @@ DSO_MODULES = boot.dso \
 	testsphere.dso \
 	testarea3.dso \
 	healthbar.dso \
-	minimap.dso
+	minimap.dso \
+	options.dso
 
 DSO_LIST = $(addprefix filesystem/, $(DSO_MODULES))
 
@@ -199,6 +200,8 @@ n64brew_SRC = src/overlays/healthbar.c
 filesystem/healthbar.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 n64brew_SRC = src/overlays/minimap.c
 filesystem/minimap.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
+n64brew_SRC = src/overlays/options.c
+filesystem/options.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 
 n64brew_SRC = src/objects/projectile.c
 filesystem/projectile.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)

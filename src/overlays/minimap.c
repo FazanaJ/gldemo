@@ -66,6 +66,7 @@ void init(void) {
     sMapDrawSizeY = surf.height;
     sMapSizeX = surf.width * sMiniMap->scaleX;
     sMapSizeY = surf.height * sMiniMap->scaleY;
+    assertf(gCurrentScene->bounds[0][0] < gCurrentScene->bounds[1][0] && gCurrentScene->bounds[0][2] < gCurrentScene->bounds[1][2], "Level boundaries are not usable.");
     sMapBoundsX = gCurrentScene->bounds[1][0] - gCurrentScene->bounds[0][0];
     sMapBoundsZ = gCurrentScene->bounds[1][2] - gCurrentScene->bounds[0][2];
     sMapOpacityTarget = 1.0f;

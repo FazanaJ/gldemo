@@ -403,7 +403,9 @@ void render_hud(int updateRate, float updateRateF) {
         sRenderMinimap = true;
     }
     hud_healthbar(updateRateF);
+#if OPENGL
     hud_minimap();
+#endif
     render_hud_subtitles();
 
     if (input_pressed(INPUT_CDOWN, 0)) {

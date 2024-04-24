@@ -22,20 +22,20 @@
 char gMenuStatus = MENU_TITLE;
 char gMenuPrev[NUM_MENU_PREVS];
 char gIsPal = false;
-char sNumOptions = 0;
 static char sMenuSwapTimer = 0;
-static short sMenuSelection[2];
+static char sConfigMenu = false;
+short gMenuSelection[2];
 static short sMenuSelectionPrev[NUM_MENU_PREVS][2];
 static char sMenuSelectionTimer[2] = {0, 0};
 static char sMenuSelectionType[2] = {0, 0};
 static unsigned char sMenuStackPos = 0;
-static MenuListRoot *sMenuDisplay = NULL;
+MenuListRoot *gMenuDisplay = NULL;
 
-static void free_menu_display(void) {
-    if (sMenuDisplay) {
-        if (sMenuDisplay->list) {
-            MenuListEntry *curList = sMenuDisplay->tail;
-            MenuListEntry *prev = sMenuDisplay->tail;
+void free_menu_display(void) {
+    if (gMenuDisplay) {
+        if (gMenuDisplay->list) {
+            MenuListEntry *curList = gMenuDisplay->tail;
+            MenuListEntry *prev = gMenuDisplay->tail;
             while (prev) {
                 prev = curList->prev;
                 free(curList->text);
@@ -43,8 +43,8 @@ static void free_menu_display(void) {
                 curList = prev;
             }
         }
-        free(sMenuDisplay);
-        sMenuDisplay = NULL;
+        free(gMenuDisplay);
+        gMenuDisplay = NULL;
     }
 
     if (gMenuStatus == MENU_CLOSED) {
@@ -54,34 +54,34 @@ static void free_menu_display(void) {
     }
 }
 
-static void init_menu_display(int x, int y) {
-    if (sMenuDisplay == NULL) {
-        sMenuDisplay = malloc(sizeof(MenuListRoot));
+void init_menu_display(int x, int y) {
+    if (gMenuDisplay == NULL) {
+        gMenuDisplay = malloc(sizeof(MenuListRoot));
     } else {
-        assertf(sMenuDisplay == NULL, "sMenuDisplay already exists.");
+        assertf(gMenuDisplay == NULL, "gMenuDisplay already exists.");
     }
 
-    sMenuDisplay->x = x;
-    sMenuDisplay->y = y;
-    sMenuDisplay->tail = NULL;
-    sMenuDisplay->list = NULL;
-    sMenuDisplay->listCount = 0;
+    gMenuDisplay->x = x;
+    gMenuDisplay->y = y;
+    gMenuDisplay->tail = NULL;
+    gMenuDisplay->list = NULL;
+    gMenuDisplay->listCount = 0;
 }
 
-static void add_menu_text(char *text, int index, unsigned int colour, int flags) {
+void add_menu_text(char *text, int index, unsigned int colour, int flags) {
     MenuListEntry *newList;
     newList = malloc(sizeof(MenuListEntry));
-    if (sMenuDisplay->list != NULL) {
-        MenuListEntry *list = sMenuDisplay->list;
+    if (gMenuDisplay->list != NULL) {
+        MenuListEntry *list = gMenuDisplay->list;
         while (index > 0 && list) {
             list = list->next;
             index--;
         }
         if (list == NULL) {
             list = newList;
-            sMenuDisplay->tail->next = newList;
-            newList->prev = sMenuDisplay->tail;
-            sMenuDisplay->tail = newList;
+            gMenuDisplay->tail->next = newList;
+            newList->prev = gMenuDisplay->tail;
+            gMenuDisplay->tail = newList;
             newList->next = NULL;
         } else {
             if (list->next != NULL) {
@@ -92,13 +92,13 @@ static void add_menu_text(char *text, int index, unsigned int colour, int flags)
             }
             list->next = newList;
             newList->prev = list;
-            if (sMenuDisplay->tail == list) {
-                sMenuDisplay->tail = newList;
+            if (gMenuDisplay->tail == list) {
+                gMenuDisplay->tail = newList;
             }
         }
     } else {
-        sMenuDisplay->list = newList;
-        sMenuDisplay->tail = newList;
+        gMenuDisplay->list = newList;
+        gMenuDisplay->tail = newList;
         newList->next = NULL;
         newList->prev = NULL;
     }
@@ -110,11 +110,11 @@ static void add_menu_text(char *text, int index, unsigned int colour, int flags)
     newList->colour[2] = (colour >> 8) & 0xFF;
     newList->colour[3] = colour & 0xFF;
     newList->flags = flags;
-    sMenuDisplay->listCount++;
+    gMenuDisplay->listCount++;
 }
 
-static void edit_menu_text(char *text, int index) {
-    MenuListEntry *list = sMenuDisplay->list;
+void edit_menu_text(char *text, int index) {
+    MenuListEntry *list = gMenuDisplay->list;
     while (index > 0 && list) {
         list = list->next;
         index--;
@@ -126,7 +126,7 @@ static void edit_menu_text(char *text, int index) {
 }
 
 static void edit_menu_style(int index, unsigned int colour, int flagsOn, int flagsOff) {
-    MenuListEntry *list = sMenuDisplay->list;
+    MenuListEntry *list = gMenuDisplay->list;
     while (index > 0 && list) {
         list = list->next;
         index--;
@@ -140,18 +140,18 @@ static void edit_menu_style(int index, unsigned int colour, int flagsOn, int fla
 }
 
 static void render_menu_list(void) {
-    if (sMenuDisplay == NULL) {
+    if (gMenuDisplay == NULL) {
         return;
     }
     int i = 0;
-    MenuListEntry *list = sMenuDisplay->list;
+    MenuListEntry *list = gMenuDisplay->list;
 
-    int x = sMenuDisplay->x;
-    int y = sMenuDisplay->y;
+    int x = gMenuDisplay->x;
+    int y = gMenuDisplay->y;
     while (list != NULL) {
         rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(0, 0, 0, 255),});
         rdpq_text_printf(NULL, FONT_MVBOLI, x + 1, y + 1, list->text);
-        if (i == sMenuSelection[1]) {
+        if (i == gMenuSelection[1]) {
             int sineCol = 128 + (32 * sins(gGameTimer * 0x400));
             rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, sineCol, sineCol, 255),});
         } else {
@@ -165,10 +165,10 @@ static void render_menu_list(void) {
 }
 
 static void menu_set_forward(int menuID) {
-    sMenuSelectionPrev[sMenuStackPos][0] = sMenuSelection[0];
-    sMenuSelectionPrev[sMenuStackPos][1] = sMenuSelection[1];
-    sMenuSelection[0] = 0;
-    sMenuSelection[1] = 0;
+    sMenuSelectionPrev[sMenuStackPos][0] = gMenuSelection[0];
+    sMenuSelectionPrev[sMenuStackPos][1] = gMenuSelection[1];
+    gMenuSelection[0] = 0;
+    gMenuSelection[1] = 0;
     sMenuSelectionTimer[0] = 0;
     sMenuSelectionTimer[1] = 0;
     sMenuSelectionType[0] = 0;
@@ -182,8 +182,8 @@ static void menu_set_forward(int menuID) {
 }
 
 static void menu_set_reset(int menuID) {
-    sMenuSelection[0] = 0;
-    sMenuSelection[1] = 0;
+    gMenuSelection[0] = 0;
+    gMenuSelection[1] = 0;
     sMenuSelectionTimer[0] = 0;
     sMenuSelectionTimer[1] = 0;
     sMenuSelectionType[0] = 0;
@@ -196,8 +196,8 @@ static void menu_set_reset(int menuID) {
 
 static void menu_set_backward(int menuID) {
     sMenuStackPos--;
-    sMenuSelection[0] = sMenuSelectionPrev[sMenuStackPos][0];
-    sMenuSelection[1] = sMenuSelectionPrev[sMenuStackPos][1];
+    gMenuSelection[0] = sMenuSelectionPrev[sMenuStackPos][0];
+    gMenuSelection[1] = sMenuSelectionPrev[sMenuStackPos][1];
     sMenuSelectionTimer[0] = 0;
     sMenuSelectionTimer[1] = 0;
     sMenuSelectionType[0] = 0;
@@ -214,52 +214,6 @@ static void menu_set_backward(int menuID) {
 void menu_reset_display(void) {
     gResetDisplay = true;
 }
-
-extern int __boot_tvtype;
-
-void menu_change_pal60(void) {
-    if (gConfig.regionMode == PAL60) {
-        gConfig.regionMode = NTSC60;
-    }
-    __boot_tvtype = gConfig.regionMode; // Writes to osTvType
-    gResetDisplay = true;
-}
-
-void menu_set_sound(void) {
-    gMusicVolume = (float) gConfig.musicVolume / (float) 9.0f;
-    gSoundVolume = (float) gConfig.soundVolume / (float) 9.0f;
-    set_music_volume(gMusicVolume);
-}
-
-static MenuOption sMenuOptions[] = {
-    {"Graphics", &gConfig.graphics, -1, 1, OPTION_WRAP | OPTION_STRING, NULL, 0},
-    {"Screen Mode", &gConfig.screenMode, 0, 2, OPTION_WRAP | OPTION_STRING | OPTION_STUB, menu_reset_display, 5},
-    {"PAL", &gConfig.regionMode, 0, 1, OPTION_WRAP | OPTION_PAL_ONLY | OPTION_STRING, menu_change_pal60, 8},
-    {"Sound Mode", &gConfig.soundMode, 0, 2, OPTION_WRAP | OPTION_STRING, NULL, 10},
-    {"Screen Pos X", &gConfig.screenPosX, -8, 8, OPTION_STUB | OPTION_BAR, NULL, 0},
-    {"Screen Pos Y", &gConfig.screenPosY, -8, 8, OPTION_STUB | OPTION_BAR, NULL, 0},
-    {"Sound Volume", &gConfig.soundVolume, 0, 9, OPTION_BAR, menu_set_sound, 0},
-    {"Music Volume", &gConfig.musicVolume, 0, 9, OPTION_BAR, menu_set_sound, 0},
-    {"Vsync", &gConfig.vsync, 0, 1, OPTION_STRING | OPTION_STUB, NULL, 13},
-};
-
-static char *sMenuOptionStrings[] = {
-    "Performance",
-    "Default",
-    "Beautiful",
-    "Off",
-    "On",
-    "4:3",
-    "16:10",
-    "16:9",
-    "50Hz",
-    "60Hz",
-    "Mono",
-    "Stereo",
-    "Surround",
-    "Triple Buffering",
-    "Double Buffering"
-};
 
 void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short *selectionY,  int minX, int minY, int maxX, int maxY) {
     int stickMag;
@@ -346,94 +300,48 @@ void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short
     }
 }
 
-char sMenuTextStack[40];
+char *sPauseMenuText[][LANG_TOTAL] = {
+    {"Continue", "Continue2"},
+    {"Options", "Options2"},
+    {"Photo Mode", "Photo Mode2"},
+    {"Quit", "Quit2"},
+};
 
-char *set_option_text(int optID) {
-    if (sMenuOptions[optID].flags & OPTION_STRING) {
-        int stringOffset = sMenuOptions[optID].string + (*sMenuOptions[optID].valuePtr - sMenuOptions[optID].minValue);
-        if (gConfig.regionMode == PAL50 && sMenuOptions[optID].flags & OPTION_PAL_OFFSET) {
-            stringOffset += (sMenuOptions[optID].maxValue - sMenuOptions[optID].minValue) + 1;
+void menu_config(int updateRate, float updateRateF) {
+    static void *ovl = NULL;
+    static void (*func)(int, float);
+    //overlay_run(0, updateRateF, "healthbar", sRenderHealth, &func, &ovl);
+
+
+    if (sConfigMenu) {
+        if (ovl == NULL) {
+            ovl = dlopen(asset_dir("options", DFS_OVERLAY), RTLD_LOCAL);
+            func = dlsym(ovl, "loop");
         }
-        sprintf(sMenuTextStack, "%s: %s", sMenuOptions[optID].name, sMenuOptionStrings[stringOffset]);
-    } else if (sMenuOptions[optID].flags & OPTION_BAR) {
-        sprintf(sMenuTextStack, "%s: %d", sMenuOptions[optID].name, *sMenuOptions[optID].valuePtr);
+        (*func)(updateRate, updateRateF);
+        sConfigMenu = false;
     } else {
-        sprintf(sMenuTextStack, "%s: %d", sMenuOptions[optID].name, *sMenuOptions[optID].valuePtr);
-    }
-    return sMenuTextStack;
-}
-
-static void process_config_menu(int updateRate) {
-    int xWrap = 0;
-    MenuOption *m = &sMenuOptions[sMenuSelection[1]];
-    if (m->flags & OPTION_WRAP) {
-        xWrap = MENUSTICK_WRAPX;
-    }
-
-    if (sMenuDisplay == NULL) {
-        sNumOptions = 0;
-        init_menu_display(16, 22);
-        for (int i = 0; i < sizeof(sMenuOptions) / sizeof(MenuOption); i++) {
-            int colour;
-            if (sMenuOptions[i].flags & OPTION_STUB || (sMenuOptions[i].flags & OPTION_PAL_ONLY && gIsPal == false)) {
-                colour = 0x80808080;
-            } else {
-                colour = 0xFFFFFFFF;
-            }
-            
-            add_menu_text(set_option_text(i), sNumOptions, colour, 0);
-            sNumOptions++;
-        }
-    }
-
-    if (input_held(INPUT_L)) {
-        return;
-    }
-
-    short tempVar = *m->valuePtr;
-    int prevMenuSelection = sMenuSelection[1];
-    handle_menu_stick_input(updateRate, MENUSTICK_STICKX | MENUSTICK_STICKY | MENUSTICK_WRAPY | xWrap, &tempVar, &sMenuSelection[1], m->minValue, -1, m->maxValue, sizeof(sMenuOptions) / sizeof(MenuOption));
-    if (tempVar != *m->valuePtr) {
-        *m->valuePtr = tempVar;
-        edit_menu_text(set_option_text(sMenuSelection[1]), sMenuSelection[1]);
-        if (m->func) {
-            (m->func)();
-        }
-    }
-    if (prevMenuSelection != sMenuSelection[1]) {
-        if (prevMenuSelection < sMenuSelection[1]) {
-            while (sMenuSelection[1] <= (sizeof(sMenuOptions) / sizeof(MenuOption) -1) && (sMenuOptions[sMenuSelection[1]].flags & OPTION_STUB || (sMenuOptions[sMenuSelection[1]].flags & OPTION_PAL_ONLY && gIsPal == false))) {
-                sMenuSelection[1]++;
-            }
-            if (sMenuSelection[1] >= sizeof(sMenuOptions) / sizeof(MenuOption)) {
-                sMenuSelection[1] = 0;
-            }
-        } else {
-            while (sMenuSelection[1] > -1 && (sMenuOptions[sMenuSelection[1]].flags & OPTION_STUB || (sMenuOptions[sMenuSelection[1]].flags & OPTION_PAL_ONLY && gIsPal == false))) {
-                sMenuSelection[1]--;
-            }
-            if (sMenuSelection[1] < 0) {
-                sMenuSelection[1] = (sizeof(sMenuOptions) / sizeof(MenuOption)) -1;
-            }
+        if (ovl != NULL) {
+            dlclose(ovl);
+            ovl = NULL;
         }
     }
 }
 
 static void process_options_menu(int updateRate) {
-    if (sMenuDisplay == NULL) {
+    if (gMenuDisplay == NULL) {
         init_menu_display(32, display_get_height() - 80);
-        add_menu_text("Continue", 0, 0xFFFFFFFF, 0);
-        add_menu_text("Options", 1, 0xFFFFFFFF, 0);
-        add_menu_text("Photo Mode", 2, 0xFFFFFFFF, 0);
-        add_menu_text("Quit", 3, 0xFFFFFFFF, 0);
+        for (int i = 0; i < sizeof(sPauseMenuText) / (sizeof(char *) * LANG_TOTAL); i++) {
+            add_menu_text(sPauseMenuText[i][(int) gConfig.language], i, 0xFFFFFFFF, 0);
+        }
     }
 
-    handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &sMenuSelection[1], 0, 0, 0, 4);
+    handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &gMenuSelection[1], 0, 0, 0, 4);
 
     if (input_pressed(INPUT_A, 5)) {
         play_sound_global(SOUND_MENU_CLICK);
         input_clear(INPUT_A);
-        switch (sMenuSelection[1]) {
+        switch (gMenuSelection[1]) {
         case 0:
             menu_set_backward(MENU_PREV);
             break;
@@ -468,23 +376,23 @@ static void process_options_menu(int updateRate) {
 
 #ifdef PUPPYPRINT_DEBUG
 static void process_sceneselect_menu(int updateRate) {
-    if (sMenuDisplay == NULL) {
+    if (gMenuDisplay == NULL) {
         init_menu_display(32, 32);
         for (int i = 0; i < sizeof(sSceneTable) / sizeof(char *); i++) {
             add_menu_text(sSceneTable[i], i, 0xFFFFFFFF, 0);
         }
-        add_menu_text("Back", sMenuDisplay->listCount, 0xFFFFFFFF, 0);
+        add_menu_text("Back", gMenuDisplay->listCount, 0xFFFFFFFF, 0);
     }
 
-    handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &sMenuSelection[1], 0, 0, 0, sMenuDisplay->listCount);
+    handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &gMenuSelection[1], 0, 0, 0, gMenuDisplay->listCount);
 
     if (input_pressed(INPUT_A, 3) && sMenuSwapTimer == 0) {
-        if (sMenuSelection[1] == sMenuDisplay->listCount - 1) {
+        if (gMenuSelection[1] == gMenuDisplay->listCount - 1) {
             goto goback;
         }
         play_sound_global(SOUND_MENU_CLICK);
         input_clear(INPUT_A);
-        transition_into_scene(sMenuSelection[1], TRANSITION_FULLSCREEN_IN, 30, TRANSITION_FULLSCREEN_OUT);
+        transition_into_scene(gMenuSelection[1], TRANSITION_FULLSCREEN_IN, 30, TRANSITION_FULLSCREEN_OUT);
         menu_set_reset(MENU_CLOSED);
         set_background_music(0, 30);
     } else if (input_pressed(INPUT_B, 3) && sMenuSwapTimer == 0) {
@@ -496,27 +404,33 @@ static void process_sceneselect_menu(int updateRate) {
 }
 #endif
 
+char *sTitleMenuText[][LANG_TOTAL] = {
+    {"Play", "Play2"},
+    {"Options", "Options2"},
+#ifdef PUPPYPRINT_DEBUG
+    {"Scene Select", "Scene Select2"},
+#endif
+    {"Controls", "Controls2"},
+};
+
 static void process_title_menu(int updateRate) {
     if (gCurrentController == -1) {
         return;
     }
 
-    if (sMenuDisplay == NULL) {
+    if (gMenuDisplay == NULL) {
         init_menu_display(32, display_get_height() - 80);
-        add_menu_text("Play", sMenuDisplay->listCount, 0xFFFFFFFF, 0);
-        add_menu_text("Options", sMenuDisplay->listCount, 0xFFFFFFFF, 0);
-#ifdef PUPPYPRINT_DEBUG
-        add_menu_text("Scene Select", sMenuDisplay->listCount, 0xFFFFFFFF, 0);
-#endif
-        add_menu_text("Controls", sMenuDisplay->listCount, 0xFFFFFFFF, 0);
+        for (int i = 0; i < sizeof(sTitleMenuText) / (sizeof(char *) * LANG_TOTAL); i++) {
+            add_menu_text(sTitleMenuText[i][(int) gConfig.language], gMenuDisplay->listCount, 0xFFFFFFFF, 0);
+        }
     }
 
-    handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &sMenuSelection[1], 0, 0, 0, sMenuDisplay->listCount);
+    handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &gMenuSelection[1], 0, 0, 0, gMenuDisplay->listCount);
 
     if (input_pressed(INPUT_A, 3) && sMenuSwapTimer == 0) {
         play_sound_global(SOUND_MENU_CLICK);
         input_clear(INPUT_A);
-        switch (sMenuSelection[1]) {
+        switch (gMenuSelection[1]) {
         case 0:
             menu_set_reset(MENU_CLOSED);
             transition_into_scene(SCENE_TESTAREA, TRANSITION_FULLSCREEN_IN, 30, TRANSITION_FULLSCREEN_OUT);
@@ -543,6 +457,7 @@ static void process_title_menu(int updateRate) {
 void process_menus(int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
     DECREASE_VAR(sMenuSwapTimer, updateRate, 0);
+    menu_config(updateRate, updateRateF);
     switch (gMenuStatus) {
     case MENU_CLOSED:
         if (sMenuSwapTimer == 0 && gTalkControl == NULL && input_pressed(INPUT_START, 3)) {
@@ -569,8 +484,8 @@ void process_menus(int updateRate, float updateRateF) {
         }
         return;
     case MENU_CONFIG:
-        process_config_menu(updateRate);
         if ((input_pressed(INPUT_START, 3) || input_pressed(INPUT_B, 3)) && sMenuSwapTimer == 0) {
+            sConfigMenu = false;
             play_sound_global(SOUND_MENU_CLICK);
             input_clear(INPUT_START);
             input_clear(INPUT_B);
@@ -579,6 +494,8 @@ void process_menus(int updateRate, float updateRateF) {
                 screenshot_on(FMT_I8);
             }
             save_config_write();
+        } else {
+            sConfigMenu = true;
         }
         return;
 #ifdef PUPPYPRINT_DEBUG

@@ -8,6 +8,13 @@
 
 #define ANIM_NONE 65535
 
+enum Languages {
+    LANG_ENGLISH,
+    LANG_PLACEHOLDER,
+
+    LANG_TOTAL
+};
+
 enum MaterialFlags {
     MATERIAL_NULL,
     MATERIAL_CUTOUT =       (1 << 0), // Enables 1 bit alpha.

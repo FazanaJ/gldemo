@@ -50,6 +50,7 @@ typedef struct Config {
     char musicVolume;
     char vsync;
     char subtitles;
+    char language;
 } Config;
 
 typedef struct ConfigBits {
@@ -64,6 +65,7 @@ typedef struct ConfigBits {
     unsigned vsync : 1;
     unsigned magic : 6;
     unsigned subtitles : 1;
+    unsigned language : 3;
 } ConfigBits;
 
 extern surface_t gZBuffer;
