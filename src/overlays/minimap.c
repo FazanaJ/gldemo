@@ -14,6 +14,8 @@ sprite_t *sMinimapArrow;
 sprite_t *sMinimapSprite;
 sprite_t *sMinimapSight;
 SceneMap *sMiniMap;
+float sMapOpacity;
+float sMapOpacityTarget;
 float sMapSizeX;
 float sMapSizeY;
 float sMapDrawSizeX;
@@ -31,19 +33,20 @@ void loop(int updateRate, float updateRateF) {
     float charPosY = (gPlayer->pos[2] / sMapBoundsZ) * ((float) sMapSizeY);
     float charAngle = SHORT_TO_RADIANS(gPlayer->faceAngle[1] + 0x8000);
     float sightAngle = SHORT_TO_RADIANS(gCamera->yaw);
+    sMapOpacity = lerpf(sMapOpacity, sMapOpacityTarget, 0.1f * updateRateF);
     rdpq_set_mode_standard();
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
     rdpq_mode_combiner(RDPQ_COMBINER_TEX_FLAT);
-    rdpq_set_prim_color(RGBA32(255, 255, 255, 192));
+    rdpq_set_prim_color(RGBA32(255, 255, 255, 192 * sMapOpacity));
     rdpq_sprite_blit(sMinimapSprite, width - (sMapDrawSizeX * 0.75f), height - (sMapDrawSizeY * 0.75f), 
         &(rdpq_blitparms_t) {.scale_x = 1.0f, .scale_y = 1.0f, .cx = sMapDrawSizeX / 2, .cy = sMapDrawSizeY / 2});
     
     int sineCol = 64 + (32 * sins(gGameTimer * 0x800));
-    rdpq_set_prim_color(RGBA32(255, 255, sineCol, 96));
+    rdpq_set_prim_color(RGBA32(255, 255, sineCol, 96 * sMapOpacity));
     rdpq_sprite_blit(sMinimapSight, width - (sMapDrawSizeX * 0.75f) + charPosX + sMiniMap->offsetX, height - (sMapDrawSizeY * 0.75f) + charPosY + sMiniMap->offsetY, 
         &(rdpq_blitparms_t) {.cx = 7, .cy = 14, .theta = sightAngle});
 
-    rdpq_set_prim_color(RGBA32(255, 0, 0, 255));
+    rdpq_set_prim_color(RGBA32(255, 0, 0, 255 * sMapOpacity));
     rdpq_sprite_blit(sMinimapArrow, width - (sMapDrawSizeX * 0.75f) + charPosX + sMiniMap->offsetX, height - (sMapDrawSizeY * 0.75f) + charPosY + sMiniMap->offsetY, 
         &(rdpq_blitparms_t) {.cx = 4, .cy = 4, .theta = charAngle});
 }
@@ -65,6 +68,8 @@ void init(void) {
     sMapSizeY = surf.height * sMiniMap->scaleY;
     sMapBoundsX = gCurrentScene->bounds[1][0] - gCurrentScene->bounds[0][0];
     sMapBoundsZ = gCurrentScene->bounds[1][2] - gCurrentScene->bounds[0][2];
+    sMapOpacityTarget = 1.0f;
+    sMapOpacity = 0.0f;
 }
 
 void destroy(void) {

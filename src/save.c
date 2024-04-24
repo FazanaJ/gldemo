@@ -8,11 +8,24 @@
 #include "audio.h"
 #include "assets.h"
 
+int gSavePaks[4];
+
+void save_find_paks(void) {
+    debugf("Searching for controller paks...\n");
+    for (int i = 0; i < 4; i++) {
+        int mem = validate_mempak(i);
+        gSavePaks[i] = mem;
+        if (mem == 0) {
+            debugf("Controller Pak #%d is detected.\n", i + 1);
+        }
+    }
+}
+
 const eepfs_entry_t eeprom_16k_files[1] = {
     {"config.dat", sizeof(ConfigBits)},
 };
 
-void write_config(void) {
+void save_config_write(void) {
     ConfigBits config;
     config.graphics = gConfig.graphics;
     config.regionMode = gConfig.regionMode;

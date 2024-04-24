@@ -377,6 +377,21 @@ void asset_cycle(int updateRate) {
         }
         modelList = modelList->next;
     }
+
+    ObjectList *objList = gObjectListHead;
+    Object *obj;
+
+    while (objList) {
+        obj = objList->obj;
+        if (obj->overlay) {
+            obj->overlayTimer -= updateRate;
+            if (obj->overlayTimer <= 0) {
+                dlclose(obj->overlay);
+                obj->overlay = NULL;
+            }
+        }
+        objList = objList->next;
+    }
 }
 
 void sky_texture_generate(Environment *e) {
@@ -433,12 +448,12 @@ rspq_block_t *sky_gradient_generate(Environment *e) {
     return rspq_block_end();
 }
 
-static void init_object_behaviour(Object *obj, int objectID) {
+void obj_overlay_init(Object *obj, int objectID) {
     DEBUG_SNAPSHOT_1();
     debugf("Loading overlay [%s].", sObjectOverlays[objectID]);
     void *addr = dlopen(asset_dir(sObjectOverlays[objectID], DFS_OVERLAY), RTLD_LOCAL);
 #ifdef PUPPYPRINT_DEBUG
-        gNumOverlays++;
+    gNumOverlays++;
 #endif
     debugf(" Time: %2.3fs.\n", (double) (TIMER_MICROS(DEBUG_SNAPSHOT_1_END) / 1000000.0f));
     ObjectEntry *entry = dlsym(addr, "entry");
@@ -447,15 +462,20 @@ static void init_object_behaviour(Object *obj, int objectID) {
     obj->flags = entry->flags;
     obj->overlay = addr;
     obj->hitbox = entry->hitbox;
-    if (entry->viewDist) {
-        obj->viewDist = entry->viewDist << 4;
+    obj->overlayTimer = 10;
+}
+
+static void init_object_behaviour(Object *obj, int objectID) {
+    obj_overlay_init(obj, objectID);
+    if (obj->header->viewDist) {
+        obj->viewDist = obj->header->viewDist << 4;
     } else {
         obj->viewDist = 500.0f;
     }
     obj->viewDist *= obj->viewDist;
-    if (entry->data) {
-        obj->data = malloc(entry->data);
-        bzero(obj->data, entry->data);
+    if (obj->header->data) {
+        obj->data = malloc(obj->header->data);
+        bzero(obj->data, obj->header->data);
     }
     if (obj->flags & OBJ_FLAG_COLLISION) {
         obj->collision = malloc(sizeof(ObjectCollision));
@@ -465,8 +485,8 @@ static void init_object_behaviour(Object *obj, int objectID) {
         obj->movement = malloc(sizeof(ObjectMovement));
         bzero(obj->movement, sizeof(ObjectMovement));
     }
-    if (entry->initFunc) {
-        (*entry->initFunc)(obj);
+    if (obj->header->initFunc) {
+        (*obj->header->initFunc)(obj);
     }
 }
 

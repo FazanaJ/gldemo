@@ -155,11 +155,13 @@ typedef struct Object {
 	void *data;
 	ObjectCollision *collision;
 	ObjectMovement *movement;
+	char *animName;
+	float animSpeed;
 	
 	unsigned short animID;
 	unsigned short animIDPrev;
-	float animSpeed;
-	char *animName;
+	
+	char overlayTimer;
 } Object;
 
 typedef struct ObjectList {

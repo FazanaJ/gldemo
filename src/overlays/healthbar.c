@@ -242,4 +242,10 @@ void init(void) {
 void destroy(void) {
     debugf("Closing overlay: [healthbar]\n");
     sprite_free(sHealthSprite);
+    if (sHealthBlock) {
+        rspq_block_free(sHealthBlock);
+    }
+    if (sHealthEmptyBlock) {
+        rspq_block_free(sHealthEmptyBlock);
+    }
 }

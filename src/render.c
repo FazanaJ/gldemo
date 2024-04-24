@@ -1255,7 +1255,7 @@ static void generate_dynamic_shadows(void) {
     
     while (list) {
         obj = list->obj;
-        if (obj->flags & OBJ_FLAG_SHADOW_DYNAMIC && obj->flags & OBJ_FLAG_IN_VIEW && !(obj->flags & OBJ_FLAG_INVISIBLE) && obj->gfx) {
+        if (obj->flags & OBJ_FLAG_SHADOW_DYNAMIC && obj->flags & OBJ_FLAG_IN_VIEW && !(obj->flags & OBJ_FLAG_INVISIBLE) && obj->gfx && obj->overlay) {
             if (obj->gfx->dynamicShadow == false) {
                 if (obj->header->dynamicShadow == NULL) {
                     list = list->next;

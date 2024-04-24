@@ -2,6 +2,7 @@
 
 #include "../include/global.h"
 #include "assets.h"
+#include "collision.h"
 
 #define MAP_OBJ 0
 #define MAP_CLU 1
@@ -41,11 +42,13 @@ typedef struct SceneMesh {
 
 typedef struct SceneChunk {
     struct SceneChunk *next;
+    struct CollisionCell *collision;
     SceneMesh *meshList;
     short flags;
     short chunkID;
     float bounds[2][3];
     unsigned char *visibility;
+    unsigned char collisionTimer;
 } SceneChunk;
 
 typedef struct ObjectMap {

@@ -472,6 +472,11 @@ static void update_objects(int updateRate, float updateRateF) {
         obj->prevPos[1] = obj->pos[1];
         obj->prevPos[2] = obj->pos[2];
         if (obj->loopFunc && (obj->flags & OBJ_FLAG_DELETE) == false && (obj->flags & OBJ_FLAG_INACTIVE) == false) {
+            if (obj->overlay == NULL) {
+                obj_overlay_init(obj, obj->objectID);
+            } else {
+                obj->overlayTimer = 10;
+            }
             (objList->obj->loopFunc)(objList->obj, updateRate, updateRateF);
         }
         if (obj->hitbox) {

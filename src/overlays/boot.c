@@ -57,7 +57,7 @@ void read_config(void) {
     gMusicVolume = (float) gConfig.musicVolume / (float) 9.0f;
     gSoundVolume = (float) gConfig.soundVolume / (float) 9.0f;
     if (write) {
-        write_config();
+        save_config_write();
     }
 }
 
@@ -182,6 +182,7 @@ void init_game(void) {
     init_audio();
     init_debug();
     init_save_data();
+    save_find_paks();
     set_region_type(gConfig.regionMode);
     load_font(FONT_ARIAL);
     load_font(FONT_MVBOLI);

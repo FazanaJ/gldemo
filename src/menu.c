@@ -578,7 +578,7 @@ void process_menus(int updateRate, float updateRateF) {
             if (gMenuStatus == MENU_OPTIONS) {
                 screenshot_on(FMT_I8);
             }
-            write_config();
+            save_config_write();
         }
         return;
 #ifdef PUPPYPRINT_DEBUG

@@ -93,3 +93,4 @@ struct Object *spawn_object_pos_scale(int objectID, float x, float y, float z, f
 struct Clutter *spawn_clutter(int objectID, float x, float y, float z, short pitch, short roll, short yaw);
 struct Particle *spawn_particle(int particleID, float x, float y, float z);
 void object_model_generate(struct Object *obj);
+void obj_overlay_init(struct Object *obj, int objectID);
