@@ -154,7 +154,7 @@ filesystem/%.sprite: assets/archives/%.png
 filesystem/%.wav64: assets/sounds/%.wav
 	@mkdir -p $(dir $@)
 	@echo "    [AUDIO] $@"
-	@$(N64_AUDIOCONV) --wav-compress 1 -o filesystem $<
+	@$(N64_AUDIOCONV) --wav-compress 1 --wav-resample 16000 -o filesystem $<
 
 filesystem/%.wav64: assets/opus/%.wav
 	@mkdir -p $(dir $@)

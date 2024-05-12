@@ -38,14 +38,10 @@ enum PlayerInput {
     PLAYER_INPUT_L_HELD = (1 << 8),
 };
 
-static void player_grounded_common(Object *o, PlayerData *d, int updateRate, float updateRateF) {
-    if (d->input & PLAYER_INPUT_A_PRESSED) {
-        if (d->playerID != -1) {
-            input_clear(INPUT_A);
-        }
-        d->input &= ~PLAYER_INPUT_A_PRESSED;
-        o->movement->vel[1] = 12.0f;
-    }
+static void player_forwardvel(Object *o, PlayerData *d, float vel, float updateRateF) {
+    short angle = d->intendedYaw + d->offsetYaw;
+    o->movement->vel[0] += (vel * sins(angle)) * updateRateF;
+    o->movement->vel[2] += (vel * coss(angle)) * updateRateF;
 }
 
 static void player_attack(Object *o, PlayerData *d, int updateRate, float updateRateF) {
@@ -57,28 +53,36 @@ static void player_attack(Object *o, PlayerData *d, int updateRate, float update
             input_clear(INPUT_B);
         }
         d->input &= ~PLAYER_INPUT_B_PRESSED;
-        d->velOffset = 16.0f;
+        player_forwardvel(o, d, 32.0f, 1.0f);
+    }
+}
+
+static void player_grounded_common(Object *o, PlayerData *d, int updateRate, float updateRateF) {
+    if (d->input & PLAYER_INPUT_A_PRESSED) {
+        if (d->playerID != -1) {
+            input_clear(INPUT_A);
+        }
+        d->input &= ~PLAYER_INPUT_A_PRESSED;
+        o->movement->vel[1] = 12.0f;
+        o->collision->grounded = false;
+    } else {
+        player_attack(o, d, 32.0f, 1.0f);
     }
 }
 
 static void player_act_idle(Object *o, PlayerData *d, int updateRate, float updateRateF) {
-    o->movement->vel[0] = approachf(o->movement->vel[0], 0.0f, 2.0f * updateRateF);
     o->movement->vel[1] = 0.0f;
-    o->movement->vel[2] = approachf(o->movement->vel[2], 0.0f, 2.0f * updateRateF);
     if (o->movement->vel[0] != 0.0f || o->movement->vel[2] != 0.0f) {
         o->movement->moveAngle[1] = atan2s(o->movement->vel[2], o->movement->vel[0]);
     }
     if ((d->input & PLAYER_INPUT_L_HELD) == false) {
         player_grounded_common(o, d, updateRate, updateRateF);
     }
-    player_attack(o, d, updateRate, updateRateF);
 }
 
 static void player_act_move(Object *o, PlayerData *d, int updateRate, float updateRateF) {
-    short angle = d->intendedYaw + d->offsetYaw;
     float factor;
-    o->movement->vel[0] = approachf(o->movement->vel[0], 32.0f * (d->intendedMag * sins(angle)), 2.0f * updateRateF);
-    o->movement->vel[2] = approachf(o->movement->vel[2], 32.0f * (d->intendedMag * coss(angle)), 2.0f * updateRateF);
+    player_forwardvel(o, d, 3.0f * d->intendedMag, updateRateF);
     if (d->forwardVel == 0.0f) {
         factor = 0.75f;
     } else {
@@ -93,13 +97,10 @@ static void player_act_move(Object *o, PlayerData *d, int updateRate, float upda
         d->cameraAngle = o->faceAngle[1];
     }
     player_grounded_common(o, d, updateRate, updateRateF);
-    player_attack(o, d, updateRate, updateRateF);
 }
 
 static void player_act_air(Object *o, PlayerData *d, int updateRate, float updateRateF) {
-    short angle = d->intendedYaw + d->offsetYaw;
-    o->movement->vel[0] = approachf(o->movement->vel[0], 32.0f * (d->intendedMag * sins(angle)), 0.75f * updateRateF);
-    o->movement->vel[2] = approachf(o->movement->vel[2], 32.0f * (d->intendedMag * coss(angle)), 0.75f * updateRateF);
+    player_forwardvel(o, d, 1.0f * d->intendedMag, updateRateF);
     o->movement->moveAngle[1] = atan2s(o->movement->vel[2], o->movement->vel[0]);
     if (gZTargetTimer == 0) {
         d->cameraAngle = o->faceAngle[1];
@@ -179,7 +180,9 @@ static void player_input(Object *o, PlayerData *d) {
     }
     d->offsetYaw = gCamera->yawTarget;
     d->intendedMag = input_stick_mag(STICK_LEFT);
-    d->intendedYaw = input_stick_angle(STICK_LEFT);
+    if (d->intendedMag != 0.0f) {
+        d->intendedYaw = input_stick_angle(STICK_LEFT);
+    }
     if (input_pressed(INPUT_A, 5)) {
         d->input |= PLAYER_INPUT_A_PRESSED;
         d->input |= PLAYER_INPUT_A_HELD;
@@ -219,18 +222,17 @@ static int player_determine_action(Object *o, PlayerData *d) {
     if (d->action == PLAYER_ACT_LEDGE) {
         return PLAYER_ACT_LEDGE;
     }
-    int grounded = (o->pos[1] - o->collision->floorHeight < FLOOR_MARGIN) && (o->movement->vel[1] <= 0.0f);
-    if (d->input & PLAYER_INPUT_L_HELD && grounded) {
+    if (d->input & PLAYER_INPUT_L_HELD && o->collision->grounded) {
         return PLAYER_ACT_IDLE;
     }
     if (d->intendedMag != 0.0f) {
-        if (grounded) {
+        if (o->collision->grounded) {
             return PLAYER_ACT_MOVE;
         } else {
             return PLAYER_ACT_AIR;
         }
     }
-    if (grounded) {
+    if (o->collision->grounded) {
         return PLAYER_ACT_IDLE;
     } else {
         return PLAYER_ACT_AIR;
@@ -241,10 +243,11 @@ static int player_determine_action(Object *o, PlayerData *d) {
 void loop(Object *obj, int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
     PlayerData *data = (PlayerData *) obj->data;
+    float grip;
 
     data->input = 0;
     data->intendedMag = 0.0f;
-    data->intendedYaw = 0;
+    //data->intendedYaw = 0;
 
     if (data->playerID != -1) {
         player_input(obj, data);
@@ -293,10 +296,18 @@ void loop(Object *obj, int updateRate, float updateRateF) {
     assertf(data->action != PLAYER_ACT_BRUH, "Bad player action.");
 
     (sPlayerFunctions[(int) data->action])(obj, obj->data, updateRate, updateRateF);
-
-    obj->pos[0] += ((obj->movement->vel[0] + (data->velOffset * sins(obj->faceAngle[1]))) / 60.0f) * updateRateF;
-    obj->pos[2] += ((obj->movement->vel[2] + (data->velOffset * coss(obj->faceAngle[1]))) / 60.0f) * updateRateF;
-    data->velOffset = approachf(data->velOffset, 0.0f, 2.0f * updateRateF);
+    if (obj->collision->grounded) {
+        grip = 1.0f;
+    } else {
+        grip = 0.25f;
+    }
+    for (int i = 0; i < 3; i += 2) {
+        obj->pos[i] += (obj->movement->vel[i] / 60.0f) * updateRateF;
+        obj->movement->vel[i] = approachf(obj->movement->vel[i], 0.0f, (fabsf(obj->movement->vel[i] * 0.1f) * grip) * updateRateF);
+        if (fabsf(obj->movement->vel[i]) < 1.0f) {
+            obj->movement->vel[i] = 0.0f;
+        }
+    }
     data->forwardVel = sqrtf(SQR(obj->movement->vel[0]) + SQR(obj->movement->vel[2]));
 
     if (data->playerID != -1) {

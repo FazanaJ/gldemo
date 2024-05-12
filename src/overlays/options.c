@@ -9,7 +9,7 @@
 #include "../main.h"
 #include "../input.h"
 
-static char sMenuTextStack[40];
+static char sMenuTextStack[64];
 static char sNumOptions = 0;
 
 static char *sOptionTextGraphics[LANG_TOTAL] = {
@@ -64,7 +64,7 @@ static char *sOptionTextVsync[LANG_TOTAL] = {
 
 extern int __boot_tvtype;
 
-void menu_change_pal60(void) {
+static void menu_change_pal60(void) {
     if (gConfig.regionMode == PAL60) {
         gConfig.regionMode = NTSC60;
     }
@@ -72,7 +72,7 @@ void menu_change_pal60(void) {
     menu_reset_display();
 }
 
-void menu_set_sound(void) {
+static void menu_set_sound(void) {
     gMusicVolume = (float) gConfig.musicVolume / (float) 9.0f;
     gSoundVolume = (float) gConfig.soundVolume / (float) 9.0f;
     set_music_volume(gMusicVolume);
@@ -111,7 +111,7 @@ static const char *sMenuOptionStrings[][LANG_TOTAL] = {
     {NULL, "Placeholder"}
 };
 
-char *set_option_text(int optID) {
+static char *set_option_text(int optID) {
     if (sMenuOptions[optID].flags & OPTION_STRING) {
         int stringOffset = sMenuOptions[optID].string + (*sMenuOptions[optID].valuePtr - sMenuOptions[optID].minValue);
         if (gConfig.regionMode == PAL50 && sMenuOptions[optID].flags & OPTION_PAL_OFFSET) {
@@ -126,13 +126,7 @@ char *set_option_text(int optID) {
     return sMenuTextStack;
 }
 
-void loop(int updateRate) {
-    int xWrap = 0;
-    MenuOption *m = &sMenuOptions[gMenuSelection[1]];
-    if (m->flags & OPTION_WRAP) {
-        xWrap = MENUSTICK_WRAPX;
-    }
-
+void init(void) {
     if (gMenuDisplay == NULL) {
         sNumOptions = 0;
         init_menu_display(16, 22);
@@ -148,6 +142,14 @@ void loop(int updateRate) {
             sNumOptions++;
         }
     }
+}
+
+void loop(int updateRate) {
+    int xWrap = 0;
+    MenuOption *m = &sMenuOptions[gMenuSelection[1]];
+    if (m->flags & OPTION_WRAP) {
+        xWrap = MENUSTICK_WRAPX;
+    }
 
     if (input_held(INPUT_L)) {
         return;
@@ -155,28 +157,43 @@ void loop(int updateRate) {
 
     short tempVar = *m->valuePtr;
     int prevMenuSelection = gMenuSelection[1];
-    handle_menu_stick_input(updateRate, MENUSTICK_STICKX | MENUSTICK_STICKY | MENUSTICK_WRAPY | xWrap, &tempVar, &gMenuSelection[1], m->minValue, -1, m->maxValue, sizeof(sMenuOptions) / sizeof(MenuOption));
+    handle_menu_stick_input(updateRate, MENUSTICK_STICKX | MENUSTICK_STICKY | MENUSTICK_WRAPY | xWrap, &tempVar, &gMenuSelection[1], m->minValue, -1, m->maxValue, (sizeof(sMenuOptions) / sizeof(MenuOption)) + 1);
     if (tempVar != *m->valuePtr) {
         *m->valuePtr = tempVar;
         edit_menu_text(set_option_text(gMenuSelection[1]), gMenuSelection[1]);
         if (m->func) {
             (m->func)();
         }
+        init();
+    }
+    if (gMenuSelection[1] < 0) {
+        gMenuSelection[1] = (sizeof(sMenuOptions) / sizeof(MenuOption)) -1;
+        prevMenuSelection = gMenuSelection[1] + 1;
+    }
+    if (gMenuSelection[1] >= sizeof(sMenuOptions) / sizeof(MenuOption)) {
+        gMenuSelection[1] = 0;
+        prevMenuSelection = gMenuSelection[1] - 1;
     }
     if (prevMenuSelection != gMenuSelection[1]) {
         if (prevMenuSelection < gMenuSelection[1]) {
-            while (gMenuSelection[1] <= (sizeof(sMenuOptions) / sizeof(MenuOption) -1) && (sMenuOptions[gMenuSelection[1]].flags & OPTION_STUB || (sMenuOptions[gMenuSelection[1]].flags & OPTION_PAL_ONLY && gIsPal == false))) {
+            while (sMenuOptions[gMenuSelection[1]].flags & OPTION_STUB || (sMenuOptions[gMenuSelection[1]].flags & OPTION_PAL_ONLY && gIsPal == false)) {
                 gMenuSelection[1]++;
-            }
-            if (gMenuSelection[1] >= sizeof(sMenuOptions) / sizeof(MenuOption)) {
-                gMenuSelection[1] = 0;
+                if (gMenuSelection[1] >= sizeof(sMenuOptions) / sizeof(MenuOption)) {
+                    gMenuSelection[1] = 0;
+                }
+                if (gMenuSelection[1] < 0) {
+                    gMenuSelection[1] = (sizeof(sMenuOptions) / sizeof(MenuOption)) -1;
+                }
             }
         } else {
-            while (gMenuSelection[1] > -1 && (sMenuOptions[gMenuSelection[1]].flags & OPTION_STUB || (sMenuOptions[gMenuSelection[1]].flags & OPTION_PAL_ONLY && gIsPal == false))) {
+            while (sMenuOptions[gMenuSelection[1]].flags & OPTION_STUB || (sMenuOptions[gMenuSelection[1]].flags & OPTION_PAL_ONLY && gIsPal == false)) {
                 gMenuSelection[1]--;
-            }
-            if (gMenuSelection[1] < 0) {
-                gMenuSelection[1] = (sizeof(sMenuOptions) / sizeof(MenuOption)) -1;
+                if (gMenuSelection[1] < 0) {
+                    gMenuSelection[1] = (sizeof(sMenuOptions) / sizeof(MenuOption)) -1;
+                }
+                if (gMenuSelection[1] >= sizeof(sMenuOptions) / sizeof(MenuOption)) {
+                    gMenuSelection[1] = 0;
+                }
             }
         }
     }

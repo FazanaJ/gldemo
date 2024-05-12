@@ -171,8 +171,9 @@ void init_audio(void) {
     set_background_music(1, 0);
     for (int i = 0; i < CHANNEL_MAX_NUM; i++) {
         gChannelVol[i] = 1.0f;
+        mixer_ch_set_limits(i, 16, 22050, 0);
     }
-    mixer_ch_set_limits(CHANNEL_VOICE, 16, 48000, 0);
+    mixer_ch_set_limits(CHANNEL_VOICE, 16, 12000, 0);
 }
 
 void init_game(void) {

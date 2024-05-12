@@ -312,10 +312,11 @@ void menu_config(int updateRate, float updateRateF) {
     static void (*func)(int, float);
     //overlay_run(0, updateRateF, "healthbar", sRenderHealth, &func, &ovl);
 
-
     if (sConfigMenu) {
         if (ovl == NULL) {
             ovl = dlopen(asset_dir("options", DFS_OVERLAY), RTLD_LOCAL);
+            void (*init)() = dlsym(ovl, "init");
+            (*init)();
             func = dlsym(ovl, "loop");
         }
         (*func)(updateRate, updateRateF);

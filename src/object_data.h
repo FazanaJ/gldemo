@@ -10,7 +10,6 @@ typedef struct PlayerData {
 	float climbPos[3];
 	float intendedMag;
 	float forwardVel;
-	float velOffset;
 	short input;
 	short intendedYaw;
 	short offsetYaw;

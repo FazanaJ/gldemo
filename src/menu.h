@@ -73,7 +73,6 @@ void edit_menu_text(char *text, int index);
 void init_menu_display(int x, int y);
 void render_menus(int updateRate, float updateRateF);
 void process_menus(int updateRate, float updateRateF);
-void menu_set_sound(void);
 void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short *selectionY,  int minX, int minY, int maxX, int maxY);
 void free_menu_display(void);
 void menu_reset_display(void);

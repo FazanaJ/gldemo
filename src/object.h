@@ -129,6 +129,7 @@ typedef struct ObjectCollision {
 	float hitboxHeight;
 	float floorHeight;
 	float floorNorm;
+	char grounded;
 } ObjectCollision;
 
 typedef struct ObjectMovement {

@@ -524,6 +524,12 @@ static void update_objects(int updateRate, float updateRateF) {
         }
         if (obj->flags & OBJ_FLAG_COLLISION) {
             object_collide(obj);
+            if (obj->flags & OBJ_FLAG_MOVE && obj->movement->vel[1] <= 0.0f) {
+                obj->collision->grounded = obj->pos[1] - obj->collision->floorHeight < FLOOR_MARGIN;
+                if (obj->flags & OBJ_FLAG_TANGIBLE && obj->collision->grounded == false) {
+                    obj->collision->grounded = obj->pos[1] - obj->collision->hitboxHeight < FLOOR_MARGIN;
+                }
+            }
         }
         skipObject:
         objList = objList->next;
