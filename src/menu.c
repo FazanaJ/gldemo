@@ -68,6 +68,16 @@ void init_menu_display(int x, int y) {
     gMenuDisplay->listCount = 0;
 }
 
+void menutext_bar(MenuListEntry *m, int size) {
+    if (size < 0) {
+        size = 0;
+    }
+    if (size > 100) {
+        size = 100;
+    }
+    m->var1 = size;
+}
+
 void add_menu_text(char *text, int index, unsigned int colour, int flags) {
     MenuListEntry *newList;
     newList = malloc(sizeof(MenuListEntry));
@@ -110,6 +120,8 @@ void add_menu_text(char *text, int index, unsigned int colour, int flags) {
     newList->colour[2] = (colour >> 8) & 0xFF;
     newList->colour[3] = colour & 0xFF;
     newList->flags = flags;
+    newList->var1 = 0;
+    newList->var2 = 0;
     gMenuDisplay->listCount++;
 }
 
@@ -150,14 +162,23 @@ static void render_menu_list(void) {
     int y = gMenuDisplay->y;
     while (list != NULL) {
         rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(0, 0, 0, 255),});
-        rdpq_text_printf(NULL, FONT_MVBOLI, x + 1, y + 1, list->text);
+        rdpq_text_print(NULL, FONT_MVBOLI, x + 1, y + 1, list->text);
         if (i == gMenuSelection[1]) {
             int sineCol = 128 + (32 * sins(gGameTimer * 0x400));
             rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, sineCol, sineCol, 255),});
         } else {
             rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(list->colour[0], list->colour[1], list->colour[2], list->colour[3]),});
         }
-        rdpq_text_printf(NULL, FONT_MVBOLI, x, y, list->text);
+        rdpq_text_print(NULL, FONT_MVBOLI, x, y, list->text);
+        if (list->flags & MENUTEXT_BAR) {
+            rdpq_set_mode_fill(RGBA32(0, 0, 0, 255));
+            rdpq_fill_rectangle(x + 139, y - 9, x + 241, y + 1);
+            if (list->var1 != 0) {
+                rdpq_set_mode_fill(RGBA32(255, 255, 255, 255));
+                rdpq_fill_rectangle(x + 140, y - 8, x + 140 + list->var1, y);
+            }
+            rdpq_set_mode_standard();
+        }
         y += 12;
         i++;
         list = list->next;

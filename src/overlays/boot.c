@@ -36,8 +36,8 @@ void read_config(void) {
     if (config.magic != SAVE_MAGIC_NUMBER) {
         bzero(&config, sizeof(ConfigBits));
         gConfig.regionMode = region;
-        gConfig.musicVolume = 9;
-        gConfig.soundVolume = 9;
+        gConfig.musicVolume = 10;
+        gConfig.soundVolume = 10;
         gConfig.soundMode = SOUND_STEREO;
         gConfig.subtitles = true;
         config.magic = SAVE_MAGIC_NUMBER;
@@ -54,8 +54,8 @@ void read_config(void) {
     gConfig.graphics = config.graphics;
     gConfig.screenMode = config.screenMode;
     gConfig.vsync = config.vsync;
-    gMusicVolume = (float) gConfig.musicVolume / (float) 9.0f;
-    gSoundVolume = (float) gConfig.soundVolume / (float) 9.0f;
+    gMusicVolume = (float) gConfig.musicVolume / (float) 10.0f;
+    gSoundVolume = (float) gConfig.soundVolume / (float) 10.0f;
     if (write) {
         save_config_write();
     }

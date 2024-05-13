@@ -8,6 +8,7 @@
 #include "../menu.h"
 #include "../main.h"
 #include "../input.h"
+#include "../math_util.h"
 
 static char sMenuTextStack[64];
 static char sNumOptions = 0;
@@ -73,8 +74,8 @@ static void menu_change_pal60(void) {
 }
 
 static void menu_set_sound(void) {
-    gMusicVolume = (float) gConfig.musicVolume / (float) 9.0f;
-    gSoundVolume = (float) gConfig.soundVolume / (float) 9.0f;
+    gMusicVolume = (float) gConfig.musicVolume / (float) 10.0f;
+    gSoundVolume = (float) gConfig.soundVolume / (float) 10.0f;
     set_music_volume(gMusicVolume);
 }
 
@@ -86,8 +87,8 @@ static MenuOption sMenuOptions[] = {
     {sOptionTextSoundMode, &gConfig.soundMode, 0, 2, OPTION_WRAP | OPTION_STRING, NULL, 10},
     {sOptionTextScreenX, &gConfig.screenPosX, -8, 8, OPTION_STUB | OPTION_BAR, NULL, 0},
     {sOptionTextScreenY, &gConfig.screenPosY, -8, 8, OPTION_STUB | OPTION_BAR, NULL, 0},
-    {sOptionTextSound, &gConfig.soundVolume, 0, 9, OPTION_BAR, menu_set_sound, 0},
-    {sOptionTextMusic, &gConfig.musicVolume, 0, 9, OPTION_BAR, menu_set_sound, 0},
+    {sOptionTextSound, &gConfig.soundVolume, 0, 10, OPTION_BAR, menu_set_sound, 0},
+    {sOptionTextMusic, &gConfig.musicVolume, 0, 10, OPTION_BAR, menu_set_sound, 0},
     {sOptionTextVsync, &gConfig.vsync, 0, 1, OPTION_STRING | OPTION_STUB, NULL, 13},
 };
 
@@ -114,12 +115,12 @@ static const char *sMenuOptionStrings[][LANG_TOTAL] = {
 static char *set_option_text(int optID) {
     if (sMenuOptions[optID].flags & OPTION_STRING) {
         int stringOffset = sMenuOptions[optID].string + (*sMenuOptions[optID].valuePtr - sMenuOptions[optID].minValue);
-        if (gConfig.regionMode == PAL50 && sMenuOptions[optID].flags & OPTION_PAL_OFFSET) {
+        if (gIsPal && sMenuOptions[optID].flags & OPTION_PAL_OFFSET) {
             stringOffset += (sMenuOptions[optID].maxValue - sMenuOptions[optID].minValue) + 1;
         }
         sprintf(sMenuTextStack, "%s: %s", sMenuOptions[optID].name[(int) gConfig.language], sMenuOptionStrings[stringOffset][(int) gConfig.language]);
     } else if (sMenuOptions[optID].flags & OPTION_BAR) {
-        sprintf(sMenuTextStack, "%s: %d", sMenuOptions[optID].name[(int) gConfig.language], *sMenuOptions[optID].valuePtr);
+        sprintf(sMenuTextStack, "%s:", sMenuOptions[optID].name[(int) gConfig.language]);
     } else {
         sprintf(sMenuTextStack, "%s: %d", sMenuOptions[optID].name[(int) gConfig.language], *sMenuOptions[optID].valuePtr);
     }
@@ -132,13 +133,18 @@ void init(void) {
         init_menu_display(16, 22);
         for (int i = 0; i < sizeof(sMenuOptions) / sizeof(MenuOption); i++) {
             int colour;
+            int hasBar;
             if (sMenuOptions[i].flags & OPTION_STUB || (sMenuOptions[i].flags & OPTION_PAL_ONLY && gIsPal == false)) {
                 colour = 0x80808080;
             } else {
                 colour = 0xFFFFFFFF;
             }
-            
-            add_menu_text(set_option_text(i), sNumOptions, colour, 0);
+            if (sMenuOptions[i].flags & OPTION_BAR) {
+                hasBar = true;
+            } else {
+                hasBar = false;
+            }
+            add_menu_text(set_option_text(i), sNumOptions, colour, hasBar);
             sNumOptions++;
         }
     }
@@ -197,5 +203,16 @@ void loop(int updateRate) {
             }
         }
     }
+    MenuListEntry *entry = gMenuDisplay->list;
+    for (int i = 0; i < gMenuDisplay->listCount; i++) {
+        if ((sMenuOptions[i].flags & OPTION_BAR) == false) {
+            entry = entry->next;
+            continue;
+        }
+        int entryOffset;
+        entryOffset = MIN(0, sMenuOptions[i].minValue);
+        menutext_bar(entry, (int)(((float) (*sMenuOptions[i].valuePtr - entryOffset) / (float) (sMenuOptions[i].maxValue - entryOffset)) * 100.0f));
+        entry = entry->next;
+    } 
 }
 

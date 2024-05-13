@@ -12,6 +12,11 @@ enum OptionFlags {
     OPTION_PAL_ONLY = (1 << 5),
 };
 
+enum MenuFlags {
+    MENUTEXT_NONE,
+    MENUTEXT_BAR = (1 << 0),
+};
+
 typedef struct MenuOption {
     char **name;
     char *valuePtr;
@@ -24,8 +29,10 @@ typedef struct MenuOption {
 
 typedef struct MenuListEntry {
     char *text;
-    int colour[4];
+    char colour[4];
     int flags;
+    short var1;
+    short var2;
     struct MenuListEntry *prev;
     struct MenuListEntry *next;
 } MenuListEntry;
@@ -76,3 +83,4 @@ void process_menus(int updateRate, float updateRateF);
 void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short *selectionY,  int minX, int minY, int maxX, int maxY);
 void free_menu_display(void);
 void menu_reset_display(void);
+void menutext_bar(MenuListEntry *m, int size);
