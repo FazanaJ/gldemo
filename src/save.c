@@ -8,13 +8,15 @@
 #include "audio.h"
 #include "assets.h"
 
-int gSavePaks[4];
+char gSavePaks[4];
+char gControllerPaks[4];
 
 void save_find_paks(void) {
     debugf("Searching for controller paks...\n");
     for (int i = 0; i < 4; i++) {
         int mem = validate_mempak(i);
         gSavePaks[i] = mem;
+        gControllerPaks[i] = joypad_get_accessory_type(i);
         if (mem == 0) {
             debugf("Controller Pak #%d is detected.\n", i + 1);
         }

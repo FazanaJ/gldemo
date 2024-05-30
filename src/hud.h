@@ -19,3 +19,5 @@ void add_subtitle(char *text, int timer);
 void transition_set(int type, int timer);
 void transition_into_scene(int sceneID, int transitionType, int timer, int transitionOut);
 void transition_clear(void);
+void render_panel(int x1, int y1, int x2, int y2, int style, unsigned int colour);
+void text_outline(rdpq_textparms_t *parms, int x, int y, char *text, color_t colour);

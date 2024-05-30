@@ -70,7 +70,8 @@ DSO_MODULES = boot.dso \
 	testarea3.dso \
 	healthbar.dso \
 	minimap.dso \
-	options.dso
+	options.dso \
+	pakmenu.dso
 
 DSO_LIST = $(addprefix filesystem/, $(DSO_MODULES))
 
@@ -95,6 +96,7 @@ COMPRESS_LEVEL ?= --compress $(ASSET_LEVEL_COMPRESS)
 all: gldemo.z64
 
 filesystem/arial.10.font64: MKFONT_FLAGS+=--size 10
+filesystem/mvboli.12.font64: MKFONT_FLAGS+=--size 12
 
 filesystem/%.font64: assets/fonts/%.ttf
 	@mkdir -p $(dir $@)
@@ -202,6 +204,8 @@ n64brew_SRC = src/overlays/minimap.c
 filesystem/minimap.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 n64brew_SRC = src/overlays/options.c
 filesystem/options.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
+n64brew_SRC = src/overlays/pakmenu.c
+filesystem/pakmenu.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 
 n64brew_SRC = src/objects/projectile.c
 filesystem/projectile.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)

@@ -53,6 +53,7 @@ enum MenuStatus {
     MENU_OPTIONS,
     MENU_CONFIG,
     MENU_CONTROLS,
+    MENU_SAVES,
 #ifdef PUPPYPRINT_DEBUG
     MENU_SCENESELECT,
 #endif

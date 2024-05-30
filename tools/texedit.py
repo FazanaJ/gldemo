@@ -1,16 +1,37 @@
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QListWidget, QListWidgetItem, QLabel
+from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QListWidget, QListWidgetItem, QLabel, QFileDialog
 from PyQt5.QtGui import QPixmap
+import configparser
 import sys
 import os
 
 def check_valid_directory():
-    if (os.path.exists("../assets/textures")):
+    if (os.path.exists(app.rootDir + "/assets/textures")):
         print("Texture directory found.")
         return True
     else:
         print("Texture directory missing.")
         return False
+    
+def write_config():
+    with open(app.configDir, "w") as configfile:
+        app.config.write(configfile)
+
+def boot_config():
+    if not os.path.exists(app.configDir):
+        print("No config found, generating new one.")
+        app.config.add_section("Core")
+        app.config["Core"]["version"] = "1.0"
+        app.config["Core"]["last_directory"] = app.rootDir
+        write_config()
+    else:
+        app.config.read("toolconfig.ini")
+        app.rootDir = app.config["Core"]["last_directory"]
+    if not (os.path.exists(app.rootDir + "/assets/textures")):
+        app.rootDir = QFileDialog.getExistingDirectory(window, "Open Repo Folder", app.rootDir, QtWidgets.QFileDialog.ShowDirsOnly)
+        window.setWindowTitle("Texedit | " + app.rootDir)
+        app.config["Core"]["last_directory"] = app.rootDir
+        write_config()
     
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -52,6 +73,9 @@ app.textureMirrorH = []
 app.textureMirrorV = []
 app.textureCount = 0
 window = Window()
+app.config = configparser.ConfigParser()
+app.rootDir = ""
+app.configDir = "./toolconfig.ini"
 
 def create_button(parent, x, y, w, h, text, hidden):
     button = QtWidgets.QPushButton(parent)
@@ -129,7 +153,7 @@ def make_window():
     window.texImage.setVisible(True)
 
 def init_tex_list():
-    file = open("../include/texture_Table.h")
+    file = open(app.rootDir + "/include/texture_Table.h")
     levelString = file.readlines()
     file.close()
     enumFound = False
@@ -187,7 +211,7 @@ def init_tex_list():
                 app.textureNames.insert(index, name)
                 app.textureCount += 1
     enumFound = False
-    file = open("../include/enums.h")
+    file = open(app.rootDir + "/include/enums.h")
     levelString = file.readlines()
     file.close()
     for line in levelString:
@@ -200,7 +224,6 @@ def init_tex_list():
             ln3 = line.rfind(',')
             if ln == -1:
                 name = line[ln + 1:ln3]
-                print(name)
                 index = len(app.textureEnums)
                 app.textureEnums.insert(index, name)
     
@@ -324,6 +347,7 @@ def save_texture():
     window.texList.addItems(app.textureNames)
     write_textures()
 
+boot_config()
 if check_valid_directory() is True:
     print("Starting.")
     make_window()

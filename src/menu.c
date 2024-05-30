@@ -24,6 +24,7 @@ char gMenuPrev[NUM_MENU_PREVS];
 char gIsPal = false;
 static char sMenuSwapTimer = 0;
 static char sConfigMenu = false;
+static char sSaveMenu = false;
 short gMenuSelection[2];
 static short sMenuSelectionPrev[NUM_MENU_PREVS][2];
 static char sMenuSelectionTimer[2] = {0, 0};
@@ -161,15 +162,14 @@ static void render_menu_list(void) {
     int x = gMenuDisplay->x;
     int y = gMenuDisplay->y;
     while (list != NULL) {
-        rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(0, 0, 0, 255),});
-        rdpq_text_print(NULL, FONT_MVBOLI, x + 1, y + 1, list->text);
+        color_t colour;
         if (i == gMenuSelection[1]) {
             int sineCol = 128 + (32 * sins(gGameTimer * 0x400));
-            rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, sineCol, sineCol, 255),});
+            colour =RGBA32(255, sineCol, sineCol, 255);
         } else {
-            rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(list->colour[0], list->colour[1], list->colour[2], list->colour[3]),});
+            colour = RGBA32(list->colour[0], list->colour[1], list->colour[2], list->colour[3]);
         }
-        rdpq_text_print(NULL, FONT_MVBOLI, x, y, list->text);
+        text_outline(NULL, x, y, list->text, colour);
         if (list->flags & MENUTEXT_BAR) {
             rdpq_set_mode_fill(RGBA32(0, 0, 0, 255));
             rdpq_fill_rectangle(x + 139, y - 9, x + 241, y + 1);
@@ -328,6 +328,35 @@ char *sPauseMenuText[][LANG_TOTAL] = {
     {"Quit", "Quit2"},
 };
 
+
+void (*sSavesRender)(int, float);
+
+void menu_saves(int updateRate, float updateRateF) {
+    static void *ovl = NULL;
+    static void (*func)(int, float);
+    //overlay_run(0, updateRateF, "healthbar", sRenderHealth, &func, &ovl);
+
+    if (sSaveMenu) {
+        if (ovl == NULL) {
+            ovl = dlopen(asset_dir("pakmenu", DFS_OVERLAY), RTLD_LOCAL);
+            void (*init)() = dlsym(ovl, "init");
+            sSavesRender = dlsym(ovl, "render");
+            (*init)();
+            func = dlsym(ovl, "loop");
+        }
+        (*func)(updateRate, updateRateF);
+        sSaveMenu = false;
+    } else {
+        if (ovl != NULL) {
+            void (*close)() = dlsym(ovl, "close");
+            (*close)();
+            dlclose(ovl);
+            ovl = NULL;
+            sSavesRender = NULL;
+        }
+    }
+}
+
 void menu_config(int updateRate, float updateRateF) {
     static void *ovl = NULL;
     static void (*func)(int, float);
@@ -429,6 +458,7 @@ static void process_sceneselect_menu(int updateRate) {
 char *sTitleMenuText[][LANG_TOTAL] = {
     {"Play", "Play2"},
     {"Options", "Options2"},
+    {"Saves", "Saves2"},
 #ifdef PUPPYPRINT_DEBUG
     {"Scene Select", "Scene Select2"},
 #endif
@@ -462,13 +492,17 @@ static void process_title_menu(int updateRate) {
             menu_set_forward(MENU_CONFIG);
             sMenuSwapTimer = 30;
             break;
-#ifdef PUPPYPRINT_DEBUG
         case 2:
+            menu_set_forward(MENU_SAVES);
+            sMenuSwapTimer = 30;
+            break;
+#ifdef PUPPYPRINT_DEBUG
+        case 3:
             menu_set_forward(MENU_SCENESELECT);
             sMenuSwapTimer = 30;
             break;
 #endif
-        case 3:
+        case 4:
             menu_set_forward(MENU_CONTROLS);
             sMenuSwapTimer = 30;
             break;
@@ -480,6 +514,7 @@ void process_menus(int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
     DECREASE_VAR(sMenuSwapTimer, updateRate, 0);
     menu_config(updateRate, updateRateF);
+    menu_saves(updateRate, updateRateF);
     switch (gMenuStatus) {
     case MENU_CLOSED:
         if (sMenuSwapTimer == 0 && gTalkControl == NULL && input_pressed(INPUT_START, 3)) {
@@ -505,6 +540,16 @@ void process_menus(int updateRate, float updateRateF) {
             menu_set_backward(MENU_PREV);
         }
         return;
+    case MENU_SAVES:
+        if (input_pressed(INPUT_B, 3) && sMenuSwapTimer == 0) {
+            sSaveMenu = false;
+            play_sound_global(SOUND_MENU_CLICK);
+            input_clear(INPUT_B);
+            menu_set_backward(MENU_PREV);
+        } else {
+            sSaveMenu = true;
+        }
+        break;
     case MENU_CONFIG:
         if ((input_pressed(INPUT_START, 3) || input_pressed(INPUT_B, 3)) && sMenuSwapTimer == 0) {
             sConfigMenu = false;
@@ -535,16 +580,17 @@ void render_menus(int updateRate, float updateRateF) {
     case MENU_CLOSED:
         return;
     case MENU_CONTROLS:
-        rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(0, 0, 0, 255),});
-        rdpq_text_print(NULL, FONT_MVBOLI, 33, 33, "Controls:\nA: Interact\nZ: Target\nL: Move Camera\n\n\nB: Back");
-        rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, 255, 255, 255),});
-        rdpq_text_print(NULL, FONT_MVBOLI, 32, 32, "Controls:\nA: Interact\nZ: Target\nL: Move Camera\n\n\nB: Back");
+        text_outline(NULL, 32, 32, "Controls:\nA: Interact\nZ: Target\nL: Move Camera\n\n\nB: Back", RGBA32(255, 255, 255, 255));
         break;
     case MENU_CONFIG:
-        rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(0, 0, 0, 255),});
-        rdpq_text_printf(NULL, FONT_MVBOLI, display_get_width() - 79, 17, "FPS: %2.2f", (double) display_get_fps());
-        rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, 255, 255, 255),});
-        rdpq_text_printf(NULL, FONT_MVBOLI, display_get_width() - 80, 16, "FPS: %2.2f", (double) display_get_fps());
+        char textBytes[12];
+        sprintf(textBytes, "FPS: %2.2f", (double) display_get_fps());
+        text_outline(NULL, display_get_width() - 80, 16, textBytes, RGBA32(255, 255, 255, 255));
+        break;
+    case MENU_SAVES:
+        if (sSaveMenu && sSavesRender) {
+            (*sSavesRender)(updateRate, updateRateF);
+        }
         break;
     }
     render_menu_list();

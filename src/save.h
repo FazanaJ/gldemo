@@ -11,6 +11,8 @@ enum PakErrorCodes {
     PAK_DETECTED = 0,
 };
 
+extern char gSavePaks[4];
+extern char gControllerPaks[4];
 extern const eepfs_entry_t eeprom_16k_files[1];
 
 void save_find_paks(void);

@@ -28,6 +28,13 @@ int gTransitionScene;
 sprite_t *gPanelSprite[4];
 rspq_block_t *gPanelBlock;
 
+void text_outline(rdpq_textparms_t *parms, int x, int y, char *text, color_t colour) {
+    rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(0, 0, 0, 255),});
+    rdpq_text_print(parms, FONT_MVBOLI, x + 1, y + 1, text);
+    rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = colour,});
+    rdpq_text_print(parms, FONT_MVBOLI, x, y, text);
+}
+
 static void render_ztarget(void) {
     int targetPos;
     if (gConfig.regionMode == TV_PAL) {
@@ -309,10 +316,7 @@ static void render_camera_hud(void) {
         return;
     }
     char *text = "A: Toggle text\nL/Z: Down\nR: Up\nC: Look\nStick: Move\nDpad Up/Down: FoV";
-    rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(0, 0, 0, 255),});
-    rdpq_text_print(NULL, FONT_MVBOLI, 33, 33, text);
-    rdpq_font_style(gFonts[FONT_MVBOLI], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, 255, 255, 255),});
-    rdpq_text_print(NULL, FONT_MVBOLI, 32, 32, text);
+    text_outline(NULL, 32, 32, text, RGBA32(255, 255, 255, 255));
 }
 
 static char sRenderHealth = false;
@@ -423,7 +427,7 @@ void render_hud(int updateRate, float updateRateF) {
 
     if (gCurrentController == -1) {
         render_panel((gFrameBuffers->width / 2) - 64, (gFrameBuffers->height / 2) - 64, (gFrameBuffers->width / 2) + 64, (gFrameBuffers->height / 2) - 32, 0, 0xFFFFFFFF);
-        rdpq_text_printf(NULL, FONT_MVBOLI, (gFrameBuffers->width / 2) - 40, (gFrameBuffers->height / 2) - 40, "Press Blart");
+        text_outline(NULL, (gFrameBuffers->width / 2) - 40, (gFrameBuffers->height / 2) - 40, "Press Blart", RGBA32(0, 0, 0, 255));
     }
     get_time_snapshot(PP_HUD, DEBUG_SNAPSHOT_1_END);
 }
