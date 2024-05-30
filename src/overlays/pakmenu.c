@@ -184,7 +184,7 @@ void loop(int updateRate, float updateRateF) {
             input_clear(INPUT_A);
             switch (sPakMode) {
             case PAK_MODE_SELECT_SOURCE:
-                if (sPakOption != sPakOptionCount[(int) sPakID] || sPakNotes[(int) sPakID] == 16 || sPakPages[(int) sPakID] == 0) {
+                if (sPakOption != sPakOptionCount[(int) sPakID] - 1 || sPakNotes[(int) sPakID] == 16 || sPakPages[(int) sPakID] == 0) {
                     get_mempak_entry(sPakID, (int) sPakFileIDs[sPakOption], sPakSource);
                     sPakMode = PAK_MODE_OPTIONS;
                 }
