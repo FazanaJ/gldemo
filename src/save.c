@@ -24,7 +24,7 @@ void save_find_paks(void) {
 }
 
 const eepfs_entry_t eeprom_16k_files[1] = {
-    {"config.dat", sizeof(ConfigBits)},
+    {"cfg.dat", sizeof(ConfigBits)},
 };
 
 void save_config_write(void) {
@@ -37,6 +37,6 @@ void save_config_write(void) {
     config.musicVolume = gConfig.musicVolume;
     config.soundVolume = gConfig.soundVolume;
     config.magic = SAVE_MAGIC_NUMBER;
-    eepfs_write("config.dat", &config, sizeof(ConfigBits));
+    eepfs_write("cfg.dat", &config, sizeof(ConfigBits));
     debugf("Config saved.\n");
 }

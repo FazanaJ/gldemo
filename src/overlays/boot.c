@@ -31,7 +31,7 @@ void read_config(void) {
         gIsPal = true;
     }
     ConfigBits config;
-    eepfs_read("config.dat", &config, sizeof(ConfigBits));
+    eepfs_read("cfg.dat", &config, sizeof(ConfigBits));
     debugf("Magic Number is: 0x%X\n", config.magic);
     if (config.magic != SAVE_MAGIC_NUMBER) {
         bzero(&config, sizeof(ConfigBits));
