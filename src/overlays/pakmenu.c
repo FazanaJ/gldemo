@@ -19,6 +19,7 @@
 #define PAK_MODE_SELECT_DEST 3
 #define PAK_MODE_CONFIRM 4
 #define PAK_MODE_ERROR 5
+#define PAK_MODE_FORMAT 6
 
 static char sResetPaks;
 static char sPakExists;
@@ -56,11 +57,32 @@ static void pak_reset_menu(void) {
 static void pakmenu_reset(void) {
     sPakExists = false;
     save_find_paks();
+    if (gSavePaks[(int) sPakID] != 0) {
+        sPakID--;
+        if (sPakID == -1) {
+            sPakID = 3;
+        }
+        while (gSavePaks[(int) sPakID] != 0) {
+            sPakID--;
+            if (sPakID == -1) {
+                sPakID = 3;
+            }
+        }
+    }
     for (int i = 0; i < 4; i++) {
         if (gSavePaks[i] == 0) {
             if (sPrevPakID != sPakID && sPakID == i) {
                 if (sPakMode != PAK_MODE_SELECT_SOURCE && sPakMode != PAK_MODE_SELECT_DEST) {
-                    pak_reset_menu();
+                    sPakMode = PAK_MODE_SELECT_SOURCE;
+                }
+                if (validate_mempak(i) == -3) {
+                    sPakMode = PAK_MODE_FORMAT;
+                    sPakID = i;
+                    sPakConfirmOption = 0;
+                    sPakExists = true;
+                    sPakModeOpt = 2;
+                    sResetPaks = false;
+                    return;
                 }
                 sPakOption = 0;
                 sPakScroll = 0.0f;
@@ -153,12 +175,53 @@ static char *sTextConfirmNames[][2] = {
     {"Erase file?", "Erase file?2"},
 };
 
+static char *sTextFormat[][2] = {
+    {"Pak", "Pak"},
+    {"must be formatted", "Must be formatted2"},
+    {"Format now?", "Format now?2"},
+};
+
+void pakmenu_page_input(void) {
+    int prevPak = sPakID;
+    if (input_pressed(INPUT_L, 3) || input_pressed(INPUT_Z, 3)) {
+        sPakID--;
+        if (sPakID == -1) {
+            sPakID = 3;
+        }
+        while (gSavePaks[(int) sPakID] != 0) {
+            sPakID--;
+            if (sPakID == -1) {
+                sPakID = 3;
+            }
+        }
+        sResetPaks = true;
+    }
+    if (input_pressed(INPUT_R, 3)) {
+        sPakID++;
+        if (sPakID == 4) {
+            sPakID = 0;
+        }
+        while (gSavePaks[(int) sPakID] != 0) {
+            sPakID++;
+            if (sPakID == 4) {
+                sPakID = 0;
+            }
+        }
+        sResetPaks = true;
+    }
+    if (sPakID != prevPak) {
+        pakmenu_reset();
+    }
+}
+
 void loop(int updateRate, float updateRateF) {
     if (sResetPaks) {
         pakmenu_reset();
     }
 
-    if (sPakMode == PAK_MODE_SELECT_SOURCE || sPakMode == PAK_MODE_SELECT_DEST) {
+    switch (sPakMode) {
+    case PAK_MODE_SELECT_SOURCE:
+    case PAK_MODE_SELECT_DEST:
         sResetTimer += updateRate;
         if (sResetTimer >= 120) {
             sResetPaks = true;
@@ -209,34 +272,9 @@ void loop(int updateRate, float updateRateF) {
             }
             sPakConfirmOption = 0;
         }
-
-        if (input_pressed(INPUT_L, 3) || input_pressed(INPUT_Z, 3)) {
-            sPakID--;
-            if (sPakID == -1) {
-                sPakID = 3;
-            }
-            while (gSavePaks[(int) sPakID] != 0) {
-                sPakID--;
-                if (sPakID == -1) {
-                    sPakID = 3;
-                }
-            }
-            sResetPaks = true;
-        }
-        if (input_pressed(INPUT_R, 3)) {
-            sPakID++;
-            if (sPakID == 4) {
-                sPakID = 0;
-            }
-            while (gSavePaks[(int) sPakID] != 0) {
-                sPakID++;
-                if (sPakID == 4) {
-                    sPakID = 0;
-                }
-            }
-            sResetPaks = true;
-        }
-    } else if (sPakMode == PAK_MODE_OPTIONS) {
+        pakmenu_page_input();
+        break;
+    case PAK_MODE_OPTIONS:
         handle_menu_stick_input(updateRate, MENUSTICK_STICKY | MENUSTICK_WRAPY, NULL, &sPakConfirmOption, 0, 0, 0, 4);
         if (input_pressed(INPUT_A, 3)) {
             input_clear(INPUT_A);
@@ -260,12 +298,36 @@ void loop(int updateRate, float updateRateF) {
                 break;
             }
         }
-    } else if (sPakMode == PAK_MODE_CONFIRM) {
+        break;
+    case PAK_MODE_INFO:
+        if (input_pressed(INPUT_A, 3)) {
+            input_clear(INPUT_A);
+            sPakMode = PAK_MODE_SELECT_SOURCE;
+        }
+        break;
+    case PAK_MODE_CONFIRM:
+    case PAK_MODE_FORMAT:
         handle_menu_stick_input(updateRate, MENUSTICK_STICKY | MENUSTICK_WRAPY, NULL, &sPakConfirmOption, 0, 0, 0, 2);
+        if (sPakMode == PAK_MODE_FORMAT) {
+            pakmenu_page_input();
+        }
         if (input_pressed(INPUT_A, 3)) {
             input_clear(INPUT_A);
             switch (sPakConfirmOption) {
             case 0: // No
+                if (sPakMode == PAK_MODE_FORMAT) {
+                    sPakID++;
+                    if (sPakID == 4) {
+                        sPakID = 0;
+                    }
+                    while (gSavePaks[(int) sPakID] != 0) {
+                        sPakID++;
+                        if (sPakID == 4) {
+                            sPakID = 0;
+                        }
+                    }
+                    sResetPaks = true;
+                }
                 sPakMode = PAK_MODE_SELECT_SOURCE;
                 break;
             case 1: // Yes
@@ -278,8 +340,10 @@ void loop(int updateRate, float updateRateF) {
                     }
                     write_mempak_entry_data(sPakID, sPakSource, data);
                     free(data);
-                } else {
+                } else if (sPakModeOpt == 1) {
                     delete_mempak_entry(sPakID, sPakSource);
+                } else if (sPakModeOpt == 2) {
+                    format_mempak(sPakID);
                 }
                 sPakOptionCount[(int) sPakID] = 0;
                 pak_reset_menu();
@@ -289,17 +353,14 @@ void loop(int updateRate, float updateRateF) {
                 break;
             }
         }
-    } else if (sPakMode == PAK_MODE_ERROR) {
+        break;
+    case PAK_MODE_ERROR:
         sPakErrorTime -= updateRate;
         if (sPakErrorTime <= 0) {
             sPakMode = PAK_MODE_SELECT_SOURCE;
             pak_reset_menu();
         }
-    } else if (sPakMode == PAK_MODE_INFO) {
-        if (input_pressed(INPUT_A, 3)) {
-            input_clear(INPUT_A);
-            sPakMode = PAK_MODE_SELECT_SOURCE;
-        }
+        break;
     }
 }
 
@@ -383,63 +444,7 @@ void render(int updateRate, float updateRateF) {
             }
             y += 18;
         }
-
-        
         rdpq_set_scissor(0, 0, screenWidth, screenHeight);
-
-        int x = screenHalfW - (32 * 2);
-        int x2 = screenHalfW + (32 * 2) - 8;
-        y = screenHeight - 32;
-
-        rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-        rdpq_set_prim_color(RGBA32(0, 0, 0, 255));
-        // Left arrow
-        rdpq_triangle(&TRIFMT_FILL,
-                (float[]){x - 8, y},
-                (float[]){x - 32, y + 12},
-                (float[]){x - 8, y + 24}
-            );
-        // Right arrow
-        rdpq_triangle(&TRIFMT_FILL,
-                (float[]){x2 + 8, y},
-                (float[]){x2 + 32, y + 12},
-                (float[]){x2 + 8, y + 24}
-            );
-        text_outline(NULL, x - 22, y + 16, "Z", RGBA32(255, 255, 255, 255));
-        text_outline(NULL, x2 + 10, y + 16, "R", RGBA32(255, 255, 255, 255));
-        for (int i = 0; i < 4; i++) {
-            sprite_t *spr = NULL;
-
-            if (gControllerPaks[i] == JOYPAD_ACCESSORY_TYPE_CONTROLLER_PAK) {
-                spr = sControllerPakIcon;
-            } else if (gControllerPaks[i] == JOYPAD_ACCESSORY_TYPE_TRANSFER_PAK) {
-                spr = sTransferPakIcon;
-            } else if (gControllerPaks[i] == JOYPAD_ACCESSORY_TYPE_RUMBLE_PAK) {
-                spr = sRumblePakIcon;
-            }
-
-            unsigned int colour;
-            int colour2;
-            if (sPakID == i && gSavePaks[i] == 0) {
-                colour = sineCol;
-                colour2 = 255;
-            } else {
-                colour = 0;
-                colour2 = 0;
-            }
-            rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
-            rdpq_set_prim_color(RGBA32(colour2, colour, colour, 255));
-            rdpq_fill_rectangle(x, screenHeight - 32, x + 24, screenHeight - 8);
-            if (spr == NULL) {
-                rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
-                rdpq_fill_rectangle(x + 1, screenHeight - 32 + 1, x + 23, screenHeight - 9);
-            } else {
-                rdpq_mode_combiner(RDPQ_COMBINER_TEX);
-                rdpq_sprite_blit(spr, x + 1, screenHeight - 31, NULL);
-            }
-
-            x += 32;
-        }
     } else {
         rdpq_set_prim_color(RGBA32(0, 0, 0, 192));
         rdpq_fill_rectangle(screenHalfW - 120, screenHalfH - 80, screenHalfW + 120, screenHalfH + 80);
@@ -449,12 +454,66 @@ void render(int updateRate, float updateRateF) {
         text_outline(&parms, screenHalfW - 120 + 1, screenHalfH - 48, textBytes, RGBA32(255, 255, 255, 255));
         sprintf(textBytes, "Vendor: 0x%X", (unsigned int) sPakSource->vendor);
         text_outline(&parms, screenHalfW - 120 + 1, screenHalfH - 36, textBytes, RGBA32(255, 255, 255, 255));
-        sprintf(textBytes, "Game ID: 0x%X", sPakSource->game_id);
+        sprintf(textBytes, "Company ID: 0x%X", sPakSource->game_id);
         text_outline(&parms, screenHalfW - 120 + 1, screenHalfH - 24, textBytes, RGBA32(255, 255, 255, 255));
         sprintf(textBytes, "Region: 0x%X", sPakSource->region);
         text_outline(&parms, screenHalfW - 120 + 1, screenHalfH - 12, textBytes, RGBA32(255, 255, 255, 255));
         sprintf(textBytes, "Note: %X", sPakSource->entry_id + 1);
         text_outline(&parms, screenHalfW - 120 + 1, screenHalfH - 0, textBytes, RGBA32(255, 255, 255, 255));
+    }
+
+    int x = screenHalfW - (32 * 2);
+    int x2 = screenHalfW + (32 * 2) - 8;
+    int y = screenHeight - 32;
+
+    rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+    rdpq_set_prim_color(RGBA32(0, 0, 0, 255));
+    // Left arrow
+    rdpq_triangle(&TRIFMT_FILL,
+        (float[]){x - 8, y},
+        (float[]){x - 32, y + 12},
+        (float[]){x - 8, y + 24}
+    );
+    // Right arrow
+    rdpq_triangle(&TRIFMT_FILL,
+        (float[]){x2 + 8, y},
+        (float[]){x2 + 32, y + 12},
+        (float[]){x2 + 8, y + 24}
+    );
+    text_outline(NULL, x - 22, y + 16, "Z", RGBA32(255, 255, 255, 255));
+    text_outline(NULL, x2 + 10, y + 16, "R", RGBA32(255, 255, 255, 255));
+    for (int i = 0; i < 4; i++) {
+        sprite_t *spr = NULL;
+
+        if (gControllerPaks[i] == JOYPAD_ACCESSORY_TYPE_CONTROLLER_PAK) {
+            spr = sControllerPakIcon;
+        } else if (gControllerPaks[i] == JOYPAD_ACCESSORY_TYPE_TRANSFER_PAK) {
+            spr = sTransferPakIcon;
+        } else if (gControllerPaks[i] == JOYPAD_ACCESSORY_TYPE_RUMBLE_PAK) {
+            spr = sRumblePakIcon;
+        }
+
+        unsigned int colour;
+        int colour2;
+        if (sPakID == i && gSavePaks[i] == 0) {
+            colour = sineCol;
+            colour2 = 255;
+        } else {
+            colour = 0;
+            colour2 = 0;
+        }
+        rdpq_mode_combiner(RDPQ_COMBINER_FLAT);
+        rdpq_set_prim_color(RGBA32(colour2, colour, colour, 255));
+        rdpq_fill_rectangle(x, screenHeight - 32, x + 24, screenHeight - 8);
+        if (spr == NULL) {
+            rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
+            rdpq_fill_rectangle(x + 1, screenHeight - 32 + 1, x + 23, screenHeight - 9);
+        } else {
+            rdpq_mode_combiner(RDPQ_COMBINER_TEX);
+            rdpq_sprite_blit(spr, x + 1, screenHeight - 31, NULL);
+        }
+
+        x += 32;
     }
 
     rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
@@ -496,5 +555,22 @@ void render(int updateRate, float updateRateF) {
         rdpq_fill_rectangle(screenHalfW - 80, screenHalfH, screenHalfW + 80, screenHalfH + 32);
         parms.width = 160;
         text_outline(&parms, screenHalfW - 80, (screenHalfH + 16), sErrorText[(int)sPakError][(int) gConfig.language], RGBA32(255, 255, 255, 255));
+    } else if (sPakMode == PAK_MODE_FORMAT) {
+        rdpq_set_prim_color(RGBA32(0, 0, 0, 224));
+        rdpq_fill_rectangle(screenHalfW - 80, screenHalfH - 32, screenHalfW + 80, screenHalfH + 40);
+        parms.width = 160;
+        parms.line_spacing = -8;
+        char textBytes[64];
+        sprintf(textBytes, "%s %d %s\n%s", sTextFormat[0][(int) gConfig.language], sPakID + 1, sTextFormat[1][(int) gConfig.language], sTextFormat[2][(int) gConfig.language]);
+        text_outline(&parms, screenHalfW - 80, (screenHalfH - 18), textBytes, RGBA32(255, 255, 255, 255));
+        for (int i = 0; i < 2; i++) {
+            int colour;
+            if (sPakConfirmOption == i) {
+                colour = sineCol;
+            } else {
+                colour = 255;
+            }
+            text_outline(&parms, screenHalfW - 80, (screenHalfH + 12) + (i * 12), sTextConfirm[i][(int) gConfig.language], RGBA32(255, colour, colour, 255));
+        }
     }
 }
