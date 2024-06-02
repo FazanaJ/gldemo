@@ -1,5 +1,5 @@
 BUILD_DIR=build
-T3D_INST = ../t3d
+T3D_INST ?= ../t3d
 include $(N64_INST)/include/n64.mk
 include $(T3D_INST)/t3d.mk
 
