@@ -71,7 +71,8 @@ DSO_MODULES = boot.dso \
 	healthbar.dso \
 	minimap.dso \
 	options.dso \
-	pakmenu.dso
+	pakmenu.dso \
+	keyboard.dso
 
 DSO_LIST = $(addprefix filesystem/, $(DSO_MODULES))
 
@@ -206,6 +207,8 @@ n64brew_SRC = src/overlays/options.c
 filesystem/options.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 n64brew_SRC = src/overlays/pakmenu.c
 filesystem/pakmenu.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
+n64brew_SRC = src/overlays/keyboard.c
+filesystem/keyboard.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 
 n64brew_SRC = src/objects/projectile.c
 filesystem/projectile.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)

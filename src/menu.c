@@ -25,6 +25,7 @@ char gIsPal = false;
 static char sMenuSwapTimer = 0;
 static char sConfigMenu = false;
 static char sSaveMenu = false;
+static char sKeyboard = false;
 short gMenuSelection[2];
 static short sMenuSelectionPrev[NUM_MENU_PREVS][2];
 static char sMenuSelectionTimer[2] = {0, 0};
@@ -357,6 +358,34 @@ void menu_saves(int updateRate, float updateRateF) {
     }
 }
 
+void (*sKeyboardRender)(int, float);
+
+void menu_keyboard(int updateRate, float updateRateF) {
+    static void *ovl = NULL;
+    static void (*func)(int, float);
+    //overlay_run(0, updateRateF, "healthbar", sRenderHealth, &func, &ovl);
+
+    if (sKeyboard) {
+        if (ovl == NULL) {
+            ovl = dlopen(asset_dir("keyboard", DFS_OVERLAY), RTLD_LOCAL);
+            void (*init)() = dlsym(ovl, "init");
+            sKeyboardRender = dlsym(ovl, "render");
+            (*init)();
+            func = dlsym(ovl, "loop");
+        }
+        (*func)(updateRate, updateRateF);
+        sKeyboard = false;
+    } else {
+        if (ovl != NULL) {
+            void (*close)() = dlsym(ovl, "close");
+            (*close)();
+            dlclose(ovl);
+            ovl = NULL;
+            sKeyboardRender = NULL;
+        }
+    }
+}
+
 void menu_config(int updateRate, float updateRateF) {
     static void *ovl = NULL;
     static void (*func)(int, float);
@@ -514,6 +543,7 @@ void process_menus(int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
     DECREASE_VAR(sMenuSwapTimer, updateRate, 0);
     menu_config(updateRate, updateRateF);
+    menu_keyboard(updateRate, updateRateF);
     menu_saves(updateRate, updateRateF);
     switch (gMenuStatus) {
     case MENU_CLOSED:
@@ -530,6 +560,7 @@ void process_menus(int updateRate, float updateRateF) {
         return;
     case MENU_TITLE:
         process_title_menu(updateRate);
+        //sKeyboard = true;
         return;
     case MENU_OPTIONS:
         process_options_menu(updateRate);
@@ -592,6 +623,10 @@ void render_menus(int updateRate, float updateRateF) {
             (*sSavesRender)(updateRate, updateRateF);
         }
         break;
+    case MENU_TITLE:
+        if (sKeyboard && sKeyboardRender) {
+            (*sKeyboardRender)(updateRate, updateRateF);
+        }
     }
     render_menu_list();
     get_time_snapshot(PP_MENU, DEBUG_SNAPSHOT_1_END);

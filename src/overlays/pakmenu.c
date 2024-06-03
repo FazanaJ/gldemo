@@ -57,12 +57,12 @@ static void pak_reset_menu(void) {
 static void pakmenu_reset(void) {
     sPakExists = false;
     save_find_paks();
-    if (gSavePaks[(int) sPakID] != 0) {
+    if (gControllerPaks[(int) sPakID] != JOYPAD_ACCESSORY_TYPE_CONTROLLER_PAK) {
         sPakID--;
         if (sPakID == -1) {
             sPakID = 3;
         }
-        while (gSavePaks[(int) sPakID] != 0) {
+        while (gControllerPaks[(int) sPakID] != JOYPAD_ACCESSORY_TYPE_CONTROLLER_PAK) {
             sPakID--;
             if (sPakID == -1) {
                 sPakID = 3;
@@ -70,19 +70,10 @@ static void pakmenu_reset(void) {
         }
     }
     for (int i = 0; i < 4; i++) {
-        if (gSavePaks[i] == 0) {
+        if (gControllerPaks[i] == JOYPAD_ACCESSORY_TYPE_CONTROLLER_PAK) {
             if (sPrevPakID != sPakID && sPakID == i) {
                 if (sPakMode != PAK_MODE_SELECT_SOURCE && sPakMode != PAK_MODE_SELECT_DEST) {
                     sPakMode = PAK_MODE_SELECT_SOURCE;
-                }
-                if (validate_mempak(i) == -3) {
-                    sPakMode = PAK_MODE_FORMAT;
-                    sPakID = i;
-                    sPakConfirmOption = 0;
-                    sPakExists = true;
-                    sPakModeOpt = 2;
-                    sResetPaks = false;
-                    return;
                 }
                 sPakOption = 0;
                 sPakScroll = 0.0f;
@@ -92,12 +83,14 @@ static void pakmenu_reset(void) {
                 bzero(&sPakFileIDs, sizeof(sPakFileIDs));
                 sPakFull[i] = false;
                 sPakOptionCount[i] = 0;
-                for (int j = 0; j < 16; j++) {
-                    get_mempak_entry(i, j, sPakFiles[j]);
-                    if (sPakFiles[j]->valid) {
-                        sPakFileIDs[(int) sPakNotes[i]] = j;
-                        sPakOptionCount[i]++;
-                        sPakNotes[i]++;
+                if (validate_mempak(i) == 0) {
+                    for (int j = 0; j < 16; j++) {
+                        get_mempak_entry(i, j, sPakFiles[j]);
+                        if (sPakFiles[j]->valid) {
+                            sPakFileIDs[(int) sPakNotes[i]] = j;
+                            sPakOptionCount[i]++;
+                            sPakNotes[i]++;
+                        }
                     }
                 }
                 if (sPakOptionCount[i] != 16 && sPakPages[i] != 0) {
@@ -188,7 +181,7 @@ void pakmenu_page_input(void) {
         if (sPakID == -1) {
             sPakID = 3;
         }
-        while (gSavePaks[(int) sPakID] != 0) {
+        while (gControllerPaks[(int) sPakID] != JOYPAD_ACCESSORY_TYPE_CONTROLLER_PAK) {
             sPakID--;
             if (sPakID == -1) {
                 sPakID = 3;
@@ -201,7 +194,7 @@ void pakmenu_page_input(void) {
         if (sPakID == 4) {
             sPakID = 0;
         }
-        while (gSavePaks[(int) sPakID] != 0) {
+        while (gControllerPaks[(int) sPakID] != JOYPAD_ACCESSORY_TYPE_CONTROLLER_PAK) {
             sPakID++;
             if (sPakID == 4) {
                 sPakID = 0;
@@ -217,6 +210,15 @@ void pakmenu_page_input(void) {
 void loop(int updateRate, float updateRateF) {
     if (sResetPaks) {
         pakmenu_reset();
+    }
+
+    if (gSavePaks[(int) sPakID] == -3 && sPakMode != PAK_MODE_FORMAT) {
+        sPakMode = PAK_MODE_FORMAT;
+        sPakConfirmOption = 0;
+        sPakExists = true;
+        sPakModeOpt = 2;
+        sResetPaks = false;
+        return;
     }
 
     switch (sPakMode) {
@@ -320,7 +322,7 @@ void loop(int updateRate, float updateRateF) {
                     if (sPakID == 4) {
                         sPakID = 0;
                     }
-                    while (gSavePaks[(int) sPakID] != 0) {
+                    while (gControllerPaks[(int) sPakID] != JOYPAD_ACCESSORY_TYPE_CONTROLLER_PAK) {
                         sPakID++;
                         if (sPakID == 4) {
                             sPakID = 0;
@@ -495,7 +497,7 @@ void render(int updateRate, float updateRateF) {
 
         unsigned int colour;
         int colour2;
-        if (sPakID == i && gSavePaks[i] == 0) {
+        if (sPakID == i && gControllerPaks[(int) sPakID] == JOYPAD_ACCESSORY_TYPE_CONTROLLER_PAK) {
             colour = sineCol;
             colour2 = 255;
         } else {
