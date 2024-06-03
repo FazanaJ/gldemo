@@ -40,8 +40,8 @@ void init(void) {
     sKeyboardEntry[0] = '\0';
     sKeyboardCharLimit = 12;
     sKeyboardCursorPos = 1;
-    sKeyboardUpperCase = false;
-    sKeyboardShift = false;
+    sKeyboardUpperCase = true;
+    sKeyboardShift = true;
     sKeyboardPos[0] = (display_get_width() / 2) - (240 / 2);
     sKeyboardPos[1] = display_get_height() - 96;
 }
@@ -57,12 +57,20 @@ void loop(int updateRate, float updateRateF) {
             sKeyboardEntry[p] = sKeyboardString[(int) sKeyboardUpperCase][pos];
             sKeyboardEntry[p + 1] = '\0';
             sKeyboardCursorPos++;
+            if (sKeyboardShift) {
+                sKeyboardShift = 0;
+                sKeyboardUpperCase ^= 1;
+            }
         } else {
             switch (sKeyboardKeyPos[1]) {
             case 0:
-                if (sKeyboardCursorPos > 0) {
-                    sKeyboardEntry[p] = '\0';
+                if (sKeyboardCursorPos > 1) {
                     sKeyboardCursorPos--;
+                    sKeyboardEntry[p - 1] = '\0';
+                    if (sKeyboardCursorPos == 1) {
+                        sKeyboardShift = true;
+                        sKeyboardUpperCase = true;
+                    }
                 }
                 break;
             case 2:
@@ -76,16 +84,18 @@ void loop(int updateRate, float updateRateF) {
     } else if (input_pressed(INPUT_B, 3)) {
         int p = sKeyboardCursorPos - 1;
         input_clear(INPUT_B);
-        if (sKeyboardCursorPos > 0) {
-            sKeyboardEntry[p] = '\0';
+        if (sKeyboardCursorPos > 1) {
             sKeyboardCursorPos--;
+            sKeyboardEntry[p - 1] = '\0';
+            if (sKeyboardCursorPos == 1) {
+                sKeyboardShift = true;
+                sKeyboardUpperCase = true;
+            }
         }
     }
 }
 
 void render(int updateRate, float updateRateF) {
-    int screenW = display_get_width();
-    int screenH = display_get_height();
     int sineCol = 128 + (32 * sins(gGameTimer * 0x400));
     rdpq_set_mode_standard();
     rdpq_mode_combiner(RDPQ_COMBINER_FLAT);

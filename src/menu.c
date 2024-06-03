@@ -560,7 +560,7 @@ void process_menus(int updateRate, float updateRateF) {
         return;
     case MENU_TITLE:
         process_title_menu(updateRate);
-        //sKeyboard = true;
+        sKeyboard = true;
         return;
     case MENU_OPTIONS:
         process_options_menu(updateRate);
@@ -627,6 +627,7 @@ void render_menus(int updateRate, float updateRateF) {
         if (sKeyboard && sKeyboardRender) {
             (*sKeyboardRender)(updateRate, updateRateF);
         }
+        return;
     }
     render_menu_list();
     get_time_snapshot(PP_MENU, DEBUG_SNAPSHOT_1_END);

@@ -208,14 +208,15 @@ void pakmenu_page_input(void) {
 }
 
 void loop(int updateRate, float updateRateF) {
+    int pak = sPakID;
     if (sResetPaks) {
         pakmenu_reset();
     }
 
-    if (gSavePaks[(int) sPakID] == -3 && sPakMode != PAK_MODE_FORMAT) {
-        sPakPages[(int) sPakID] = 0;
-        sPakNotes[(int) sPakID] = 0;
-        sPakOptionCount[(int) sPakID] = 0;
+    if (gSavePaks[pak] == -3 && sPakMode != PAK_MODE_FORMAT) {
+        sPakPages[pak] = 0;
+        sPakNotes[pak] = 0;
+        sPakOptionCount[pak] = 0;
         sPakMode = PAK_MODE_FORMAT;
         sPakConfirmOption = 0;
         sPakExists = true;
@@ -234,10 +235,10 @@ void loop(int updateRate, float updateRateF) {
         }
         
         int prevOption = sPakOption;
-        handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &sPakOption, 0, 0, 0, sPakOptionCount[(int) sPakID]);
+        handle_menu_stick_input(updateRate, MENUSTICK_STICKY, NULL, &sPakOption, 0, 0, 0, sPakOptionCount[pak]);
         int diff = sPakOption - (int) sPakScrollTarget;
         if (prevOption < sPakOption) {
-            if (sPakOption != 15 && diff >= 8 && sPakOptionCount[(int) sPakID] - sPakOption > 1) {
+            if (sPakOption != 15 && diff >= 8 && sPakOptionCount[pak] - sPakOption > 1) {
                 sPakScrollTarget += 1.0f;
             }
         } else {
@@ -252,20 +253,20 @@ void loop(int updateRate, float updateRateF) {
             input_clear(INPUT_A);
             switch (sPakMode) {
             case PAK_MODE_SELECT_SOURCE:
-                if (sPakOption != sPakOptionCount[(int) sPakID] - 1 || sPakNotes[(int) sPakID] == 16 || sPakPages[(int) sPakID] == 0) {
+                if (sPakOption != sPakOptionCount[pak] - 1 || sPakNotes[pak] == 16 || sPakPages[pak] == 0) {
                     get_mempak_entry(sPakID, (int) sPakFileIDs[sPakOption], sPakSource);
                     sPakMode = PAK_MODE_OPTIONS;
                 }
                 break;
             case PAK_MODE_SELECT_DEST:
-                if (sPakModeOpt == 0 || sPakOption != sPakOptionCount[(int) sPakID] - 1) {
+                if (sPakModeOpt == 0 || sPakOption != sPakOptionCount[pak] - 1) {
                     int offset;
-                    if (sPakOption != sPakOptionCount[(int) sPakID] - 1) {
+                    if (sPakOption != sPakOptionCount[pak] - 1) {
                         offset = sPakFiles[(int) sPakFileIDs[(int) sPakOption]]->blocks;
                     } else {
                         offset = 0;
                     }
-                    if (sPakPages[(int) sPakID] + offset < sPakSource->blocks) {
+                    if (sPakPages[pak] + offset < sPakSource->blocks) {
                         sPakMode = PAK_MODE_ERROR;
                         sPakError = 0;
                         sPakErrorTime = timer_int(200);
@@ -325,7 +326,7 @@ void loop(int updateRate, float updateRateF) {
                     if (sPakID == 4) {
                         sPakID = 0;
                     }
-                    while (gControllerPaks[(int) sPakID] != JOYPAD_ACCESSORY_TYPE_CONTROLLER_PAK) {
+                    while (gControllerPaks[pak] != JOYPAD_ACCESSORY_TYPE_CONTROLLER_PAK) {
                         sPakID++;
                         if (sPakID == 4) {
                             sPakID = 0;
@@ -339,7 +340,7 @@ void loop(int updateRate, float updateRateF) {
                 if (sPakModeOpt == 0) {
                     void *data = malloc(sPakSource->blocks * 256);
                     read_mempak_entry_data(sPakID, sPakSource, data);
-                    if (sPakOption != sPakOptionCount[(int) sPakID] - 1) {
+                    if (sPakOption != sPakOptionCount[pak] - 1) {
                         entry_structure_t *file = sPakFiles[(int) sPakFileIDs[(int) sPakOption]];
                         delete_mempak_entry(sPakID, file);
                     }
@@ -350,7 +351,7 @@ void loop(int updateRate, float updateRateF) {
                 } else if (sPakModeOpt == 2) {
                     format_mempak(sPakID);
                 }
-                sPakOptionCount[(int) sPakID] = 0;
+                sPakOptionCount[pak] = 0;
                 pak_reset_menu();
                 sResetPaks = true;
                 sPrevPakID = -1;
