@@ -213,6 +213,9 @@ void loop(int updateRate, float updateRateF) {
     }
 
     if (gSavePaks[(int) sPakID] == -3 && sPakMode != PAK_MODE_FORMAT) {
+        sPakPages[(int) sPakID] = 0;
+        sPakNotes[(int) sPakID] = 0;
+        sPakOptionCount[(int) sPakID] = 0;
         sPakMode = PAK_MODE_FORMAT;
         sPakConfirmOption = 0;
         sPakExists = true;
