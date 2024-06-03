@@ -85,3 +85,4 @@ void handle_menu_stick_input(int updateRate, int flags, short *selectionX, short
 void free_menu_display(void);
 void menu_reset_display(void);
 void menutext_bar(MenuListEntry *m, int size);
+void menu_input_string(char *string);

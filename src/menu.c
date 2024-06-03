@@ -32,6 +32,13 @@ static char sMenuSelectionTimer[2] = {0, 0};
 static char sMenuSelectionType[2] = {0, 0};
 static unsigned char sMenuStackPos = 0;
 MenuListRoot *gMenuDisplay = NULL;
+char gMenuInputString[32];
+
+void menu_input_string(char *string) {
+    bzero(&gMenuInputString, sizeof(gMenuInputString));
+    memcpy(&gMenuInputString, string, strlen(string));
+    sKeyboard = false;
+}
 
 void free_menu_display(void) {
     if (gMenuDisplay) {
@@ -374,7 +381,7 @@ void menu_keyboard(int updateRate, float updateRateF) {
             func = dlsym(ovl, "loop");
         }
         (*func)(updateRate, updateRateF);
-        sKeyboard = false;
+        //sKeyboard = false;
     } else {
         if (ovl != NULL) {
             void (*close)() = dlsym(ovl, "close");
@@ -545,6 +552,10 @@ void process_menus(int updateRate, float updateRateF) {
     menu_config(updateRate, updateRateF);
     menu_keyboard(updateRate, updateRateF);
     menu_saves(updateRate, updateRateF);
+    if (sKeyboard) {
+        get_time_snapshot(PP_MENU, DEBUG_SNAPSHOT_1_END);
+        return;
+    }
     switch (gMenuStatus) {
     case MENU_CLOSED:
         if (sMenuSwapTimer == 0 && gTalkControl == NULL && input_pressed(INPUT_START, 3)) {
@@ -557,20 +568,19 @@ void process_menus(int updateRate, float updateRateF) {
             play_sound_global(SOUND_MENU_CLICK);
             input_clear(INPUT_START);
         }
-        return;
+        break;
     case MENU_TITLE:
         process_title_menu(updateRate);
-        sKeyboard = true;
-        return;
+        break;
     case MENU_OPTIONS:
         process_options_menu(updateRate);
-        return;
+        break;
     case MENU_CONTROLS:
         if (input_pressed(INPUT_B, 3)) {
             input_clear(INPUT_B);
             menu_set_backward(MENU_PREV);
         }
-        return;
+        break;
     case MENU_SAVES:
         if (input_pressed(INPUT_B, 3) && sMenuSwapTimer == 0) {
             sSaveMenu = false;
@@ -595,14 +605,22 @@ void process_menus(int updateRate, float updateRateF) {
         } else {
             sConfigMenu = true;
         }
-        return;
+        break;
 #ifdef PUPPYPRINT_DEBUG
     case MENU_SCENESELECT:
         process_sceneselect_menu(updateRate);
-        return;
+        break;
 #endif
     }
     get_time_snapshot(PP_MENU, DEBUG_SNAPSHOT_1_END);
+}
+
+void menu_overlay_render(int updateRate, float updateRateF) {
+    if (sSaveMenu && sSavesRender) {
+        (*sSavesRender)(updateRate, updateRateF);
+    } else if (sKeyboard && sKeyboardRender) {
+        (*sKeyboardRender)(updateRate, updateRateF);
+    }
 }
 
 void render_menus(int updateRate, float updateRateF) {
@@ -618,17 +636,10 @@ void render_menus(int updateRate, float updateRateF) {
         sprintf(textBytes, "FPS: %2.2f", (double) display_get_fps());
         text_outline(NULL, display_get_width() - 80, 16, textBytes, RGBA32(255, 255, 255, 255));
         break;
-    case MENU_SAVES:
-        if (sSaveMenu && sSavesRender) {
-            (*sSavesRender)(updateRate, updateRateF);
-        }
-        break;
     case MENU_TITLE:
-        if (sKeyboard && sKeyboardRender) {
-            (*sKeyboardRender)(updateRate, updateRateF);
-        }
-        return;
+        break;
     }
     render_menu_list();
+    menu_overlay_render(updateRate, updateRateF);
     get_time_snapshot(PP_MENU, DEBUG_SNAPSHOT_1_END);
 }

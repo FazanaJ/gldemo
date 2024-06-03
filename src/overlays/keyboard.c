@@ -23,6 +23,7 @@ const char *sKeyboardString[] = {
     "qwertyuiop\n"
     "asdfghjkl!\n"
     "zxcvbnm .?\n",
+
     "1234567890\n"
     "QWERTYUIOP\n"
     "ASDFGHJKL!\n"
@@ -33,7 +34,7 @@ char *sKeyboardNames[][2] = {
     {"Del", "Del2"},
     {"Caps", "Caps2"},
     {"Shift", "Shift2"},
-    {"Done", "Done"}
+    {"Done", "Done2"}
 };
 
 void init(void) {
@@ -53,13 +54,15 @@ void loop(int updateRate, float updateRateF) {
         int p = sKeyboardCursorPos - 1;
         input_clear(INPUT_A);
         if (sKeyboardKeyPos[0] < 10) {
-            int pos = sKeyboardKeyPos[0] + (sKeyboardKeyPos[1] * 10) + sKeyboardKeyPos[1];
-            sKeyboardEntry[p] = sKeyboardString[(int) sKeyboardUpperCase][pos];
-            sKeyboardEntry[p + 1] = '\0';
-            sKeyboardCursorPos++;
-            if (sKeyboardShift) {
-                sKeyboardShift = 0;
-                sKeyboardUpperCase ^= 1;
+            if (sKeyboardCursorPos <= sKeyboardCharLimit) {
+                int pos = sKeyboardKeyPos[0] + (sKeyboardKeyPos[1] * 10) + sKeyboardKeyPos[1];
+                sKeyboardEntry[p] = sKeyboardString[(int) sKeyboardUpperCase][pos];
+                sKeyboardEntry[p + 1] = '\0';
+                sKeyboardCursorPos++;
+                if (sKeyboardShift) {
+                    sKeyboardShift = 0;
+                    sKeyboardUpperCase ^= 1;
+                }
             }
         } else {
             switch (sKeyboardKeyPos[1]) {
@@ -78,6 +81,9 @@ void loop(int updateRate, float updateRateF) {
                 // fallthrough
             case 1: 
                 sKeyboardUpperCase ^= 1;
+                break;
+            case 3:
+                menu_input_string(sKeyboardEntry);
                 break;
             }
         }
