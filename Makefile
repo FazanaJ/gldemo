@@ -33,7 +33,7 @@ assets_png = $(wildcard assets/textures/character/*.png) $(wildcard assets/textu
 			 $(wildcard assets/textures/hud/*.png) $(wildcard assets/textures/icons/*.png) $(wildcard assets/textures/misc/*.png) \
 			 $(wildcard assets/textures/props/*.png) $(wildcard assets/textures/skyboxes/*.png) $(wildcard assets/textures/talksprites/*.png) \
 			 $(wildcard assets/textures/maps/*.png)
-assets_wav = $(wildcard assets/sounds/*.wav)
+assets_wav = $(wildcard assets/sounds/lq/*.wav) $(wildcard assets/sounds/mq/*.wav) $(wildcard assets/sounds/hq/*.wav)
 assets_gltf = $(wildcard assets/models/*.glb) $(wildcard assets/archives/*.glb)
 assets_xm1 = $(wildcard assets/xm/*.xm)
 assets_opus = $(wildcard assets/opus/*.wav)
@@ -154,20 +154,30 @@ filesystem/%.sprite: assets/archives/%.png
 	@echo "    [SPRITE] $@"
 	@$(N64_MKSPRITE) --compress 3 -o "$(dir $@)" "$<"
 
-filesystem/%.wav64: assets/sounds/%.wav
+filesystem/%.wav64: assets/sounds/lq/%.wav
 	@mkdir -p $(dir $@)
 	@echo "    [AUDIO] $@"
-	@$(N64_AUDIOCONV) --wav-compress 1 --wav-resample 16000 -o filesystem $<
+	@$(N64_AUDIOCONV) --wav-compress 1 --wav-resample 12000 --wav-mono -o filesystem $<
+
+filesystem/%.wav64: assets/sounds/mq/%.wav
+	@mkdir -p $(dir $@)
+	@echo "    [AUDIO] $@"
+	@$(N64_AUDIOCONV) --wav-compress 1 --wav-resample 16000 --wav-mono -o filesystem $<
+
+filesystem/%.wav64: assets/sounds/hq/%.wav
+	@mkdir -p $(dir $@)
+	@echo "    [AUDIO] $@"
+	@$(N64_AUDIOCONV) --wav-compress 1 --wav-resample 20000 --wav-mono -o filesystem $<
 
 filesystem/%.wav64: assets/opus/%.wav
 	@mkdir -p $(dir $@)
 	@echo "    [AUDIO] $@"
-	@$(N64_AUDIOCONV) --wav-compress 3 --wav-resample 12000 -o filesystem $<
+	@$(N64_AUDIOCONV) --wav-compress 3 --wav-resample 12000 --wav-mono -o filesystem $<
 
 filesystem/%.xm64: assets/xm/%.xm
 	@mkdir -p $(dir $@)
 	@echo "    [AUDIO] $@"
-	@$(N64_AUDIOCONV) --wav-compress 1 -o filesystem "$<"
+	@$(N64_AUDIOCONV) --wav-compress 1 --wav-resample 16000 --wav-mono -o filesystem "$<"
 
 ifeq ($(GFXUCODE),opengl)
 filesystem/%.model64: assets/models/%.glb

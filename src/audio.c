@@ -31,6 +31,7 @@ SoundData sSoundTable[] = {
     {"mouseclick", 10},
     {"shell1", 10},
     {"textblip", 10},
+    {"keyboard", 10},
 };
 
 VoiceData sVoiceTable[] = {
@@ -128,7 +129,7 @@ void audio_loop(int updateRate, float updateRateF) {
 }
 
 static int find_sound_channel(int priority) {
-    static int pris[CHANNEL_MAX_NUM] = { 0 };
+    static char pris[CHANNEL_MAX_NUM] = { 0 };
 
     // Find a free channel
     int lowest = 0;

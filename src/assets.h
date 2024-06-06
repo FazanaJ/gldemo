@@ -17,21 +17,21 @@ enum Languages {
 
 enum MaterialFlags {
     MATERIAL_NULL,
-    MATERIAL_CUTOUT =       (1 << 0), // Enables 1 bit alpha.
-    MATERIAL_XLU =          (1 << 1), // Enables semitransparency.
-    MATERIAL_LIGHTING =     (1 << 2), // Enables light calculation.
-    MATERIAL_FOG =          (1 << 3), // Enables fog.
-    MATERIAL_ENVMAP =       (1 << 4), // Enables environment mapping.
-    MATERIAL_DEPTH_READ =  (1 << 5), // Enables depth write.
-    MATERIAL_VTXCOL =       (1 << 6), // Enables vertex colours
-    MATERIAL_DECAL =        (1 << 7), // Enables surface decal projection.
-    MATERIAL_INTER =        (1 << 8), // Enables interpenetrating surfaces.
-    MATERIAL_BACKFACE =     (1 << 9), // Enables backfaces
-    MATERIAL_INVISIBLE =    (1 << 10), // Don't render.
-    MATERIAL_INTANGIBLE =   (1 << 11), // Don't collide with anything.
-    MATERIAL_CAM_ONLY =     (1 << 12), // Only collide with the camera.
-    MATERIAL_NO_CAM =       (1 << 13), // Don't collide with the camera.
-    MATERIAL_FRONTFACE =    (1 << 14), // Enables frontfaces
+    MATERIAL_CUTOUT =       (1 << 4), // Enables 1 bit alpha.
+    MATERIAL_XLU =          (1 << 5), // Enables semitransparency.
+    MATERIAL_LIGHTING =     (1 << 6), // Enables light calculation.
+    MATERIAL_FOG =          (1 << 7), // Enables fog.
+    MATERIAL_ENVMAP =       (1 << 8), // Enables environment mapping.
+    MATERIAL_DEPTH_READ =   (1 << 9), // Enables depth write.
+    MATERIAL_VTXCOL =       (1 << 10), // Enables vertex colours
+    MATERIAL_DECAL =        (1 << 11), // Enables surface decal projection.
+    MATERIAL_INTER =        (1 << 12), // Enables interpenetrating surfaces.
+    MATERIAL_BACKFACE =     (1 << 13), // Enables backfaces
+    MATERIAL_INVISIBLE =    (1 << 14), // Don't render.
+    MATERIAL_INTANGIBLE =   (1 << 15), // Don't collide with anything.
+    MATERIAL_CAM_ONLY =     (1 << 16), // Only collide with the camera.
+    MATERIAL_NO_CAM =       (1 << 17), // Don't collide with the camera.
+    MATERIAL_FRONTFACE =    (1 << 18), // Enables frontfaces
 };
 
 enum TextureFlags {
@@ -63,7 +63,7 @@ enum FontList {
 
  typedef struct TextureInfo {
     char *file;
-    unsigned char flags;
+    unsigned int flags;
 } __attribute__((__packed__)) TextureInfo;
 
  typedef struct SpriteInfo {

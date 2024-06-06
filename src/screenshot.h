@@ -4,7 +4,6 @@
 
 extern char gScreenshotStatus;
 extern surface_t gScreenshot;
-extern sprite_t *gScreenshotSprite;
 extern char gScreenshotType;
 
 #define SCREENSHOT_SHOW -1

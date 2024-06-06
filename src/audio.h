@@ -33,6 +33,7 @@ enum SoundIDs {
     SOUND_MENU_CLICK,
     SOUND_SHELL1,
     SOUND_TEXTBLIP,
+    SOUND_KEYBOARD,
 
     SOUND_TOTAL
 };

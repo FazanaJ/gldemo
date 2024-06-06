@@ -1023,7 +1023,7 @@ static void render_world(int updateRate) {
                     RenderNode *entry = (RenderNode *) render_alloc(sizeof(RenderNode), layer);
                     entry->matrix = NULL;
                     Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : c->material;
-                    add_render_node(entry, c->renderBlock, mat, c->material->flags, layer);
+                    add_render_node(entry, c->renderBlock, mat, MATERIAL_NULL, layer);
                     c = c->next;
                 }
                 s->flags |= CHUNK_HAS_MODEL;
@@ -1381,6 +1381,8 @@ void render_game(int updateRate, float updateRateF) {
     gMatrixStackPos = 1;
 #endif
     if (gScreenshotStatus != SCREENSHOT_SHOW) {
+        glDisable(GL_MULTISAMPLE_ARB);
+        rdpq_mode_antialias(AA_NONE);
         render_ztarget_scissor();
         if (gEnvironment->skyboxTextureID == -1 || gConfig.graphics == G_PERFORMANCE) {
             render_sky_gradient(gEnvironment);
@@ -1389,14 +1391,14 @@ void render_game(int updateRate, float updateRateF) {
         if (gEnvironment->skyboxTextureID != -1 && gConfig.graphics != G_PERFORMANCE) {
             render_sky_texture(gEnvironment);
         }
-        apply_anti_aliasing(AA_GEO);
         apply_render_settings();
         set_light(lightNeutral);
         render_determine_visible();
+        apply_anti_aliasing(AA_GEO);
         render_world(updateRate);
-        apply_anti_aliasing(AA_GEO);
+        //apply_anti_aliasing(AA_GEO);
         render_object_shadows();
-        apply_anti_aliasing(AA_GEO);
+        //apply_anti_aliasing(AA_GEO);
         render_clutter();
         apply_anti_aliasing(AA_ACTOR);
         render_objects();

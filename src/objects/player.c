@@ -107,12 +107,23 @@ static void player_act_air(Object *o, PlayerData *d, int updateRate, float updat
     }
 
     if (o->movement->vel[1] < 0.0f) {
+        int grabbed = false;
         float offset = o->hitbox->width + 3.0f;
         float posX = o->pos[0] + (offset * sins(o->faceAngle[1]));
         float posZ = o->pos[2] + (offset * coss(o->faceAngle[1]));
         float height = collision_floor(posX, o->pos[1] + o->hitbox->height + 2.0f, posZ, NULL, false);
         float heightDiff = o->pos[1] - height;
         if (heightDiff < -15.0f && heightDiff > -25.0f) {
+            grabbed = true;
+        } else {
+            height = collision_floor_hitbox(o, posX, o->pos[1] + o->hitbox->height + 2.0f, posZ);
+            float heightDiff = o->pos[1] - height;
+            if (heightDiff < -15.0f && heightDiff > -25.0f) {
+                grabbed = true;
+            }
+        }
+
+        if (grabbed) {
             d->action = PLAYER_ACT_LEDGE;
             d->climbPos[0] = posX;
             d->climbPos[1] = height;

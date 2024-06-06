@@ -132,6 +132,7 @@ float gHitboxHeight;
 Object *gObjectPlatform; 
 Object *sPrevPlatform;
 #define COLLISION_CAP (sizeof(obj->hitbox->collideObj) / sizeof(int *))
+#define NEAR_CAP (sizeof(obj->hitbox->nearObj) / sizeof(int *))
 
 Object *find_nearest_object_facing(Object *obj, int objectID, float baseDist, int range, int angle) {
     float bestDist = SQR(baseDist);
@@ -266,10 +267,14 @@ static void object_hit_cylinder_cylinder(Object *obj, Object *testObj) {
         Hitbox *h2 = testObj->hitbox;
         float dist = SQR(relX) + SQR(relZ);
         if (dist > (gHitboxSize[0][0] + gHitboxSize[1][0]) * (gHitboxSize[0][2] + gHitboxSize[1][2])) {
+            if (dist * 0.75f > (gHitboxSize[0][0] + gHitboxSize[1][0]) * (gHitboxSize[0][2] + gHitboxSize[1][2])) {
+                h->nearObj[(int) h->numNear++] = testObj;
+            }
             return;
         }
         dist = sqrtf(dist);
         h->collideObj[(int) h->numCollisions++] = testObj;
+        h->nearObj[(int) h->numNear++] = testObj;
         if (h2->numCollisions < COLLISION_CAP) {
             h2->collideObj[(int) h2->numCollisions++] = obj;
         }
@@ -481,6 +486,7 @@ static void update_objects(int updateRate, float updateRateF) {
         }
         if (obj->hitbox) {
             obj->hitbox->numCollisions = 0;
+            obj->hitbox->numNear = 0;
         }
         objList = objList->next;
         if ((obj->flags & OBJ_FLAG_DELETE) == false) {

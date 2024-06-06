@@ -235,6 +235,17 @@ float collision_floor(float x, float y, float z, float *norm, int w) {
 #endif
 }
 
+float collision_floor_hitbox(Object *obj, float x, float y, float z) {
+    DEBUG_SNAPSHOT_1();
+    float recordHeight = -30000.0f;
+    for (int i = 0; i < obj->hitbox->numNear; i++) {
+        Object *hit = obj->hitbox->nearObj[i];
+
+    }
+    get_time_snapshot(PP_COLLISION, DEBUG_SNAPSHOT_1_END);
+    return recordHeight;
+}
+
 void object_collide(Object *obj) {
 #if OPENGL
     DEBUG_SNAPSHOT_1();

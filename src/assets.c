@@ -51,28 +51,14 @@ short gObjectModels[OBJ_TOTAL] = {
 };
 
 short playerModelTextures[][9] = {
-    {TEXTURE_PLEASE, 0, 0, 0, 0, 0, 0, 0, 0}, // Ears
-    {TEXTURE_PLEASE, 0, 0, 0, 0, 0, 0, 0, 0}, // Feet
-    {TEXTURE_STONEFLOOR4, 0, 0, 0, 0, 0, 0, 0, 0}, // Hair
-    {TEXTURE_PLEASE, 0, 0, 0, 0, 0, 0, 0, 0}, // Hands
-    {TEXTURE_EYE1, TEXTURE_INTEROSIGN2, TEXTURE_MOUTH1, TEXTURE_PLEASE, 0, 0, 0, 0, 0}, // Head
+    {TEXTURE_BROIJUSTWANTCOLOUR, 0, 0, 0, 0, 0, 0, 0, 0}, // Ears
+    {TEXTURE_BROIJUSTWANTCOLOUR, 0, 0, 0, 0, 0, 0, 0, 0}, // Feet
+    {TEXTURE_ROCKSURFACE4, 0, 0, 0, 0, 0, 0, 0, 0}, // Hair
+    {TEXTURE_BROIJUSTWANTCOLOUR, 0, 0, 0, 0, 0, 0, 0, 0}, // Hands
+    {TEXTURE_EYE1, TEXTURE_INTROSIGN2, TEXTURE_MOUTH1, TEXTURE_BROIJUSTWANTCOLOUR, 0, 0, 0, 0, 0}, // Head
     {TEXTURE_TROUSERS, 0, 0, 0, 0, 0, 0, 0, 0}, // Legs
-    {TEXTURE_PLEASE, 0, 0, 0, 0, 0, 0, 0, 0}, // Tail
-    {TEXTURE_PLEASE, TEXTURE_SHIRT, 0, 0, 0, 0, 0, 0, 0}, // Torso
-};
-
-short playerModelFlags[][9] = {
-    {0, 0, 0, MATERIAL_CUTOUT | MATERIAL_DECAL, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0 | 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0 | 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0 | 0, 0, 0, 0, 0, 0},
-    {MATERIAL_CUTOUT | MATERIAL_DECAL, 0, MATERIAL_CUTOUT | MATERIAL_DECAL, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0 | 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0 | 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0 | 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0 | 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0 | 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0 | 0, 0, 0, 0, 0, 0},
+    {TEXTURE_BROIJUSTWANTCOLOUR, 0, 0, 0, 0, 0, 0, 0, 0}, // Tail
+    {TEXTURE_BROIJUSTWANTCOLOUR, TEXTURE_SHIRT, 0, 0, 0, 0, 0, 0, 0}, // Torso
 };
 
 MaterialList *gMaterialListHead;
@@ -168,7 +154,6 @@ char *asset_dir(char *dir, int format) {
 void load_font(int fontID) {
     if (gFonts[fontID] == NULL) {
         gFonts[fontID] = rdpq_font_load(asset_dir(gFontAssetTable[fontID - 1], DFS_FONT64));
-        rdpq_font_style(gFonts[fontID], 0, &(rdpq_fontstyle_t) { .color = RGBA32(255, 255, 255, 255),});
         rdpq_text_register_font(fontID, gFonts[fontID]);
     }
 }
@@ -214,6 +199,7 @@ int load_texture(Material *material) {
 #endif
     list->loadTimer = 10;
     material->index = list;
+    material->flags = gTextureIDs[material->textureID].flags;
     debugf(" Time: %2.3fs.\n", (double) (TIMER_MICROS(DEBUG_SNAPSHOT_1_END) / 1000000.0f));
 #ifdef PUPPYPRINT_DEBUG
     gNumTextures++;
@@ -725,17 +711,19 @@ static void load_object_model(Object *obj, int objectID) {
             ObjectModel *m = malloc(sizeof(ObjectModel));
             m->prim = model64_get_primitive(mesh, j);
             if (modelID == 1) {
-                m->material.flags = playerModelFlags[i][j] | MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_LIGHTING;
                 m->material.textureID = playerModelTextures[i][j];
                 m->material.combiner = 0;
-            } else if (modelID == 4) {
-                m->material.flags = MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_LIGHTING | MATERIAL_VTXCOL;
+            } else if (modelID == 4 || modelID == 5 || modelID == 6) {
                 m->material.textureID = TEXTURE_CRATE;
                 m->material.combiner = 0;
             } else {
-                m->material.flags = MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_LIGHTING | MATERIAL_VTXCOL;
                 m->material.textureID = -1;
                 m->material.combiner = 0;
+            }
+            if (m->material.textureID != -1) {
+                m->material.flags = gTextureIDs[m->material.textureID].flags;
+            } else {
+                m->material.flags = 0;
             }
             m->material.index = NULL;
             m->next = NULL;

@@ -186,7 +186,7 @@ static void render_hud_subtitles(void) {
         .width = display_get_width(),
         .height = 0,
         .align = ALIGN_CENTER,
-        .valign = VALIGN_BOTTOM,
+        .valign = VALIGN_TOP,
         .line_spacing = -8,
     };
 
@@ -218,7 +218,11 @@ void init_hud(void) {
 
 void render_panel(int x1, int y1, int x2, int y2, int style, unsigned int colour) {
     rdpq_set_mode_standard();
-    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    if ((colour & 0xFF) != 255) {
+        rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    } else {
+        rdpq_mode_blender(0);
+    }
     rdpq_set_prim_color(RGBA32((colour >> 24) & 0xFF, (colour >> 16) & 0xFF, (colour >> 8) & 0xFF, colour & 0xFF));
     rdpq_mode_combiner(RDPQ_COMBINER_TEX_FLAT);
 

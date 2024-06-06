@@ -20,3 +20,4 @@ typedef struct CollisionCell {
 
 void object_collide(struct Object *obj);
 float collision_floor(float x, float y, float z, float *norm, int w);
+float collision_floor_hitbox(struct Object *obj, float x, float y, float z);

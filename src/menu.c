@@ -22,6 +22,7 @@
 char gMenuStatus = MENU_TITLE;
 char gMenuPrev[NUM_MENU_PREVS];
 char gIsPal = false;
+char gMenuMode2 = 0;
 static char sMenuSwapTimer = 0;
 static char sConfigMenu = false;
 static char sSaveMenu = false;
@@ -520,9 +521,9 @@ static void process_title_menu(int updateRate) {
         input_clear(INPUT_A);
         switch (gMenuSelection[1]) {
         case 0:
-            menu_set_reset(MENU_CLOSED);
-            transition_into_scene(SCENE_TESTAREA, TRANSITION_FULLSCREEN_IN, 30, TRANSITION_FULLSCREEN_OUT);
-            set_background_music(0, 30);
+            sKeyboard = true;
+            gMenuMode2 = 1;
+            return;
             break;
         case 1:
             menu_set_forward(MENU_CONFIG);
@@ -543,6 +544,13 @@ static void process_title_menu(int updateRate) {
             sMenuSwapTimer = 30;
             break;
         }
+    }
+
+    if (gMenuMode2 && sKeyboard == false) {
+        menu_set_reset(MENU_CLOSED);
+        transition_into_scene(SCENE_TESTAREA, TRANSITION_FULLSCREEN_IN, 30, TRANSITION_FULLSCREEN_OUT);
+        set_background_music(0, 30);
+        gMenuMode2 = 0;
     }
 }
 

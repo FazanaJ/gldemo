@@ -10,7 +10,6 @@
 char gScreenshotStatus;
 char gScreenshotType;
 surface_t gScreenshot;
-sprite_t *gScreenshotSprite;
 
 void screenshot_on(int type) {
     gScreenshotStatus = SCREENSHOT_GENERATE;

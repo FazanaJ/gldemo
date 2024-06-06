@@ -59,7 +59,8 @@ enum HitboxTypes {
 };
 
 typedef struct Hitbox {
-	char type;
+	unsigned type : 4;
+	unsigned numNear : 4;
 	unsigned numCollisions : 4;
 	unsigned solid : 4;
 	unsigned short moveSound;
@@ -70,7 +71,8 @@ typedef struct Hitbox {
 	float length;
 	float height;
 	float weight;
-	struct Object *collideObj[4];
+	struct Object *collideObj[4]; // Objects actively collided with
+	struct Object *nearObj[8]; // Objects reasonably near
 } Hitbox;
 
 typedef struct DynamicShadowData {

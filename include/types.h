@@ -32,7 +32,7 @@ typedef struct MaterialList {
 typedef struct Material {
     MaterialList *index;
     short textureID;
-    short flags;
+    int flags;
     int combiner;
 } Material;
 
