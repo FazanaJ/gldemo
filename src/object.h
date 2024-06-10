@@ -103,13 +103,13 @@ typedef struct DynamicShadow {
 } DynamicShadow;
 
 typedef struct ObjectModel {
-	Material material;
+	Material *material;
 	struct ObjectModel *next;
 	void (*func)(struct Object *obj, int updateRate, float updateRateF);
 	rspq_block_t *block;
 	primitive_t *prim;
+	short materialID;
 	char matrixBehaviour;
-	char pad[3];
 } ObjectModel;
 
 typedef struct ObjectGraphics {
@@ -219,7 +219,7 @@ typedef struct ParticleInfo {
 } ParticleInfo;
 
 typedef struct Particle {
-	Material *material;
+	//Material *material;
 	struct ParticleList *entry;
 	float pos[3];
 	unsigned int flags;

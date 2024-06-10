@@ -9,6 +9,7 @@
 #include "../include/global.h"
 #define INCLUDE_TEX_TABLE
 #include "../include/texture_table.h"
+#include "../include/material_table.h"
 #undef INCLUDE_TEX_TABLE
 
 #include "debug.h"
@@ -63,22 +64,24 @@ short playerModelTextures[][9] = {
 
 MaterialList *gMaterialListHead;
 MaterialList *gMaterialListTail;
+SpriteList *gSpriteListHead;
+SpriteList *gSpriteListTail;
 ModelList *gModelIDListHead = NULL;
 ModelList *gModelIDListTail = NULL;
 rdpq_font_t *gFonts[FONT_TOTAL];
 #ifdef PUPPYPRINT_DEBUG
-short gNumTextures;
+short gNumMaterials;
 short gNumTextureLoads;
 #endif
 
 void init_materials(void) {
     bzero(&gRenderSettings, sizeof(RenderSettings));
     gPrevRenderFlags = 0;
-    gPrevTextureID = 0;
+    gPrevMaterialID = -1;
     gMaterialListHead = NULL;
     gMaterialListTail = NULL;
 #ifdef PUPPYPRINT_DEBUG
-    gNumTextures = 0;
+    gNumMaterials = 0;
     gNumTextureLoads = 0;
 #endif
     rspq_block_begin();
@@ -93,43 +96,6 @@ void init_materials(void) {
 #endif
     gParticleMaterialBlock = rspq_block_end();
 }
-
-#if OPENGL
-void bind_new_texture(MaterialList *material) {
-    int repeatH;
-    int repeatV;
-    int mirrorH;
-    int mirrorV;
-    int texID = material->textureID;
-
-    if (gTextureIDs[texID].flags & TEX_CLAMP_H) {
-        repeatH = false;
-    } else {
-        repeatH = REPEAT_INFINITE;
-    }
-    if (gTextureIDs[texID].flags & TEX_CLAMP_V) {
-        repeatV = false;
-    } else {
-        repeatV = REPEAT_INFINITE;
-    }
-    if (gTextureIDs[texID].flags & TEX_MIRROR_H) {
-        mirrorH = MIRROR_REPEAT;
-    } else {
-        mirrorH = MIRROR_DISABLED;
-    }
-    if (gTextureIDs[texID].flags & TEX_MIRROR_V) {
-        mirrorV = MIRROR_REPEAT;
-    } else {
-        mirrorV = MIRROR_DISABLED;
-    }
-    glBindTexture(GL_TEXTURE_2D, material->texture);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-    glSpriteTextureN64(GL_TEXTURE_2D, material->sprite, &(rdpq_texparms_t){.s.repeats = repeatH, .t.repeats = repeatV, .s.mirror = mirrorH, .t.mirror = mirrorV});
-}
-#endif
 
 static char *sFileFormatString[] = {
     "sprite",
@@ -164,22 +130,183 @@ void free_font(int fontID) {
     }
 }
 
-int load_texture(Material *material) {
-    DEBUG_SNAPSHOT_1();
-    MaterialList *list = gMaterialListHead;
+rdpq_texparms_t sTexParams;
+
+rdpq_combiner_t sCombinerTable[CC_TOTAL] = {
+    RDPQ_COMBINER_TEX_SHADE,
+    RDPQ_COMBINER2((TEX1, TEX0, TEX1, TEX0), (0, 0, 0, ENV), (COMBINED, 0, SHADE, 0), (0, 0, 0, COMBINED)),
+    RDPQ_COMBINER_TEX_SHADE,
+    RDPQ_COMBINER_TEX_SHADE,
+    RDPQ_COMBINER_TEX_SHADE,
+    RDPQ_COMBINER_TEX_SHADE,
+    RDPQ_COMBINER2((TEX0, PRIM, TEX1, PRIM), (TEX0, 0, TEX1, 0), (TEX1, 0, TEX1, COMBINED), (SHADE, 0, PRIM, COMBINED)),
+};
+
+void material_setup_constants(Material *m) {
+    tex_format_t fmt = sprite_get_format(m->tex0->sprite);
+    if (fmt == FMT_CI4 || fmt == FMT_CI8) {
+        int palletteSize;
+        uint16_t *pallette;
+        if (fmt == FMT_CI8) {
+            palletteSize = 256;
+        } else {
+            palletteSize = 16;
+        }
+        pallette = sprite_get_palette(m->tex0->sprite);
+        if (pallette == NULL) {
+            debugf("Texture [%s] is marked as CI, but is not actually a CI.\n", gTextureIDs[m->tex0->spriteID].file);
+        }
+        rdpq_tex_upload_tlut(pallette, 0, palletteSize);
+    }
+    glTexSizeN64(m->tex0->sprite->width, m->tex0->sprite->height);
+    if (gTextureIDs[m->tex0->spriteID].flags & TEX_CLAMP_H) {
+        sTexParams.s.repeats = 0;
+    } else {
+        sTexParams.s.repeats = REPEAT_INFINITE;
+    }
+    /*if (gTextureIDs[m->tex0->spriteID].flags & TEX_CLAMP_V) {
+        sTexParams.t.repeats = 0;
+    } else {*/
+        sTexParams.t.repeats = REPEAT_INFINITE;
+    //}
+    if (gTextureIDs[m->tex0->spriteID].flags & TEX_MIRROR_H) {
+        sTexParams.s.mirror = MIRROR_REPEAT;
+    } else {
+        sTexParams.s.mirror = false;
+    }
+    if (gTextureIDs[m->tex0->spriteID].flags & TEX_MIRROR_V) {
+        sTexParams.t.mirror = MIRROR_REPEAT;
+    } else {
+        sTexParams.t.mirror = false;
+    }
+    sTexParams.s.translate = 0;
+    sTexParams.t.translate = m->tex0->sprite->height;
+    sTexParams.s.scale_log = gMaterialIDs[m->entry->materialID].shiftS0;
+    sTexParams.t.scale_log = gMaterialIDs[m->entry->materialID].shiftT0;
+    rdpq_mode_combiner(sCombinerTable[m->combiner]);
+}
+
+void material_run_partial(Material *m) {
+    m->shiftS0 += gMaterialIDs[m->entry->materialID].moveS0;
+    if (m->shiftS0 > 1024) {
+        m->shiftS0 -= 1024;
+    }
+    m->shiftT0 += gMaterialIDs[m->entry->materialID].moveT0;
+    if (m->shiftT0 > 1024) {
+        m->shiftT0 -= 1024;
+    }
+    sTexParams.s.translate = (float) m->shiftS0 * 0.125f;
+    sTexParams.t.translate = m->tex0->sprite->height + ((float) m->shiftT0 * 0.125f);
+    sTexParams.s.scale_log = gMaterialIDs[m->entry->materialID].shiftS0;
+    sTexParams.t.scale_log = gMaterialIDs[m->entry->materialID].shiftT0;
+    if (m->tex1) {
+        rdpq_tex_multi_begin();
+    }
+    surface_t surf = sprite_get_pixels(m->tex0->sprite);
+    rdpq_tex_upload(0, &surf, &sTexParams);
+    if (m->tex1) {
+        m->shiftS1 += gMaterialIDs[m->entry->materialID].moveS1;
+        if (m->shiftS1 > 1024) {
+            m->shiftS1 -= 1024;
+        }
+        m->shiftT1 += gMaterialIDs[m->entry->materialID].moveT1;
+        if (m->shiftT1 > 1024) {
+            m->shiftT1 -= 1024;
+        }
+        sTexParams.s.translate = (float) m->shiftS1 * 0.125f;
+        sTexParams.t.translate = (float) m->shiftT1 * 0.125f;
+        sTexParams.s.scale_log = gMaterialIDs[m->entry->materialID].shiftS1;
+        sTexParams.t.scale_log = gMaterialIDs[m->entry->materialID].shiftT1;
+        surface_t surf = sprite_get_pixels(m->tex1->sprite);
+        rdpq_tex_upload(1, &surf, &sTexParams);
+        rdpq_tex_multi_end();
+    }
+}
+
+rspq_block_t *material_generate_dl(Material *m) {
+    rspq_block_begin();
+    material_setup_constants(m);
+    if (gMaterialIDs[m->entry->materialID].moveS0 == 0 && gMaterialIDs[m->entry->materialID].moveT0 == 0 &&
+        gMaterialIDs[m->entry->materialID].moveS1 == 0 && gMaterialIDs[m->entry->materialID].moveT1 == 0) {
+        material_run_partial(m);
+    }
+    return rspq_block_end();
+}
+
+static SpriteList *sprite_try_load(int spriteID) {
+    SpriteList *list = gSpriteListHead;
     // Check if the texture is already loaded, and bind it to the index.
     while (list) {
-        if (list->textureID == material->textureID) {
-            material->index = list;
-            return 0;
+        if (list->spriteID == spriteID) {
+            goto end;
         }
         list = list->next;
     }
     // It doesn't, so load the texture into RAM and create a new entry.
-    list = malloc(sizeof(MaterialList));
+    list = malloc(sizeof(SpriteList));
     if (list == NULL) {
-        return -1;
+        return NULL;
     }
+    if (gSpriteListHead == NULL) {
+        gSpriteListHead = list;
+        gSpriteListHead->prev = NULL;
+        gSpriteListTail = gSpriteListHead;
+    } else {
+        gSpriteListTail->next = list;
+        gSpriteListTail->next->prev = gSpriteListTail;
+        gSpriteListTail = gSpriteListTail->next;
+    }
+    list->next = NULL;
+    list->spriteID = spriteID;
+    list->sprite = sprite_load(asset_dir(gTextureIDs[spriteID].file, DFS_SPRITE));
+    list->refCount = 0;
+    end:
+    list->refCount++;
+    return list;
+}
+
+static void sprite_try_free(SpriteList *sprite) {
+    sprite->refCount--;
+    if (sprite->refCount > 0) {
+        return;
+    }
+    sprite_free(sprite->sprite);
+        
+    if (sprite == gSpriteListHead) {
+        if (gSpriteListHead->next) {
+            gSpriteListHead = gSpriteListHead->next;
+            gSpriteListHead->prev = NULL;
+        } else {
+            gSpriteListHead = NULL;
+            if (sprite == gSpriteListTail) {
+                gSpriteListTail = NULL;
+            }
+        }
+    } else {
+        if (sprite == gSpriteListTail) {
+            gSpriteListTail = gSpriteListTail->prev;
+        }
+        sprite->prev->next = sprite->next;
+        if (sprite->next) {
+            sprite->next->prev = sprite->prev;
+        }
+    }
+    free(sprite);
+}
+
+Material *material_init(int materialID) {
+    DEBUG_SNAPSHOT_1();
+    MaterialList *list = gMaterialListHead;
+    // Check if the texture is already loaded, and bind it to the index.
+    while (list) {
+        if (list->materialID == materialID) {
+            list->refCount++;
+            return list->material;
+        }
+        list = list->next;
+    }
+    debugf("Loading material: %d.", materialID);
+    list = malloc(sizeof(MaterialList));
     if (gMaterialListHead == NULL) {
         gMaterialListHead = list;
         gMaterialListHead->prev = NULL;
@@ -189,25 +316,47 @@ int load_texture(Material *material) {
         gMaterialListTail->next->prev = gMaterialListTail;
         gMaterialListTail = gMaterialListTail->next;
     }
+    list->refCount = 1;
+    list->materialID = materialID;
     list->next = NULL;
-    debugf("Loading texture: %s.", gTextureIDs[material->textureID].file);
-    list->sprite = sprite_load(asset_dir(gTextureIDs[material->textureID].file, DFS_SPRITE));
-    list->textureID = material->textureID;
-#if OPENGL
-    glGenTextures(1, &list->texture);
-    bind_new_texture(list);
-#endif
-    list->loadTimer = 10;
-    material->index = list;
-    material->flags = gTextureIDs[material->textureID].flags;
+    list->material = malloc(sizeof(Material));
+    list->material->collisionFlags = gMaterialIDs[materialID].collisionFlags;
+    list->material->combiner = gMaterialIDs[materialID].combiner;
+    list->material->flags = gMaterialIDs[materialID].flags;
+    list->material->entry = list;
+    list->material->shiftS0 = 0;
+    list->material->shiftS1 = 0;
+    if (gMaterialIDs[materialID].tex0 != TEXTURE_NONE) {
+        list->material->tex0 = sprite_try_load(gMaterialIDs[materialID].tex0);
+        list->material->tex0Flags = gTextureIDs[gMaterialIDs[materialID].tex0].flags;
+        list->material->shiftT0 = list->material->tex0->sprite->height * 16;
+    } else {
+        list->material->tex0 = NULL;
+        list->material->shiftT0 = 0;
+    }
+    if (gMaterialIDs[materialID].tex1 != TEXTURE_NONE) {
+        list->material->tex1 = sprite_try_load(gMaterialIDs[materialID].tex1);
+        list->material->tex1Flags = gTextureIDs[gMaterialIDs[materialID].tex1].flags;
+        list->material->shiftT1 = list->material->tex1->sprite->height * 16;
+    } else {
+        list->material->tex1 = NULL;
+        list->material->shiftT1 = 0;
+    }
+    list->material->block = material_generate_dl(list->material);
     debugf(" Time: %2.3fs.\n", (double) (TIMER_MICROS(DEBUG_SNAPSHOT_1_END) / 1000000.0f));
 #ifdef PUPPYPRINT_DEBUG
-    gNumTextures++;
+    gNumMaterials++;
 #endif
-    return 0;
+    return list->material;
 }
 
-static void free_material(MaterialList *material) {
+void material_try_free(MaterialList *material) {
+    material->refCount--;
+    if (material->refCount > 0) {
+        return;
+    }
+    
+    debugf("Freeing material: %d.\n", material->materialID);
     if (material == gMaterialListHead) {
         if (gMaterialListHead->next) {
             gMaterialListHead = gMaterialListHead->next;
@@ -227,13 +376,17 @@ static void free_material(MaterialList *material) {
             material->next->prev = material->prev;
         }
     }
-    sprite_free(material->sprite);
-#if OPENGL
-    glDeleteTextures(1, &material->texture);
-#endif
+    rspq_block_free(material->material->block);
+    if (material->material->tex0) {
+        sprite_try_free(material->material->tex0);
+    }
+    if (material->material->tex1) {
+        sprite_try_free(material->material->tex1);
+    }
+    free(material->material);
     free(material);
 #ifdef PUPPYPRINT_DEBUG
-    gNumTextures--;
+    gNumMaterials--;
 #endif
 }
 
@@ -311,6 +464,11 @@ void shadow_generate(Object *obj) {
 static void object_model_clear(ModelList *entry) {
     ObjectModel *m = entry->entry;
     while (m) {
+        if (m->material) {
+            material_try_free(m->material->entry);
+            m->material = NULL;
+        }
+        m->material = NULL;
         if (m->block) {
             rspq_block_free(m->block);
             m->block = NULL;
@@ -326,21 +484,10 @@ void asset_cycle(int updateRate) {
         get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
         return;
     }
-    MaterialList *matList = gMaterialListHead;
-    while (matList) {
-        MaterialList *curList = matList;
-        matList->loadTimer -= updateRate;
-        matList = matList->next;
-        if (curList->loadTimer <= 0) {
-            debugf("Freeing texture: %s.\n", gTextureIDs[curList->textureID].file);
-            free_material(curList);
-            //break;
-        }
-    }
 #ifdef PUPPYPRINT_DEBUG
     gNumTextureLoads = 0;
 #endif
-    gPrevTextureID = 0;
+    gPrevMaterialID = -1;
     gPrevRenderFlags = 0;
     bzero(&gRenderSettings, sizeof(RenderSettings));
     if (gEnvironment->texGen) {
@@ -348,7 +495,7 @@ void asset_cycle(int updateRate) {
         if (gEnvironment->skyTimer <= 0) {
             debugf("Freeing texture: %s.\n", gTextureIDs[gEnvironment->skyboxTextureID].file);
             for (int i = 0; i < 32; i++) {
-                gNumTextures--;
+                gNumMaterials--;
 #if OPENGL
                 glDeleteTextures(1, &gEnvironment->textureSegments[i]);
 #endif
@@ -398,7 +545,7 @@ void sky_texture_generate(Environment *e) {
             y += 64;
             x = 0;
         }
-        gNumTextures++;
+        gNumMaterials++;
 #if OPENGL
         glGenTextures(1, &e->textureSegments[i]);
         glBindTexture(GL_TEXTURE_2D, e->textureSegments[i]);
@@ -619,7 +766,7 @@ Particle *allocate_particle(void) {
         list->particle = newParticle;
         gParticleListTail = list;
     }
-    newParticle->material = NULL;
+    //newParticle->material = NULL;
     newParticle->flags = OBJ_FLAG_NONE;
 #ifdef PUPPYPRINT_DEBUG
     gNumParticles++;
@@ -642,6 +789,7 @@ static int temp_matrix_grabber(int modelID) {
 void object_model_generate(Object *obj) {
     ObjectModel *m = obj->gfx->listEntry->entry;
     while (m) {
+        m->material = material_init(m->materialID);
         rspq_block_begin();
 #if OPENGL
         //glScalef(10.0f, 9.0f, 10.0f);
@@ -710,22 +858,14 @@ static void load_object_model(Object *obj, int objectID) {
         for (int j = 0; j < primCount; j++) {
             ObjectModel *m = malloc(sizeof(ObjectModel));
             m->prim = model64_get_primitive(mesh, j);
+            m->material = NULL;
             if (modelID == 1) {
-                m->material.textureID = playerModelTextures[i][j];
-                m->material.combiner = 0;
+                m->materialID = playerModelTextures[i][j];
             } else if (modelID == 4 || modelID == 5 || modelID == 6) {
-                m->material.textureID = TEXTURE_CRATE;
-                m->material.combiner = 0;
+                m->materialID = TEXTURE_CRATE;
             } else {
-                m->material.textureID = -1;
-                m->material.combiner = 0;
+                m->materialID = 0;
             }
-            if (m->material.textureID != -1) {
-                m->material.flags = gTextureIDs[m->material.textureID].flags;
-            } else {
-                m->material.flags = 0;
-            }
-            m->material.index = NULL;
             m->next = NULL;
             if (i == 0 && j == 0) {
                 m->matrixBehaviour = matrixType;
@@ -869,9 +1009,9 @@ void free_particle(Particle *obj) {
         }
     }
     free(obj->entry);
-    if (obj->material) {
+    /*if (obj->material) {
         free(obj->material);
-    }
+    }*/
     free(obj);
 #ifdef PUPPYPRINT_DEBUG
     gNumParticles--;
@@ -972,6 +1112,6 @@ Particle *spawn_particle(int particleID, float x, float y, float z) {
     particle->scale[0] = 1.0f;
     particle->scale[1] = 1.0f;
     particle->scale[2] = 1.0f;
-    particle->material = NULL;
+    //particle->material = NULL;
     return particle;
 }

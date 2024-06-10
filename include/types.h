@@ -16,24 +16,39 @@ typedef struct RenderSettings {
     unsigned inter : 1;
     unsigned backface : 1;
     unsigned frontface : 1;
+    unsigned ci : 1;
 } RenderSettings;
 
 typedef struct MaterialList {
     struct MaterialList *next;
     struct MaterialList *prev;
-    sprite_t *sprite;
-#if OPENGL
-    GLuint texture;
-#endif
-    short loadTimer;
-    short textureID;
+    struct Material *material;
+    short materialID;
+    char refCount;
 } MaterialList;
 
+typedef struct SpriteList {
+    struct SpriteList *next;
+    struct SpriteList *prev;
+    sprite_t *sprite;
+    short spriteID;
+    char refCount;
+} SpriteList;
+
 typedef struct Material {
-    MaterialList *index;
-    short textureID;
-    int flags;
-    int combiner;
+    SpriteList *tex0;
+    SpriteList *tex1;
+    struct MaterialList *entry;
+    rspq_block_t *block;
+    unsigned int flags;
+    short combiner;
+    char tex0Flags;
+    char tex1Flags;
+    short collisionFlags;
+    short shiftS0;
+    short shiftT0;
+    short shiftS1;
+    short shiftT1;
 } Material;
 
 typedef struct Environment {

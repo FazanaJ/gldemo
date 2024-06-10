@@ -5,16 +5,16 @@
 #include "../src/assets.h"
 
 const TextureInfo gTextureIDs[] = {
-{"grass0.ci4", 1664},
+{"grass0.i4", 1664},
 {"health.ia4", 35},
 {"plant1.ia8", 1174},
 {"shadow.i4", 2220},
 {"stone.ci4", 1664},
-{"water.ci8", 12960},
+{"water.i4", 12960},
 {"kitchentile.i8", 1664},
 {"introsign.i4", 1664},
 {"introsign2.i4", 1664},
-{"eye1.ia4", 726},
+{"eye1.ia4", TEX_CLAMP_V | TEX_MIRROR_H},
 {"eyebrow1.ia4", 710},
 {"mouth1.ia4", 2774},
 {"shirt.ci8", 707},
@@ -26,4 +26,5 @@ const TextureInfo gTextureIDs[] = {
 {"logwall.i8", 1664},
 {"railing.ia4", 1680},
 {"crate.i8", 1740},
+{"grass1.i4", 1740},
 };

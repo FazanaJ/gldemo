@@ -26,7 +26,7 @@ char *sSceneTable[SCENE_TOTAL] = {
 char sSceneTexIDs[SCENE_TOTAL][7] = {
     {TEXTURE_INTROSIGN, TEXTURE_KITCHENTILE, TEXTURE_INTROSIGN2},
     {TEXTURE_STONE, TEXTURE_GRASS0, TEXTURE_WATER},
-    {TEXTURE_HEALTH, TEXTURE_KITCHENTILE, TEXTURE_RAILING, TEXTURE_WATER, TEXTURE_LOGWALL, TEXTURE_INTROSIGN, TEXTURE_NONE},
+    {TEXTURE_HEALTH, TEXTURE_KITCHENTILE, TEXTURE_RAILING, TEXTURE_WATER, TEXTURE_LOGWALL, TEXTURE_INTROSIGN, 0},
     {TEXTURE_GRASS0, TEXTURE_KITCHENTILE, TEXTURE_LOGWALL, TEXTURE_WATER, TEXTURE_STONE},
 };
 
@@ -49,8 +49,8 @@ static void setup_fog(SceneHeader *header) {
     gEnvironment->fogFar = header->fogFar;
     gEnvironment->skyboxTextureID = header->skyTexture;
 #if OPENGL
-    glFogf(GL_FOG_START, gEnvironment->fogNear);
-    glFogf(GL_FOG_END, gEnvironment->fogFar);
+    glFogf(GL_FOG_END, gEnvironment->fogNear);
+    glFogf(GL_FOG_START, gEnvironment->fogFar);
     glFogfv(GL_FOG_COLOR, gEnvironment->fogColour);
 #elif TINY3D
     rdpq_mode_fog(RDPQ_FOG_STANDARD);
@@ -73,7 +73,9 @@ static void clear_scene(void) {
             while (curMesh) {
                 SceneMesh *m = curMesh;
                 curMesh = curMesh->next;
-                free(m->material);
+                if (m->material) {
+                    material_try_free(m->material->entry);
+                }
                 if (m->renderBlock) {
                     rspq_block_free(m->renderBlock);
                 }
@@ -175,6 +177,10 @@ static void scene_mesh_boundbox(SceneChunk *c, SceneMesh *m) {
 void scene_clear_chunk(SceneChunk *c) {
     SceneMesh *m = c->meshList;
     while (m) {
+        if (m->material) {
+            material_try_free(m->material->entry);
+            m->material = NULL;
+        }
         if (m->renderBlock) {
             rspq_block_free(m->renderBlock);
             m->renderBlock = NULL;
@@ -185,6 +191,7 @@ void scene_clear_chunk(SceneChunk *c) {
 }
 
 void scene_generate_chunk(SceneMesh *s) {
+    s->material = material_init(s->materialID);
     rspq_block_begin();
     MATRIX_PUSH();
 #if OPENGL
@@ -239,14 +246,8 @@ void load_scene(int sceneID) {
             for (int j = 0; j < primCount; j++) {
                 SceneMesh *m = malloc(sizeof(SceneMesh));
                 m->mesh = model64_get_primitive(mesh, j);
-                m->material = malloc(sizeof(Material));
-                m->material->index = NULL;
-                m->material->textureID = sSceneTexIDs[gCurrentScene->sceneID][j];
-                if (m->material->textureID != -1) {
-                    m->material->flags = gTextureIDs[m->material->textureID].flags;
-                } else {
-                    m->material->flags = 0;
-                }
+                m->material = NULL;
+                m->materialID = sSceneTexIDs[gCurrentScene->sceneID][j];
                 scene_mesh_boundbox(c, m);
                 lowPos[0] = MIN(lowPos[0], c->bounds[0][0]);
                 lowPos[1] = MIN(lowPos[1], c->bounds[0][1]);

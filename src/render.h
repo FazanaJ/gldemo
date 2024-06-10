@@ -73,7 +73,7 @@ typedef struct RenderList {
 extern rspq_block_t *sRenderSkyBlock;
 extern RenderSettings gRenderSettings;
 extern int gPrevRenderFlags;
-extern int gPrevTextureID;
+extern int gPrevMaterialID;
 extern int gPrevCombiner;
 extern rspq_block_t *gParticleMaterialBlock;
 extern unsigned int gSortPos[DRAW_TOTAL];

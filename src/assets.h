@@ -15,6 +15,22 @@ enum Languages {
     LANG_TOTAL
 };
 
+enum CombinerNames {
+    CC_TEX_SHADE,
+    CC_MULTITEX_SHADE,
+    CC_TEX_PRIM,
+    CC_MULTITEX_PRIM,
+    CC_TEX_SHADE_PRIM,
+    CC_MULTITEX_SHADE_PRIM,
+    CC_MULTITEX_WATER,
+
+    CC_TOTAL
+};
+
+enum MaterialNames {
+    MATERIAL_GRASS0,
+};
+
 enum MaterialFlags {
     MATERIAL_NULL,
     MATERIAL_CUTOUT =       (1 << 4), // Enables 1 bit alpha.
@@ -32,6 +48,7 @@ enum MaterialFlags {
     MATERIAL_CAM_ONLY =     (1 << 16), // Only collide with the camera.
     MATERIAL_NO_CAM =       (1 << 17), // Don't collide with the camera.
     MATERIAL_FRONTFACE =    (1 << 18), // Enables frontfaces
+    MATERIAL_CI =           (1 << 19), // Use colour index
 };
 
 enum TextureFlags {
@@ -61,19 +78,51 @@ enum FontList {
     FONT_TOTAL
 };
 
- typedef struct TextureInfo {
+#define COLFLAG_NONE            0x0000
+#define COLFLAG_SOUND_DIRT      0x0001
+#define COLFLAG_SOUND_GRASS     0x0002
+#define COLFLAG_SOUND_STONE     0x0003
+#define COLFLAG_SOUND_GRAVEL    0x0004
+#define COLFLAG_SOUND_TILE      0x0005
+#define COLFLAG_SOUND_WOOD      0x0006
+#define COLFLAG_SOUND_GLASS     0x0007
+#define COLFLAG_SOUND_WATER     0x0008
+#define COLFLAG_SOUND_MESH      0x0009
+#define COLFLAG_SOUND_SAND      0x000A
+#define COLFLAG_SOUND_SNOW      0x000B
+#define COLFLAG_SOUND_METAL     0x000C
+#define COLFLAG_SOUND_CARPET    0x000D
+
+typedef struct TextureInfo {
     char *file;
     unsigned int flags;
 } __attribute__((__packed__)) TextureInfo;
 
- typedef struct SpriteInfo {
+typedef struct SpriteInfo {
     char *file;
     unsigned char frames;
 } __attribute__((__packed__)) SpriteInfo;
 
-extern short gNumTextures;
+typedef struct MaterialInfo {
+    short tex0;
+    short tex1;
+    unsigned int flags;
+    short combiner;
+    short collisionFlags;
+    char shiftS0;
+    char shiftT0;
+    char shiftS1;
+    char shiftT1;
+    char moveS0;
+    char moveT0;
+    char moveS1;
+    char moveT1;
+} __attribute__((__packed__)) MaterialInfo;
+
+extern short gNumMaterials;
 extern short gNumTextureLoads;
 extern const TextureInfo gTextureIDs[];
+extern const MaterialInfo gMaterialIDs[];
 extern rdpq_font_t *gFonts[FONT_TOTAL];
 
 void setup_textures(GLuint textures[], sprite_t *sprites[], const char *texture_path[], int texture_number);
@@ -82,7 +131,6 @@ void init_materials(void);
 char *asset_dir(char *dir, int format);
 void load_font(int fontID);
 void free_font(int fontID);
-int load_texture(Material *material);
 void shadow_generate(struct Object *obj);
 void sky_texture_generate(Environment *e);
 rspq_block_t *sky_gradient_generate(Environment *e);
@@ -101,3 +149,8 @@ struct Clutter *spawn_clutter(int objectID, float x, float y, float z, short pit
 struct Particle *spawn_particle(int particleID, float x, float y, float z);
 void object_model_generate(struct Object *obj);
 void obj_overlay_init(struct Object *obj, int objectID);
+Material *material_init(int materialID);
+void material_try_free(MaterialList *material);
+rspq_block_t *material_generate_dl(Material *m);
+void material_run(Material *m);
+void material_run_partial(Material *m);

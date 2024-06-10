@@ -40,7 +40,9 @@ static rspq_block_t *sParticleBlock;
 rspq_block_t *sBushBlock;
 rspq_block_t *sShadowBlock;
 Material gOverrideMaterial;
-Material gBlankMaterial = {NULL, -1, MATERIAL_NULL};
+Material gBlankMaterial;
+Material *gBlobShadowMat;
+Material *gOutlineMat;
 void *gSortHeap[DRAW_TOTAL];
 unsigned int gSortPos[DRAW_TOTAL];
 float gHalfFovHor;
@@ -48,19 +50,12 @@ float gHalfFovVert;
 RenderSettings gRenderSettings;
 rspq_block_t *gParticleMaterialBlock;
 int gPrevRenderFlags;
-int gPrevTextureID;
-int gPrevCombiner;
+int gPrevMaterialID;
 #ifdef PUPPYPRINT_DEBUG
 int gSortRecord[DRAW_TOTAL];
 #endif
 
-Material gBlobShadowMat = {NULL, TEXTURE_SHADOW, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_XLU, 0};
-Material gOutlineMat = {NULL, TEXTURE_SHADOW, MATERIAL_DEPTH_READ | MATERIAL_FOG, 0};
-
-Material gTempMaterials[] = {
-    {NULL, 0, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_VTXCOL, 0},
-    {NULL, 2, MATERIAL_DEPTH_READ | MATERIAL_FOG | MATERIAL_CUTOUT | MATERIAL_VTXCOL, 0},
-};
+Material *gTempMaterials[2];
 
 light_t lightNeutral = {
     colour: {0.66f, 0.66f, 0.66f, 0.66f},
@@ -124,6 +119,8 @@ void init_renderer(void) {
     glCullFace(GL_BACK);
     glShadeModel(GL_SMOOTH);
     glDepthMask(GL_TRUE);
+    rdpq_mode_filter(FILTER_BILINEAR);
+    rdpq_mode_dithering(DITHER_SQUARE_SQUARE);
     glDitherModeN64(DITHER_SQUARE_SQUARE);
 #endif
     sBeginModeBlock = rspq_block_end();
@@ -141,6 +138,18 @@ void init_renderer(void) {
     glDepthMask(GL_FALSE);
 #endif
     sRenderEndBlock = rspq_block_end();
+
+    if (gBlobShadowMat == NULL) {
+        gBlobShadowMat = material_init(TEXTURE_SHADOW);
+    }
+
+    if (gTempMaterials[0] == NULL) {
+        gTempMaterials[0] = material_init(TEXTURE_GRASS0);
+    }
+
+    if (gTempMaterials[1] == NULL) {
+        gTempMaterials[1] = material_init(TEXTURE_PLANT1);
+    }
 
     for (int i = 0; i < DRAW_TOTAL; i++) {
         if (gSortHeap[i] == NULL) {
@@ -454,6 +463,7 @@ void set_particle_render_settings(void) {
     gRenderSettings.decal = false;
     gRenderSettings.backface = false;
     gRenderSettings.frontface = false;
+    gRenderSettings.ci = false;
     gRenderSettings.texture = true;
 #if OPENGL
     if (gEnvironment->flags & ENV_FOG) {
@@ -475,34 +485,40 @@ static void material_mode(int flags) {
     if (flags & MATERIAL_CUTOUT) {
         if (!gRenderSettings.cutout) {
             glEnable(GL_ALPHA_TEST);
+            rdpq_mode_alphacompare(64);
             gRenderSettings.cutout = true;
         }
     } else {
         if (gRenderSettings.cutout) {
             glDisable(GL_ALPHA_TEST);
+            rdpq_set_mode_standard();
             gRenderSettings.cutout = false;
         }
     }
     if (flags & MATERIAL_XLU) {
         if (!gRenderSettings.xlu) {
             glEnable(GL_BLEND);
+            rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
             glDepthMask(GL_FALSE);
             gRenderSettings.xlu = true;
         }
     } else {
         if (gRenderSettings.xlu) {
             glDisable(GL_BLEND);
+            rdpq_mode_blender(0);
             glDepthMask(GL_TRUE);
             gRenderSettings.xlu = false;
         }
     }
     if (flags & MATERIAL_DEPTH_READ) {
         if (!gRenderSettings.depthRead) {
+            rdpq_mode_zbuf(true, true);
             glEnable(GL_DEPTH_TEST);
             gRenderSettings.depthRead = true;
         }
     } else {
         if (gRenderSettings.depthRead) {
+            rdpq_mode_zbuf(false, false);
             glDisable(GL_DEPTH_TEST);
             gRenderSettings.depthRead = false;
         }
@@ -520,12 +536,12 @@ static void material_mode(int flags) {
     }
     if (flags & MATERIAL_FOG && gEnvironment->flags & ENV_FOG) {
         if (!gRenderSettings.fog) {
-            glEnable(GL_FOG);
+            rdpq_mode_fog(RDPQ_FOG_STANDARD);
             gRenderSettings.fog = true;
         }
     } else {
         if (gRenderSettings.fog) {
-            glDisable(GL_FOG);
+            rdpq_mode_fog(0);
             gRenderSettings.fog = false;
         }
     }
@@ -581,57 +597,54 @@ static void material_mode(int flags) {
             gRenderSettings.decal = false;
         }
     }
+    if (flags & MATERIAL_CI) {
+        if (!gRenderSettings.ci) {
+            rdpq_mode_tlut(TLUT_RGBA16);
+            gRenderSettings.ci = true;
+        }
+    } else {
+        if (gRenderSettings.ci) {
+            rdpq_mode_tlut(TLUT_NONE);
+            gRenderSettings.ci = false;
+        }
+    }
 #endif
     gPrevRenderFlags = flags;
 }
 
-static void material_texture(Material *m) {
-    if (m->textureID != -1) {
-        if (load_texture(m) == -1) {
-            return;
-        }
-            
+void material_texture(Material *m) {
+    if (m->tex0) {
         if (!gRenderSettings.texture) {
-#if OPENGL
+    #if OPENGL
             glEnable(GL_TEXTURE_2D);
-#endif
+    #endif
             gRenderSettings.texture = true;
         }
-        m->index->loadTimer = 10;
-#if OPENGL
-        glBindTexture(GL_TEXTURE_2D, m->index->texture);
-#endif
-        gPrevTextureID = m->textureID;
-#ifdef PUPPYPRINT_DEBUG
+        rspq_block_run(m->block);
+        if (gMaterialIDs[m->entry->materialID].moveS0 || gMaterialIDs[m->entry->materialID].moveT0 ||
+            gMaterialIDs[m->entry->materialID].moveS1 || gMaterialIDs[m->entry->materialID].moveT1) {
+            material_run_partial(m);
+        }
         gNumTextureLoads++;
-#endif
+        gPrevMaterialID = m->entry->materialID;
     } else {
         if (gRenderSettings.texture) {
-#if OPENGL
+    #if OPENGL
             glDisable(GL_TEXTURE_2D);
-#endif
+    #endif
             gRenderSettings.texture = false;
         }
     }
 }
 
-static void material_combiner(int combiner) {
-    rdpq_set_combiner_raw(combiner);
-    gPrevCombiner = combiner;
-}
-
-static void material_set(Material *material, int flags, int combiner) {
+void material_set(Material *material, int flags) {
     DEBUG_SNAPSHOT_1();
     flags |= material->flags;
-    combiner |= material->combiner;
-    if (gPrevTextureID != material->textureID) {
-        material_texture(material);
-    }
     if (gPrevRenderFlags != flags) {
         material_mode(flags);
     }
-    if (gPrevCombiner != combiner) {
-        material_combiner(combiner);
+    if (material->tex0 && gPrevMaterialID != material->tex0->spriteID) {
+        material_texture(material);
     }
     get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
 }
@@ -760,10 +773,10 @@ static inline void render_end(void) {
     rdpq_set_scissor(0, 0, display_get_width(), display_get_height());
 }
 
-static void render_shadow(float pos[3]) {
+static void render_shadow(float pos[3], float height) {
     MATRIX_PUSH();
 #if OPENGL
-    glTranslatef(pos[0], pos[1] + 0.1f, pos[2]);
+    glTranslatef(pos[0], height + 0.1f, pos[2]);
     if (sShadowBlock == NULL) {
         rspq_block_begin();
         glScalef(0.5f, 0.5f, 0.5f);
@@ -821,8 +834,7 @@ static void render_ztarget_scissor(void) {
 }
 
 static void apply_render_settings(void) {
-    gPrevTextureID = -1;
-    gPrevCombiner = -1;
+    gPrevMaterialID = -1;
     gPrevRenderFlags = -1;
     rspq_block_run(sBeginModeBlock);
     if (gConfig.graphics == G_BEAUTIFUL) {
@@ -832,9 +844,12 @@ static void apply_render_settings(void) {
     }
 }
 
-static inline void find_material_list(RenderNode *node, int layer) {
+void find_material_list(RenderNode *node, int layer) {
     // idk if this section is faster, yet.
-    if (gPrevMatList && node->material->textureID == gPrevMatList->entryHead->material->textureID) {
+    if (node->material->entry == NULL) {
+        goto lmao;
+    }
+    if (gPrevMatList && node->material->entry->materialID == gPrevMatList->entryHead->material->entry->materialID) {
         RenderList *list = gPrevMatList;
         if (list->entryHead == gRenderNodeHead[layer]) {
             gRenderNodeHead[layer] = node;
@@ -855,7 +870,7 @@ static inline void find_material_list(RenderNode *node, int layer) {
     } else {
         RenderList *list = gMateriallistHead[layer];
         while (list) {
-            if (list->entryHead->material->textureID == node->material->textureID) {
+            if (list->entryHead->material->entry->materialID == node->material->entry->materialID) {
                 if (list->entryHead == gRenderNodeHead[layer]) {
                     gRenderNodeHead[layer] = node;
                 } else {
@@ -869,6 +884,7 @@ static inline void find_material_list(RenderNode *node, int layer) {
             }
             list = list->next;
         }
+        lmao:
         matList = (RenderList *) render_alloc(sizeof(RenderList), layer);
         gMateriallistTail[layer]->next = matList;
         gRenderNodeTail[layer]->next = node;
@@ -882,7 +898,7 @@ static inline void find_material_list(RenderNode *node, int layer) {
     gPrevMatList = matList;
 }
 
-static void add_render_node(RenderNode *entry, rspq_block_t *block, Material *material, int flags, int layer) {
+void add_render_node(RenderNode *entry, rspq_block_t *block, Material *material, int flags, int layer) {
     DEBUG_SNAPSHOT_1();
     entry->block = block;
     entry->material = material;
@@ -891,25 +907,29 @@ static void add_render_node(RenderNode *entry, rspq_block_t *block, Material *ma
     get_time_snapshot(PP_BATCH, DEBUG_SNAPSHOT_1_END);
 }
 
-static void pop_render_list(int layer) {
+void pop_render_list(int layer) {
     if (gRenderNodeHead[layer] == NULL) {
         return;
     }
     RenderNode *renderList = gRenderNodeHead[layer];
+    glEnable(GL_RDPQ_TEXTURING_N64);
+    glEnable(GL_RDPQ_MATERIAL_N64);
     while (renderList) {
-    MATRIX_PUSH();
+        MATRIX_PUSH();
         if (renderList->matrix) {
             MATRIX_MUL(renderList->matrix->m, gMatrixStackPos, gMatrixStackPos - 1);
         }
         if (renderList->material) {
-            material_set(renderList->material, renderList->flags, 0);
+            material_set(renderList->material, renderList->flags);
         }
-        rdpq_set_prim_color(renderList->primColour);
-        rdpq_set_env_color(renderList->envColour);
+        rdpq_set_prim_color(RGBA32(89, 125, 151, 64));
+        //rdpq_set_env_color(renderList->envColour);
         rspq_block_run(renderList->block);
         MATRIX_POP();
         renderList = renderList->next;
     }
+    glDisable(GL_RDPQ_MATERIAL_N64);
+    glDisable(GL_RDPQ_TEXTURING_N64);
     gRenderNodeHead[layer] = NULL;
     gRenderNodeTail[layer] = NULL;
     gMateriallistHead[layer] = NULL;
@@ -938,9 +958,9 @@ static void render_particles(void) {
     while (list) {
         particle = list->particle;
         MATRIX_PUSH();
-        if (particle->material) {
-            material_set(particle->material, 0, 0);
-        }
+        /*if (particle->material) {
+            material_set(particle->material, 0);
+        }*/
         Matrix mtx;
         mtx_billboard(&mtx, particle->pos[0], particle->pos[1], particle->pos[2]);
         mtx_scale(&mtx, particle->scale[0], particle->scale[1], particle->scale[2]);
@@ -1005,10 +1025,15 @@ static void render_world(int updateRate) {
 
         while (s != NULL) {
             if (gScreenshotStatus != SCREENSHOT_SHOW && render_world_visible(s)) {
-                i++;
                 SceneMesh *c = s->meshList;
+                i++;
                 while (c != NULL) {
                     int layer;
+
+                    if (c->renderBlock == NULL) {
+                        scene_generate_chunk(c);
+                    }
+
                     if (c->material->flags & MATERIAL_DECAL) {
                         layer = DRAW_DECAL;
                     } else if (c->material->flags & MATERIAL_XLU) {
@@ -1017,13 +1042,10 @@ static void render_world(int updateRate) {
                         layer = DRAW_OPA;
                     }
                     
-                    if (c->renderBlock == NULL) {
-                        scene_generate_chunk(c);
-                    }
                     RenderNode *entry = (RenderNode *) render_alloc(sizeof(RenderNode), layer);
                     entry->matrix = NULL;
-                    Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : c->material;
-                    add_render_node(entry, c->renderBlock, mat, MATERIAL_NULL, layer);
+                    //Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : c->material;
+                    add_render_node(entry, c->renderBlock, c->material, MATERIAL_NULL, layer);
                     c = c->next;
                 }
                 s->flags |= CHUNK_HAS_MODEL;
@@ -1047,22 +1069,32 @@ static void render_object_shadows(void) {
     ObjectList *list = gObjectListHead;
     Object *obj;
     
-    material_set(&gBlobShadowMat, MATERIAL_DECAL, 0);
+    glEnable(GL_RDPQ_TEXTURING_N64);
+    glEnable(GL_RDPQ_MATERIAL_N64);
+    material_set(gBlobShadowMat, MATERIAL_DECAL);
     while (list) {
         obj = list->obj;
         if (obj->flags & OBJ_FLAG_IN_VIEW && (obj->flags & OBJ_FLAG_SHADOW || (gConfig.graphics == G_PERFORMANCE && obj->flags & OBJ_FLAG_SHADOW_DYNAMIC))) { 
-            render_shadow(obj->pos);
+            float height;
+            if (obj->collision) {
+                height = obj->collision->floorHeight;
+            } else {
+                height = obj->pos[1];
+            }
+            render_shadow(obj->pos, height);
         }
         list = list->next;
     }
 
+    glDisable(GL_RDPQ_TEXTURING_N64);
+    glDisable(GL_RDPQ_MATERIAL_N64);
     if (gConfig.graphics == G_PERFORMANCE) {
         get_time_snapshot(PP_SHADOWS, DEBUG_SNAPSHOT_1_END);
         profiler_wait();
         return;
     }
     list = gObjectListHead;
-    material_set(&gBlankMaterial, MATERIAL_DECAL | MATERIAL_XLU | MATERIAL_DEPTH_READ, 0);
+    material_set(&gBlankMaterial, MATERIAL_DECAL | MATERIAL_XLU | MATERIAL_DEPTH_READ);
 #if OPENGL
     glEnable(GL_TEXTURE_2D);
 #endif
@@ -1134,14 +1166,14 @@ static void render_clutter(void) {
                 entry->matrix = (Matrix *) render_alloc(sizeof(Matrix), DRAW_OPA);
                 
                 mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
-                Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[1];
-                add_render_node(entry, sBushBlock, mat, MATERIAL_NULL, DRAW_OPA);
+                //Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[1];
+                add_render_node(entry, sBushBlock, gTempMaterials[1], MATERIAL_NULL, DRAW_OPA);
             } else if (obj->objectID == CLUTTER_ROCK) {
                 RenderNode *entry = (RenderNode *) render_alloc(sizeof(RenderNode), DRAW_OPA);
                 entry->matrix = (Matrix *) render_alloc(sizeof(Matrix), DRAW_OPA);
                 mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
-                Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[0];
-                add_render_node(entry, sBushBlock, mat, MATERIAL_NULL, DRAW_OPA);
+                //Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[0];
+                add_render_node(entry, sBushBlock, gTempMaterials[0], MATERIAL_NULL, DRAW_OPA);
             }
         }
         list = list->next;
@@ -1173,7 +1205,7 @@ static void render_objects(void) {
             }
             while (m) {
                 int layer;
-                if (m->material.flags & MATERIAL_DECAL || m->material.flags & MATERIAL_XLU) {
+                if (m->material->flags & MATERIAL_DECAL || m->material->flags & MATERIAL_XLU) {
                     layer = DRAW_XLU;
                 } else {
                     layer = DRAW_OPA;
@@ -1186,9 +1218,9 @@ static void render_objects(void) {
                 } else {
                     entry->matrix = prevMtx;
                 }
-                Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &m->material;
-                add_render_node(entry, m->block, mat, MATERIAL_NULL, layer);
-                if (obj->flags & OBJ_FLAG_OUTLINE) {
+                //Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &m->material;
+                add_render_node(entry, m->block, m->material, MATERIAL_NULL, layer);
+                /*if (obj->flags & OBJ_FLAG_OUTLINE) {
                     RenderNode *entry2 = (RenderNode *) render_alloc(sizeof(RenderNode), DRAW_XLU);
                     entry2->matrix = (Matrix *) render_alloc(sizeof(Matrix), DRAW_XLU);
                     if (m->matrixBehaviour != MTX_NONE) {
@@ -1198,8 +1230,8 @@ static void render_objects(void) {
                     }
                     mtx_scale(entry2->matrix, 1.05f, 1.00f, 1.05f);
                     entry2->primColour = RGBA32(255, 0, 0, 192);
-                    add_render_node(entry2, m->block, &gOutlineMat, MATERIAL_FRONTFACE, DRAW_XLU);
-                }
+                    add_render_node(entry2, m->block, m->material, MATERIAL_FRONTFACE, DRAW_XLU);
+                }*/
                 m = m->next;
             }
         }
@@ -1228,7 +1260,7 @@ static void reset_shadow_perspective(void) {
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 #endif
-        material_set(&gBlankMaterial, MATERIAL_CAM_ONLY, 0);
+        material_set(&gBlankMaterial, MATERIAL_CAM_ONLY);
 #if OPENGL
         glEnable(GL_RDPQ_MATERIAL_N64);
 #endif
@@ -1404,7 +1436,7 @@ void render_game(int updateRate, float updateRateF) {
         render_objects();
         apply_anti_aliasing(AA_GEO);
         set_particle_render_settings();
-        render_particles();
+        //render_particles();
         render_end();
         if (gScreenshotStatus == SCREENSHOT_GENERATE) {
             clear_dynamic_shadows();

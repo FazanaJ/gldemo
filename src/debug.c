@@ -213,7 +213,7 @@ void profiler_draw_overview(void) {
 
     int ramUsed = mem_info.uordblks - (size_t) (((width * height) * 2) - ((unsigned int) HEAP_START_ADDR - 0x80000000) - 0x10000);
     rdpq_text_printf(NULL, FONT_ARIAL, 8, height - 8, "RAM: %dKB/%dKB", (ramUsed / 1024), get_memory_size() / 1024);
-    rdpq_text_printf(NULL, FONT_ARIAL, 8, height - 16, "Tex: %d | Loads: %d", gNumTextures, gNumTextureLoads);
+    rdpq_text_printf(NULL, FONT_ARIAL, 8, height - 16, "Tex: %d | Loads: %d", gNumMaterials, gNumTextureLoads);
     rdpq_text_printf(NULL, FONT_ARIAL, 8, height - 24, "Obj: %d | Clu: %d | Par: %d", gNumObjects, gNumClutter, gNumParticles);
     rdpq_text_printf(NULL, FONT_ARIAL, 8, height - 32, "Mtx: %d | Mdl: %d | Ovl: %d", gDebugData->matrixOps, gNumModels, gNumOverlays);
     rdpq_text_printf(NULL, FONT_ARIAL, 8, height - 40, "OPA: 0x%X", gSortRecord[DRAW_OPA]);
