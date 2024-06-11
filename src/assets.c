@@ -52,14 +52,14 @@ short gObjectModels[OBJ_TOTAL] = {
 };
 
 short playerModelTextures[][9] = {
-    {TEXTURE_BROIJUSTWANTCOLOUR, 0, 0, 0, 0, 0, 0, 0, 0}, // Ears
-    {TEXTURE_BROIJUSTWANTCOLOUR, 0, 0, 0, 0, 0, 0, 0, 0}, // Feet
-    {TEXTURE_ROCKSURFACE4, 0, 0, 0, 0, 0, 0, 0, 0}, // Hair
-    {TEXTURE_BROIJUSTWANTCOLOUR, 0, 0, 0, 0, 0, 0, 0, 0}, // Hands
-    {TEXTURE_EYE1, TEXTURE_INTROSIGN2, TEXTURE_MOUTH1, TEXTURE_BROIJUSTWANTCOLOUR, 0, 0, 0, 0, 0}, // Head
-    {TEXTURE_TROUSERS, 0, 0, 0, 0, 0, 0, 0, 0}, // Legs
-    {TEXTURE_BROIJUSTWANTCOLOUR, 0, 0, 0, 0, 0, 0, 0, 0}, // Tail
-    {TEXTURE_BROIJUSTWANTCOLOUR, TEXTURE_SHIRT, 0, 0, 0, 0, 0, 0, 0}, // Torso
+    {MATERIAL_FLATPRIM, 0, 0, 0, 0, 0, 0, 0, 0}, // Ears
+    {MATERIAL_FLATPRIM, 0, 0, 0, 0, 0, 0, 0, 0}, // Feet
+    {MATERIAL_ROCKSURFACE4, 0, 0, 0, 0, 0, 0, 0, 0}, // Hair
+    {MATERIAL_FLATPRIM, 0, 0, 0, 0, 0, 0, 0, 0}, // Hands
+    {MATERIAL_EYE1, MATERIAL_INTROSIGN2, MATERIAL_MOUTH1, MATERIAL_FLATPRIM, 0, 0, 0, 0, 0}, // Head
+    {MATERIAL_TROUSERS, 0, 0, 0, 0, 0, 0, 0, 0}, // Legs
+    {MATERIAL_FLATPRIM, 0, 0, 0, 0, 0, 0, 0, 0}, // Tail
+    {MATERIAL_FLATPRIM, MATERIAL_SHIRT, 0, 0, 0, 0, 0, 0, 0}, // Torso
 };
 
 MaterialList *gMaterialListHead;
@@ -135,11 +135,12 @@ rdpq_texparms_t sTexParams;
 rdpq_combiner_t sCombinerTable[CC_TOTAL] = {
     RDPQ_COMBINER_TEX_SHADE,
     RDPQ_COMBINER2((TEX1, TEX0, TEX1, TEX0), (0, 0, 0, ENV), (COMBINED, 0, SHADE, 0), (0, 0, 0, COMBINED)),
-    RDPQ_COMBINER_TEX_SHADE,
-    RDPQ_COMBINER_TEX_SHADE,
-    RDPQ_COMBINER_TEX_SHADE,
-    RDPQ_COMBINER_TEX_SHADE,
+    RDPQ_COMBINER2((TEX1, TEX0, TEX1, TEX0), (0, 0, 0, ENV), (COMBINED, 0, SHADE, 0), (0, 0, 0, COMBINED)),
+    RDPQ_COMBINER_TEX_FLAT,
+    RDPQ_COMBINER2((TEX1, TEX0, TEX1, TEX0), (0, 0, 0, ENV), (COMBINED, 0, PRIM, 0), (0, 0, 0, COMBINED)),
+    RDPQ_COMBINER2((TEX1, TEX0, TEX1, TEX0), (0, 0, 0, ENV), (COMBINED, PRIM, SHADE, PRIM), (0, 0, 0, COMBINED)),
     RDPQ_COMBINER2((TEX0, PRIM, TEX1, PRIM), (TEX0, 0, TEX1, 0), (TEX1, 0, TEX1, COMBINED), (SHADE, 0, PRIM, COMBINED)),
+    RDPQ_COMBINER2((PRIM, 0, SHADE, 0), (0, 0, 0, ENV), (PRIM, 0, SHADE, 0), (0, 0, 0, COMBINED)),
 };
 
 void material_setup_constants(Material *m) {
@@ -183,7 +184,6 @@ void material_setup_constants(Material *m) {
     sTexParams.t.translate = m->tex0->sprite->height;
     sTexParams.s.scale_log = gMaterialIDs[m->entry->materialID].shiftS0;
     sTexParams.t.scale_log = gMaterialIDs[m->entry->materialID].shiftT0;
-    rdpq_mode_combiner(sCombinerTable[m->combiner]);
 }
 
 void material_run_partial(Material *m) {
@@ -225,11 +225,14 @@ void material_run_partial(Material *m) {
 
 rspq_block_t *material_generate_dl(Material *m) {
     rspq_block_begin();
-    material_setup_constants(m);
-    if (gMaterialIDs[m->entry->materialID].moveS0 == 0 && gMaterialIDs[m->entry->materialID].moveT0 == 0 &&
-        gMaterialIDs[m->entry->materialID].moveS1 == 0 && gMaterialIDs[m->entry->materialID].moveT1 == 0) {
-        material_run_partial(m);
+    if (m->tex0) {
+        material_setup_constants(m);
+        if (gMaterialIDs[m->entry->materialID].moveS0 == 0 && gMaterialIDs[m->entry->materialID].moveT0 == 0 &&
+            gMaterialIDs[m->entry->materialID].moveS1 == 0 && gMaterialIDs[m->entry->materialID].moveT1 == 0) {
+            material_run_partial(m);
+        }
     }
+    rdpq_mode_combiner(sCombinerTable[m->combiner]);
     return rspq_block_end();
 }
 
@@ -859,10 +862,14 @@ static void load_object_model(Object *obj, int objectID) {
             ObjectModel *m = malloc(sizeof(ObjectModel));
             m->prim = model64_get_primitive(mesh, j);
             m->material = NULL;
+            m->colour = RGBA32(255, 255, 255, 255);
             if (modelID == 1) {
                 m->materialID = playerModelTextures[i][j];
+                if (m->materialID == MATERIAL_FLATPRIM) {
+                    m->colour = RGBA32(255, 126, 0, 255);
+                }
             } else if (modelID == 4 || modelID == 5 || modelID == 6) {
-                m->materialID = TEXTURE_CRATE;
+                m->materialID = MATERIAL_CRATE;
             } else {
                 m->materialID = 0;
             }

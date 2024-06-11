@@ -108,6 +108,7 @@ typedef struct ObjectModel {
 	void (*func)(struct Object *obj, int updateRate, float updateRateF);
 	rspq_block_t *block;
 	primitive_t *prim;
+	color_t colour;
 	short materialID;
 	char matrixBehaviour;
 } ObjectModel;

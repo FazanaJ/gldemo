@@ -140,15 +140,15 @@ void init_renderer(void) {
     sRenderEndBlock = rspq_block_end();
 
     if (gBlobShadowMat == NULL) {
-        gBlobShadowMat = material_init(TEXTURE_SHADOW);
+        gBlobShadowMat = material_init(MATERIAL_SHADOW);
     }
 
     if (gTempMaterials[0] == NULL) {
-        gTempMaterials[0] = material_init(TEXTURE_GRASS0);
+        gTempMaterials[0] = material_init(MATERIAL_GRASS0);
     }
 
     if (gTempMaterials[1] == NULL) {
-        gTempMaterials[1] = material_init(TEXTURE_PLANT1);
+        gTempMaterials[1] = material_init(MATERIAL_PLANT1);
     }
 
     for (int i = 0; i < DRAW_TOTAL; i++) {
@@ -482,7 +482,7 @@ void set_particle_render_settings(void) {
 
 static void material_mode(int flags) {
 #if OPENGL
-    if (flags & MATERIAL_CUTOUT) {
+    if (flags & MAT_CUTOUT) {
         if (!gRenderSettings.cutout) {
             glEnable(GL_ALPHA_TEST);
             rdpq_mode_alphacompare(64);
@@ -495,7 +495,7 @@ static void material_mode(int flags) {
             gRenderSettings.cutout = false;
         }
     }
-    if (flags & MATERIAL_XLU) {
+    if (flags & MAT_XLU) {
         if (!gRenderSettings.xlu) {
             glEnable(GL_BLEND);
             rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
@@ -510,7 +510,7 @@ static void material_mode(int flags) {
             gRenderSettings.xlu = false;
         }
     }
-    if (flags & MATERIAL_DEPTH_READ) {
+    if (flags & MAT_DEPTH_READ) {
         if (!gRenderSettings.depthRead) {
             rdpq_mode_zbuf(true, true);
             glEnable(GL_DEPTH_TEST);
@@ -523,7 +523,7 @@ static void material_mode(int flags) {
             gRenderSettings.depthRead = false;
         }
     }
-    if (flags & MATERIAL_LIGHTING) {
+    if (flags & MAT_LIGHTING) {
         if (!gRenderSettings.lighting) {
             glEnable(GL_LIGHTING);
             gRenderSettings.lighting = true;
@@ -534,7 +534,7 @@ static void material_mode(int flags) {
             gRenderSettings.lighting = false;
         }
     }
-    if (flags & MATERIAL_FOG && gEnvironment->flags & ENV_FOG) {
+    if (flags & MAT_FOG && gEnvironment->flags & ENV_FOG) {
         if (!gRenderSettings.fog) {
             rdpq_mode_fog(RDPQ_FOG_STANDARD);
             gRenderSettings.fog = true;
@@ -545,7 +545,7 @@ static void material_mode(int flags) {
             gRenderSettings.fog = false;
         }
     }
-    if (flags & MATERIAL_VTXCOL) {
+    if (flags & MAT_VTXCOL) {
         if (!gRenderSettings.vertexColour) {
             glEnable(GL_COLOR_MATERIAL);
             gRenderSettings.vertexColour = true;
@@ -556,7 +556,7 @@ static void material_mode(int flags) {
             gRenderSettings.vertexColour = false;
         }
     }
-    if (flags & MATERIAL_BACKFACE) {
+    if (flags & MAT_BACKFACE) {
         if (!gRenderSettings.backface) {
             glDisable(GL_CULL_FACE);
             gRenderSettings.backface = true;
@@ -567,7 +567,7 @@ static void material_mode(int flags) {
             gRenderSettings.backface = false;
         }
     }
-    if (flags & MATERIAL_FRONTFACE) {
+    if (flags & MAT_FRONTFACE) {
         if (!gRenderSettings.frontface) {
             glCullFace(GL_FRONT); 
             gRenderSettings.frontface = true;
@@ -578,13 +578,13 @@ static void material_mode(int flags) {
             gRenderSettings.frontface = false;
         }
     }
-    if (flags & MATERIAL_DECAL) {
+    if (flags & MAT_DECAL) {
         if (!gRenderSettings.decal) {
             glDepthFunc(GL_EQUAL);
             gRenderSettings.decal = true;
             gRenderSettings.inter = false;
         }
-    } else if (flags & MATERIAL_INTER) {
+    } else if (flags & MAT_INTER) {
         if (!gRenderSettings.inter) {
             glDepthFunc(GL_LESS_INTERPENETRATING_N64);
             gRenderSettings.decal = false;
@@ -597,7 +597,7 @@ static void material_mode(int flags) {
             gRenderSettings.decal = false;
         }
     }
-    if (flags & MATERIAL_CI) {
+    if (flags & MAT_CI) {
         if (!gRenderSettings.ci) {
             rdpq_mode_tlut(TLUT_RGBA16);
             gRenderSettings.ci = true;
@@ -613,6 +613,7 @@ static void material_mode(int flags) {
 }
 
 void material_texture(Material *m) {
+    rspq_block_run(m->block);
     if (m->tex0) {
         if (!gRenderSettings.texture) {
     #if OPENGL
@@ -620,7 +621,6 @@ void material_texture(Material *m) {
     #endif
             gRenderSettings.texture = true;
         }
-        rspq_block_run(m->block);
         if (gMaterialIDs[m->entry->materialID].moveS0 || gMaterialIDs[m->entry->materialID].moveT0 ||
             gMaterialIDs[m->entry->materialID].moveS1 || gMaterialIDs[m->entry->materialID].moveT1) {
             material_run_partial(m);
@@ -643,7 +643,7 @@ void material_set(Material *material, int flags) {
     if (gPrevRenderFlags != flags) {
         material_mode(flags);
     }
-    if (material->tex0 && gPrevMaterialID != material->tex0->spriteID) {
+    if (gPrevMaterialID != material->entry->materialID) {
         material_texture(material);
     }
     get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
@@ -912,6 +912,7 @@ void pop_render_list(int layer) {
         return;
     }
     RenderNode *renderList = gRenderNodeHead[layer];
+    rdpq_mode_filter(FILTER_BILINEAR);
     glEnable(GL_RDPQ_TEXTURING_N64);
     glEnable(GL_RDPQ_MATERIAL_N64);
     while (renderList) {
@@ -922,7 +923,7 @@ void pop_render_list(int layer) {
         if (renderList->material) {
             material_set(renderList->material, renderList->flags);
         }
-        rdpq_set_prim_color(RGBA32(89, 125, 151, 64));
+        rdpq_set_prim_color(renderList->primColour);
         //rdpq_set_env_color(renderList->envColour);
         rspq_block_run(renderList->block);
         MATRIX_POP();
@@ -1034,9 +1035,11 @@ static void render_world(int updateRate) {
                         scene_generate_chunk(c);
                     }
 
-                    if (c->material->flags & MATERIAL_DECAL) {
+                    if ((c->material->flags & MAT_DEPTH_READ) == false) {
+                        layer = DRAW_NZB;
+                    } else if (c->material->flags & MAT_DECAL) {
                         layer = DRAW_DECAL;
-                    } else if (c->material->flags & MATERIAL_XLU) {
+                    } else if (c->material->flags & MAT_XLU) {
                         layer = DRAW_XLU;
                     } else {
                         layer = DRAW_OPA;
@@ -1044,6 +1047,7 @@ static void render_world(int updateRate) {
                     
                     RenderNode *entry = (RenderNode *) render_alloc(sizeof(RenderNode), layer);
                     entry->matrix = NULL;
+                    entry->primColour = c->primC;
                     //Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : c->material;
                     add_render_node(entry, c->renderBlock, c->material, MATERIAL_NULL, layer);
                     c = c->next;
@@ -1057,6 +1061,7 @@ static void render_world(int updateRate) {
             s = s->next;
         }
     }
+    pop_render_list(DRAW_NZB);
     pop_render_list(DRAW_OPA);
     pop_render_list(DRAW_DECAL);
     get_time_snapshot(PP_RENDERLEVEL, DEBUG_SNAPSHOT_1_END);
@@ -1071,7 +1076,7 @@ static void render_object_shadows(void) {
     
     glEnable(GL_RDPQ_TEXTURING_N64);
     glEnable(GL_RDPQ_MATERIAL_N64);
-    material_set(gBlobShadowMat, MATERIAL_DECAL);
+    material_set(gBlobShadowMat, MAT_DECAL | MAT_XLU | MAT_DEPTH_READ);
     while (list) {
         obj = list->obj;
         if (obj->flags & OBJ_FLAG_IN_VIEW && (obj->flags & OBJ_FLAG_SHADOW || (gConfig.graphics == G_PERFORMANCE && obj->flags & OBJ_FLAG_SHADOW_DYNAMIC))) { 
@@ -1094,7 +1099,6 @@ static void render_object_shadows(void) {
         return;
     }
     list = gObjectListHead;
-    material_set(&gBlankMaterial, MATERIAL_DECAL | MATERIAL_XLU | MATERIAL_DEPTH_READ);
 #if OPENGL
     glEnable(GL_TEXTURE_2D);
 #endif
@@ -1205,7 +1209,7 @@ static void render_objects(void) {
             }
             while (m) {
                 int layer;
-                if (m->material->flags & MATERIAL_DECAL || m->material->flags & MATERIAL_XLU) {
+                if (m->material->flags & MAT_DECAL || m->material->flags & MAT_XLU) {
                     layer = DRAW_XLU;
                 } else {
                     layer = DRAW_OPA;
@@ -1218,6 +1222,7 @@ static void render_objects(void) {
                 } else {
                     entry->matrix = prevMtx;
                 }
+                entry->primColour = m->colour;
                 //Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &m->material;
                 add_render_node(entry, m->block, m->material, MATERIAL_NULL, layer);
                 /*if (obj->flags & OBJ_FLAG_OUTLINE) {
@@ -1230,7 +1235,7 @@ static void render_objects(void) {
                     }
                     mtx_scale(entry2->matrix, 1.05f, 1.00f, 1.05f);
                     entry2->primColour = RGBA32(255, 0, 0, 192);
-                    add_render_node(entry2, m->block, m->material, MATERIAL_FRONTFACE, DRAW_XLU);
+                    add_render_node(entry2, m->block, m->material, MAT_FRONTFACE, DRAW_XLU);
                 }*/
                 m = m->next;
             }
@@ -1260,7 +1265,7 @@ static void reset_shadow_perspective(void) {
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 #endif
-        material_set(&gBlankMaterial, MATERIAL_CAM_ONLY);
+        material_mode(MAT_CAM_ONLY);
 #if OPENGL
         glEnable(GL_RDPQ_MATERIAL_N64);
 #endif

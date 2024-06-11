@@ -29,6 +29,7 @@
 #endif
 
 enum DrawLayer {
+    DRAW_NZB,
     DRAW_OPA,
     DRAW_DECAL,
     DRAW_XLU,

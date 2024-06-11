@@ -21,7 +21,6 @@ const TextureInfo gTextureIDs[] = {
 {"trousers.ci8", 707},
 {"rocksurface4.ci4", 1664},
 {"mountainsidebottom.ci4", 1664},
-{"broijustwantcolour.ci4", 704},
 {"skybox1.rgba16", 0},
 {"logwall.i8", 1664},
 {"railing.ia4", 1680},

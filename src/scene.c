@@ -24,10 +24,10 @@ char *sSceneTable[SCENE_TOTAL] = {
 };
 
 char sSceneTexIDs[SCENE_TOTAL][7] = {
-    {TEXTURE_INTROSIGN, TEXTURE_KITCHENTILE, TEXTURE_INTROSIGN2},
-    {TEXTURE_STONE, TEXTURE_GRASS0, TEXTURE_WATER},
-    {TEXTURE_HEALTH, TEXTURE_KITCHENTILE, TEXTURE_RAILING, TEXTURE_WATER, TEXTURE_LOGWALL, TEXTURE_INTROSIGN, 0},
-    {TEXTURE_GRASS0, TEXTURE_KITCHENTILE, TEXTURE_LOGWALL, TEXTURE_WATER, TEXTURE_STONE},
+    {MATERIAL_INTROSIGN, MATERIAL_KITCHENTILE, MATERIAL_INTROSIGN2},
+    {MATERIAL_STONE, MATERIAL_GRASS0, MATERIAL_WATER, MATERIAL_GRASS0},
+    {MATERIAL_HEALTH, MATERIAL_KITCHENTILE, MATERIAL_RAILING, MATERIAL_WATER, MATERIAL_LOGWALL, MATERIAL_INTROSIGN, MATERIAL_FLATPRIM_XLU},
+    {MATERIAL_GRASS0, MATERIAL_KITCHENTILE, MATERIAL_LOGWALL, MATERIAL_WATER, MATERIAL_STONE},
 };
 
 static void setup_fog(SceneHeader *header) {
@@ -248,6 +248,13 @@ void load_scene(int sceneID) {
                 m->mesh = model64_get_primitive(mesh, j);
                 m->material = NULL;
                 m->materialID = sSceneTexIDs[gCurrentScene->sceneID][j];
+                if (m->materialID == MATERIAL_WATER) {
+                    m->primC = RGBA32(89, 125, 151, 64);
+                } else if (m->materialID == MATERIAL_FLATPRIM_XLU) {
+                    m->primC = RGBA32(0, 255, 255, 255);
+                } else {
+                    m->primC = RGBA32(255, 255, 255, 255);
+                }
                 scene_mesh_boundbox(c, m);
                 lowPos[0] = MIN(lowPos[0], c->bounds[0][0]);
                 lowPos[1] = MIN(lowPos[1], c->bounds[0][1]);

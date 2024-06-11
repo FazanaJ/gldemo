@@ -241,49 +241,49 @@ def init_tex_list():
                 if (not flags.find("TEX_CLAMP_V") == -1):
                     addClampV = True
                     useNum = False
-                if (not flags.find("MATERIAL_CUTOUT") == -1):
+                if (not flags.find("MAT_CUTOUT") == -1):
                     addCutout = True
                     useNum = False
-                if (not flags.find("MATERIAL_XLU") == -1):
+                if (not flags.find("MAT_XLU") == -1):
                     addXlu = True
                     useNum = False
-                if (not flags.find("MATERIAL_LIGHTING") == -1):
+                if (not flags.find("MAT_LIGHTING") == -1):
                     addLighting = True
                     useNum = False
-                if (not flags.find("MATERIAL_FOG") == -1):
+                if (not flags.find("MAT_FOG") == -1):
                     addFog = True
                     useNum = False
-                if (not flags.find("MATERIAL_ENVMAP") == -1):
+                if (not flags.find("MAT_ENVMAP") == -1):
                     addEnvmap = True
                     useNum = False
-                if (not flags.find("MATERIAL_DEPTH_READ") == -1):
+                if (not flags.find("MAT_DEPTH_READ") == -1):
                     addDepth = True
                     useNum = False
-                if (not flags.find("MATERIAL_VTXCOL") == -1):
+                if (not flags.find("MAT_VTXCOL") == -1):
                     addVtxcol = True
                     useNum = False
-                if (not flags.find("MATERIAL_DECAL") == -1):
+                if (not flags.find("MAT_DECAL") == -1):
                     addDecal = True
                     useNum = False
-                if (not flags.find("MATERIAL_INTER") == -1):
+                if (not flags.find("MAT_INTER") == -1):
                     addInter = True
                     useNum = False
-                if (not flags.find("MATERIAL_BACKFACE") == -1):
+                if (not flags.find("MAT_BACKFACE") == -1):
                     addBackface = True
                     useNum = False
-                if (not flags.find("MATERIAL_INVISIBLE") == -1):
+                if (not flags.find("MAT_INVISIBLE") == -1):
                     addInvis = True
                     useNum = False
-                if (not flags.find("MATERIAL_INTANGIBLE") == -1):
+                if (not flags.find("MAT_INTANGIBLE") == -1):
                     addIntangible = True
                     useNum = False
-                if (not flags.find("MATERIAL_CAM_ONLY") == -1):
+                if (not flags.find("MAT_CAM_ONLY") == -1):
                     addCamOnly = True
                     useNum = False
-                if (not flags.find("MATERIAL_NO_CAM") == -1):
+                if (not flags.find("MAT_NO_CAM") == -1):
                     addNoCam = True
                     useNum = False
-                if (not flags.find("MATERIAL_FRONTFACE") == -1):
+                if (not flags.find("MAT_FRONTFACE") == -1):
                     addFrontface = True
                     useNum = False
                 if useNum == True:

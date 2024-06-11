@@ -23,32 +23,29 @@ enum CombinerNames {
     CC_TEX_SHADE_PRIM,
     CC_MULTITEX_SHADE_PRIM,
     CC_MULTITEX_WATER,
+    CC_SHADE_PRIM,
 
     CC_TOTAL
 };
 
-enum MaterialNames {
-    MATERIAL_GRASS0,
-};
-
 enum MaterialFlags {
     MATERIAL_NULL,
-    MATERIAL_CUTOUT =       (1 << 4), // Enables 1 bit alpha.
-    MATERIAL_XLU =          (1 << 5), // Enables semitransparency.
-    MATERIAL_LIGHTING =     (1 << 6), // Enables light calculation.
-    MATERIAL_FOG =          (1 << 7), // Enables fog.
-    MATERIAL_ENVMAP =       (1 << 8), // Enables environment mapping.
-    MATERIAL_DEPTH_READ =   (1 << 9), // Enables depth write.
-    MATERIAL_VTXCOL =       (1 << 10), // Enables vertex colours
-    MATERIAL_DECAL =        (1 << 11), // Enables surface decal projection.
-    MATERIAL_INTER =        (1 << 12), // Enables interpenetrating surfaces.
-    MATERIAL_BACKFACE =     (1 << 13), // Enables backfaces
-    MATERIAL_INVISIBLE =    (1 << 14), // Don't render.
-    MATERIAL_INTANGIBLE =   (1 << 15), // Don't collide with anything.
-    MATERIAL_CAM_ONLY =     (1 << 16), // Only collide with the camera.
-    MATERIAL_NO_CAM =       (1 << 17), // Don't collide with the camera.
-    MATERIAL_FRONTFACE =    (1 << 18), // Enables frontfaces
-    MATERIAL_CI =           (1 << 19), // Use colour index
+    MAT_CUTOUT =       (1 << 4), // Enables 1 bit alpha.
+    MAT_XLU =          (1 << 5), // Enables semitransparency.
+    MAT_LIGHTING =     (1 << 6), // Enables light calculation.
+    MAT_FOG =          (1 << 7), // Enables fog.
+    MAT_ENVMAP =       (1 << 8), // Enables environment mapping.
+    MAT_DEPTH_READ =   (1 << 9), // Enables depth write.
+    MAT_VTXCOL =       (1 << 10), // Enables vertex colours
+    MAT_DECAL =        (1 << 11), // Enables surface decal projection.
+    MAT_INTER =        (1 << 12), // Enables interpenetrating surfaces.
+    MAT_BACKFACE =     (1 << 13), // Enables backfaces
+    MAT_INVISIBLE =    (1 << 14), // Don't render.
+    MAT_INTANGIBLE =   (1 << 15), // Don't collide with anything.
+    MAT_CAM_ONLY =     (1 << 16), // Only collide with the camera.
+    MAT_NO_CAM =       (1 << 17), // Don't collide with the camera.
+    MAT_FRONTFACE =    (1 << 18), // Enables frontfaces
+    MAT_CI =           (1 << 19), // Use colour index
 };
 
 enum TextureFlags {
@@ -92,6 +89,7 @@ enum FontList {
 #define COLFLAG_SOUND_SNOW      0x000B
 #define COLFLAG_SOUND_METAL     0x000C
 #define COLFLAG_SOUND_CARPET    0x000D
+#define COLFLAG_GRIP(x)         ((x & 0xF) << 4)
 
 typedef struct TextureInfo {
     char *file;
