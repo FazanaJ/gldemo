@@ -78,6 +78,7 @@ static void player_act_idle(Object *o, PlayerData *d, int updateRate, float upda
     if ((d->input & PLAYER_INPUT_L_HELD) == false) {
         player_grounded_common(o, d, updateRate, updateRateF);
     }
+    d->walkTimer = 0;
 }
 
 static void player_act_move(Object *o, PlayerData *d, int updateRate, float updateRateF) {
@@ -97,6 +98,11 @@ static void player_act_move(Object *o, PlayerData *d, int updateRate, float upda
         d->cameraAngle = o->faceAngle[1];
     }
     player_grounded_common(o, d, updateRate, updateRateF);
+    d->walkTimer -= (d->forwardVel * updateRateF) * 0.25f;
+    if (d->walkTimer <= 0) {
+        object_footsteps(o->collision->floorFlags, o->pos);
+        d->walkTimer += 180;
+    }
 }
 
 static void player_act_air(Object *o, PlayerData *d, int updateRate, float updateRateF) {
@@ -183,6 +189,7 @@ void init(Object *obj) {
     data->cameraAngle = 0;
     data->playerID = 0;
     obj->movement->weight = 5.0f;
+    data->walkTimer = 0;
 }
 
 static void player_input(Object *o, PlayerData *d) {

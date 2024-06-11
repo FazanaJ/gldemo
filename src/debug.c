@@ -186,16 +186,16 @@ void profiler_draw_minimal(void) {
     }
     rdpq_fill_rectangle(8, 6, 96, 28 + boxHeight);
     rdpq_mode_blender(0);
-    rdpq_text_printf(NULL, FONT_ARIAL, 8, 16, "FPS: %2.2f", (double ) display_get_fps());
-    rdpq_text_printf(NULL, FONT_ARIAL, 8, 26, "CPU: %dus (%d%%)", gDebugData->cpuTime[TIME_TOTAL], gDebugData->cpuTime[TIME_TOTAL] / 333);
+    rdpq_text_printf(NULL, FONT_ARIAL, 8, 16, "FPS %2.2f", (double ) display_get_fps());
+    rdpq_text_printf(NULL, FONT_ARIAL, 8, 26, "CPU %dus (%d%%)", gDebugData->cpuTime[TIME_TOTAL], gDebugData->cpuTime[TIME_TOTAL] / 333);
     boxHeight = 0;
     if (gDebugData->rspTime[TIME_TOTAL] > 10) {
         boxHeight += 8;
-        rdpq_text_printf(NULL, FONT_ARIAL, 8, 26 + boxHeight, "RSP: %dus (%d%%)", gDebugData->rspTime[TIME_TOTAL], gDebugData->rspTime[TIME_TOTAL] / 333);
+        rdpq_text_printf(NULL, FONT_ARIAL, 8, 26 + boxHeight, "RSP %dus (%d%%)", gDebugData->rspTime[TIME_TOTAL], gDebugData->rspTime[TIME_TOTAL] / 333);
     }
     if (gDebugData->rdpTime[TIME_TOTAL] > 10) {
         boxHeight += 8;
-        rdpq_text_printf(NULL, FONT_ARIAL, 8, 26 + boxHeight, "RDP: %dus (%d%%)", gDebugData->rdpTime[TIME_TOTAL], gDebugData->rdpTime[TIME_TOTAL] / 333);
+        rdpq_text_printf(NULL, FONT_ARIAL, 8, 26 + boxHeight, "RDP %dus (%d%%)", gDebugData->rdpTime[TIME_TOTAL], gDebugData->rdpTime[TIME_TOTAL] / 333);
     }
 }
 
@@ -212,12 +212,12 @@ void profiler_draw_overview(void) {
     rdpq_fill_rectangle(8, height - 58, 120, height - 6);
 
     int ramUsed = mem_info.uordblks - (size_t) (((width * height) * 2) - ((unsigned int) HEAP_START_ADDR - 0x80000000) - 0x10000);
-    rdpq_text_printf(NULL, FONT_ARIAL, 8, height - 8, "RAM: %dKB/%dKB", (ramUsed / 1024), get_memory_size() / 1024);
-    rdpq_text_printf(NULL, FONT_ARIAL, 8, height - 16, "Tex: %d | Loads: %d", gNumMaterials, gNumTextureLoads);
-    rdpq_text_printf(NULL, FONT_ARIAL, 8, height - 24, "Obj: %d | Clu: %d | Par: %d", gNumObjects, gNumClutter, gNumParticles);
-    rdpq_text_printf(NULL, FONT_ARIAL, 8, height - 32, "Mtx: %d | Mdl: %d | Ovl: %d", gDebugData->matrixOps, gNumModels, gNumOverlays);
-    rdpq_text_printf(NULL, FONT_ARIAL, 8, height - 40, "OPA: 0x%X", gSortRecord[DRAW_OPA]);
-    rdpq_text_printf(NULL, FONT_ARIAL, 8, height - 48, "XLU: 0x%X", gSortRecord[DRAW_XLU]);
+    rdpq_text_printf(NULL, FONT_ARIAL, 8, height - 8, "RAM %dKB/%dKB", (ramUsed / 1024), get_memory_size() / 1024);
+    rdpq_text_printf(NULL, FONT_ARIAL, 8, height - 16, "Tex %d | Loads %d", gNumMaterials, gNumTextureLoads);
+    rdpq_text_printf(NULL, FONT_ARIAL, 8, height - 24, "Obj %d | Clu %d | Par %d", gNumObjects, gNumClutter, gNumParticles);
+    rdpq_text_printf(NULL, FONT_ARIAL, 8, height - 32, "Mtx %d | Mdl %d | Ovl %d", gDebugData->matrixOps, gNumModels, gNumOverlays);
+    rdpq_text_printf(NULL, FONT_ARIAL, 8, height - 40, "OPA 0x%X", gSortRecord[DRAW_OPA]);
+    rdpq_text_printf(NULL, FONT_ARIAL, 8, height - 48, "XLU 0x%X", gSortRecord[DRAW_XLU]);
 }
 
 void profiler_draw_breakdown(void) {
@@ -242,8 +242,8 @@ void profiler_draw_breakdown(void) {
     for (int i = 0; i < PP_TOTAL; i++) {
         if (i != PP_HALT && gDebugData->timer[i][TIME_TOTAL] > 1) {
             boxHeight += 8;
-            rdpq_text_printf(NULL, FONT_ARIAL, width - 100, 8 + boxHeight, "%s:", sDebugText[i]);
-            rdpq_text_printf(NULL, FONT_ARIAL, width - 38, 8 + boxHeight, "%dus", gDebugData->timer[i][TIME_TOTAL]);
+            rdpq_text_printf(NULL, FONT_ARIAL, width - 100, 8 + boxHeight, "%s", sDebugText[i]);
+            rdpq_text_printf(NULL, FONT_ARIAL, width - 38, 8 + boxHeight, "%d", gDebugData->timer[i][TIME_TOTAL]);
         }
     }
 }

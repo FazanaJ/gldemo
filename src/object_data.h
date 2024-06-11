@@ -24,7 +24,7 @@ typedef struct PlayerData {
 	char weaponOut;
 
 
-	unsigned char walkTimer;
+	short walkTimer;
 } PlayerData;
 
 typedef struct ProjectileData {

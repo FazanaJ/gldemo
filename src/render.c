@@ -711,10 +711,10 @@ static void render_bush(void) {
     glColor3f(e->skyColourBottom[0], e->skyColourBottom[1], e->skyColourBottom[2]);
     glTexCoord2f(0, 1.0f);
     glVertex3f(-5, 0, 0);
-    glTexCoord2f(2.048f, 1.0f);
+    glTexCoord2f(2.0f, 1.0f);
     glVertex3f(5, 0, 0);
     glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
-    glTexCoord2f(2.048f, 0);
+    glTexCoord2f(2.0f, 0);
     glVertex3f(5, 10, 0);
     glEnd();
 #endif
@@ -737,10 +737,10 @@ static void render_shadow(float pos[3], float height) {
         glScalef(0.5f, 0.5f, 0.5f);
         glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
         glBegin(GL_QUADS);
-        glTexCoord2f(2.048f, 0);        glVertex3f(5.0f, 0.0f, -5.0f);
+        glTexCoord2f(2.0f, 0);        glVertex3f(5.0f, 0.0f, -5.0f);
         glTexCoord2f(0, 0);             glVertex3f(-5.0f, 0.0f, -5.0f);
-        glTexCoord2f(0, 2.048f);        glVertex3f(-5.0f, 0.0f, 5.0f);
-        glTexCoord2f(2.048f, 2.048f);   glVertex3f(5.0f, 0.0f, 5.0f);
+        glTexCoord2f(0, 2.0f);        glVertex3f(-5.0f, 0.0f, 5.0f);
+        glTexCoord2f(2.0f, 2.0f);   glVertex3f(5.0f, 0.0f, 5.0f);
         glEnd();
         sShadowBlock = rspq_block_end();
     }
@@ -969,7 +969,7 @@ static int render_world_visible(SceneChunk *c) {
     return true;
 }
 
-static void render_world(int updateRate) {
+static void render_world(void) {
     DEBUG_SNAPSHOT_1();
     int i = 0;
     if (gCurrentScene && gCurrentScene->model) {
@@ -1032,11 +1032,15 @@ static void render_object_shadows(void) {
             float height;
             if (obj->collision) {
                 height = obj->collision->floorHeight;
+                if (obj->pos[1] - height > 10.0f) {
+                    goto next;
+                }
             } else {
                 height = obj->pos[1];
             }
             render_shadow(obj->pos, height);
         }
+        next:
         list = list->next;
     }
 
@@ -1385,22 +1389,20 @@ void render_game(int updateRate, float updateRateF) {
         set_light(lightNeutral);
         render_determine_visible();
         apply_anti_aliasing(AA_GEO);
-        render_world(updateRate);
-        //apply_anti_aliasing(AA_GEO);
+        render_world();
         render_object_shadows();
-        //apply_anti_aliasing(AA_GEO);
         render_clutter();
         apply_anti_aliasing(AA_ACTOR);
         render_objects();
         apply_anti_aliasing(AA_GEO);
         set_particle_render_settings();
-        //render_particles();
+        render_particles();
         render_end();
         if (gScreenshotStatus == SCREENSHOT_GENERATE) {
             clear_dynamic_shadows();
         }
     } else if (gScreenshotStatus == SCREENSHOT_SHOW) {
-        render_world(updateRate);
+        render_world();
         render_end();
         if (gScreenshotType == FMT_RGBA16) {
             rdpq_set_mode_copy(false);

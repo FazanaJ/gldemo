@@ -132,6 +132,7 @@ typedef struct ObjectCollision {
 	float hitboxHeight;
 	float floorHeight;
 	float floorNorm;
+	short floorFlags;
 	char grounded;
 } ObjectCollision;
 
@@ -291,3 +292,4 @@ Object *find_nearest_object(Object *obj, int objectID, float baseDist);
 Object *find_nearest_object_facing(Object *obj, int objectID, float baseDist, int range, int angle);
 void clear_objects(void);
 void free_dynamic_shadow(Object *obj);
+void object_footsteps(int stepID, float pos[3]);

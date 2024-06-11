@@ -254,6 +254,7 @@ void object_collide(Object *obj) {
     float scale = 1.0f;
     float recordNorm = 1.0f;
     float normY = 1.0f;
+    int recordFlags = 0;
 
     while (chunk) {
         SceneMesh *mesh = chunk->meshList;
@@ -286,6 +287,7 @@ void object_collide(Object *obj) {
                         peakY = h;
                         scale = mulFactorF;
                         recordNorm = normY;
+                        recordFlags = mesh->material->collisionFlags;
                     }
                 }
 
@@ -296,6 +298,7 @@ void object_collide(Object *obj) {
     }
     obj->collision->floorHeight = (peakY / scale) * 5;
     obj->collision->floorNorm = recordNorm;
+    obj->collision->floorFlags = recordFlags;
     get_time_snapshot(PP_COLLISION, DEBUG_SNAPSHOT_1_END);
     #endif
 }

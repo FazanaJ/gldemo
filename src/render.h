@@ -29,10 +29,10 @@
 #endif
 
 enum DrawLayer {
-    DRAW_NZB,
-    DRAW_OPA,
-    DRAW_DECAL,
-    DRAW_XLU,
+    DRAW_NZB,   // No Z Buffer
+    DRAW_OPA,   // Opaque geometry
+    DRAW_DECAL, // Decal geometry, should come after opaque, but before semitransparent
+    DRAW_XLU,   // Semitransparent geometry, do this last.
 
     DRAW_TOTAL
 };

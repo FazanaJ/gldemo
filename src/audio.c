@@ -27,11 +27,21 @@ static xm64player_t sXMPlayer;
 SoundData sSoundTable[] = {
     {"laser", 10},
     {"cannon", 10},
-    {"stonestep", 10},
     {"mouseclick", 10},
     {"shell1", 10},
     {"textblip", 10},
     {"keyboard", 10},
+    {"dirt", 10},
+    {"glass", 10},
+    {"grass", 10},
+    {"gravel", 10},
+    {"mesh", 10},
+    {"metal", 10},
+    {"sand", 10},
+    {"snow", 10},
+    {"stone", 10},
+    {"tile", 10},
+    {"wood", 10},
 };
 
 VoiceData sVoiceTable[] = {
@@ -214,7 +224,7 @@ void play_sound_spatial_pitch(int soundID, float pos[3], float pitch) {
     if (get_sound_pan(channel, pos) == 0) {
         return;
     }
-    mixer_ch_set_freq(channel, (AUDIO_FREQUENCY * 2) * pitch);
+    //mixer_ch_set_freq(channel, (AUDIO_FREQUENCY * 2) * pitch);
     wav64_play(&sSoundTable[soundID].sound, channel);
 }
 

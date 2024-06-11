@@ -31,6 +31,49 @@ short gNumOverlays = 0;
 #endif
 char gGamePaused = false;
 
+void object_footsteps(int stepID, float pos[3]) {
+    float pitch = 0.95f + (random_float() * 0.1f);
+    int soundID;
+    switch (stepID) {
+    case COLFLAG_SOUND_DIRT:
+        soundID = SOUND_STEP_DIRT;
+        break;
+    case COLFLAG_SOUND_GLASS:
+        soundID = SOUND_STEP_STONE;
+        break;
+    case COLFLAG_SOUND_GRASS:
+        soundID = SOUND_STEP_GRASS;
+        break;
+    case COLFLAG_SOUND_GRAVEL:
+        soundID = SOUND_STEP_GRAVEL;
+        break;
+    case COLFLAG_SOUND_MESH:
+        soundID = SOUND_STEP_MESH;
+        break;
+    case COLFLAG_SOUND_METAL:
+        soundID = SOUND_STEP_METAL;
+        break;
+    case COLFLAG_SOUND_SAND:
+        soundID = SOUND_STEP_SAND;
+        break;
+    case COLFLAG_SOUND_SNOW:
+        soundID = SOUND_STEP_DIRT;
+        break;
+    case COLFLAG_SOUND_STONE:
+        soundID = SOUND_STEP_STONE;
+        break;
+    case COLFLAG_SOUND_TILE:
+        soundID = SOUND_STEP_TILE;
+        break;
+    case COLFLAG_SOUND_WOOD:
+        soundID = SOUND_STEP_WOOD;
+        break;
+    default:
+        soundID = SOUND_STEP_STONE;
+    }
+    play_sound_spatial_pitch(soundID, pos, pitch);
+}
+
 static void object_move(Object *obj, float updateRateF) {
     if (obj->movement->forwardVel != 0.0f) {
         float vel = obj->movement->forwardVel / 20.0f;
