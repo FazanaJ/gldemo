@@ -78,11 +78,11 @@ static void init_particles(void) {
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
     glVertex3f(-5, 5, 0);
-    glTexCoord2f(0, 1.024f);
+    glTexCoord2f(0, 1.0f);
     glVertex3f(-5, -5, 0);
-    glTexCoord2f(1.024f, 1.024f);
+    glTexCoord2f(1.0f, 1.0f);
     glVertex3f(5, -5, 0);
-    glTexCoord2f(1.024f, 0);
+    glTexCoord2f(1.0f, 0);
     glVertex3f(5, 5, 0);
     glEnd();
 #endif
@@ -122,6 +122,8 @@ void init_renderer(void) {
     rdpq_mode_filter(FILTER_BILINEAR);
     rdpq_mode_dithering(DITHER_SQUARE_SQUARE);
     glDitherModeN64(DITHER_SQUARE_SQUARE);
+    glEnable(GL_RDPQ_TEXTURING_N64);
+    glEnable(GL_RDPQ_MATERIAL_N64);
 #endif
     sBeginModeBlock = rspq_block_end();
 
@@ -136,6 +138,8 @@ void init_renderer(void) {
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_BLEND);
     glDepthMask(GL_FALSE);
+    glDisable(GL_RDPQ_TEXTURING_N64);
+    glDisable(GL_RDPQ_MATERIAL_N64);
 #endif
     sRenderEndBlock = rspq_block_end();
 
@@ -680,67 +684,18 @@ static void render_sky_texture(Environment *e) {
         MATRIX_PUSH();
         mtx_translate(&mtx, gCamera->pos[0], gCamera->pos[1] + 50.0f, gCamera->pos[2]);
         MATRIX_MUL(mtx.m, gMatrixStackPos, gMatrixStackPos - 1);
-#if OPENGL
-        glEnable(GL_TEXTURE_2D);
-        glDisable(GL_CULL_FACE);
-        glColor3f(1, 1, 1);
-#endif
+        material_mode(MAT_CI);
+        // run block
         int base = gCamera->yaw + 0x8000;
-        if (gCamera->viewPitch >= 0x2C00 || gCamera->mode == CAMERA_PHOTO) {
-            for (int i = 0; i < 16; i++) {
-                short rot = base - ((0x10000 / 16) * i);
-                if (fabs(rot) >= 0x4000) {
-                    continue;
-                }
-                float pX = 100.0f * sins((0x10000 / 16) * i);
-                float pZ = 100.0f * coss((0x10000 / 16) * i);
-#if OPENGL
-                glBindTexture(GL_TEXTURE_2D, e->textureSegments[15 - i]);
-                glBegin(GL_QUADS);
-                glTexCoord2f(1.024f, 0.0f);
-                glVertex3f(pX * 0.66f, 75, pZ * 0.66f);
-                glTexCoord2f(1.024f, 1.024f);
-                glVertex3f(pX, 0.0f, pZ);
-#endif
-                pX = 100.0f * sins((0x10000 / 16) * (i + 1));
-                pZ = 100.0f * coss((0x10000 / 16) * (i + 1));
-#if OPENGL
-                glTexCoord2f(0.0f, 1.024f);
-                glVertex3f(pX, 0.0f, pZ);
-                glTexCoord2f(0.0f, 0.0f);
-                glVertex3f(pX * 0.66f, 75, pZ * 0.66f);
-                glEnd();
-#endif
-                gNumTextureLoads++;
-            }
-        }
-        
-        for (int i = 0; i < 16; i++) {
+        rspq_block_run(e->skyInit);
+        for (int i = 0; i < 32; i++) {
             short rot = base - ((0x10000 / 16) * i);
             if (fabs(rot) >= 0x4000) {
                 continue;
             }
-            float pX = 100.0f * sins((0x10000 / 16) * i);
-            float pZ = 100.0f * coss((0x10000 / 16) * i);
-#if OPENGL
-            glBindTexture(GL_TEXTURE_2D, e->textureSegments[31 - i]);
-            glBegin(GL_QUADS);
-            glTexCoord2f(1.024f, 0.0f);
-            glVertex3f(pX, 0.0f, pZ);
-            glTexCoord2f(1.024f, 1.024f);
-            glVertex3f(pX * 0.66f, -75, pZ * 0.66f);
-#endif
-            pX = 100.0f * sins((0x10000 / 16) * (i + 1));
-            pZ = 100.0f * coss((0x10000 / 16) * (i + 1));
-#if OPENGL
-            glTexCoord2f(0.0f, 1.024f);
-            glVertex3f(pX * 0.66f, -75, pZ * 0.66f);
-            glTexCoord2f(0.0f, 0.0f);
-            glVertex3f(pX, 0.0f, pZ);
-            glEnd();
-#endif
-            gNumTextureLoads++;
+            rspq_block_run(e->skySegment[i]);
         }
+        rdpq_mode_dithering(DITHER_SQUARE_SQUARE);
         MATRIX_POP();
     }
     get_time_snapshot(PP_BG, DEBUG_SNAPSHOT_1_END);
@@ -754,9 +709,9 @@ static void render_bush(void) {
     glTexCoord2f(0, 0);
     glVertex3f(-5, 10, 0);
     glColor3f(e->skyColourBottom[0], e->skyColourBottom[1], e->skyColourBottom[2]);
-    glTexCoord2f(0, 1.024f);
+    glTexCoord2f(0, 1.0f);
     glVertex3f(-5, 0, 0);
-    glTexCoord2f(2.048f, 1.024f);
+    glTexCoord2f(2.048f, 1.0f);
     glVertex3f(5, 0, 0);
     glColor3f(e->skyColourTop[0], e->skyColourTop[1], e->skyColourTop[2]);
     glTexCoord2f(2.048f, 0);
@@ -913,8 +868,6 @@ void pop_render_list(int layer) {
     }
     RenderNode *renderList = gRenderNodeHead[layer];
     rdpq_mode_filter(FILTER_BILINEAR);
-    glEnable(GL_RDPQ_TEXTURING_N64);
-    glEnable(GL_RDPQ_MATERIAL_N64);
     while (renderList) {
         MATRIX_PUSH();
         if (renderList->matrix) {
@@ -929,8 +882,6 @@ void pop_render_list(int layer) {
         MATRIX_POP();
         renderList = renderList->next;
     }
-    glDisable(GL_RDPQ_MATERIAL_N64);
-    glDisable(GL_RDPQ_TEXTURING_N64);
     gRenderNodeHead[layer] = NULL;
     gRenderNodeTail[layer] = NULL;
     gMateriallistHead[layer] = NULL;
@@ -1074,8 +1025,6 @@ static void render_object_shadows(void) {
     ObjectList *list = gObjectListHead;
     Object *obj;
     
-    glEnable(GL_RDPQ_TEXTURING_N64);
-    glEnable(GL_RDPQ_MATERIAL_N64);
     material_set(gBlobShadowMat, MAT_DECAL | MAT_XLU | MAT_DEPTH_READ);
     while (list) {
         obj = list->obj;
@@ -1091,8 +1040,6 @@ static void render_object_shadows(void) {
         list = list->next;
     }
 
-    glDisable(GL_RDPQ_TEXTURING_N64);
-    glDisable(GL_RDPQ_MATERIAL_N64);
     if (gConfig.graphics == G_PERFORMANCE) {
         get_time_snapshot(PP_SHADOWS, DEBUG_SNAPSHOT_1_END);
         profiler_wait();
@@ -1101,6 +1048,8 @@ static void render_object_shadows(void) {
     list = gObjectListHead;
 #if OPENGL
     glEnable(GL_TEXTURE_2D);
+    glDisable(GL_RDPQ_TEXTURING_N64);
+    glDisable(GL_RDPQ_MATERIAL_N64);
 #endif
     while (list) {
         obj = list->obj;
@@ -1131,9 +1080,9 @@ static void render_object_shadows(void) {
                     gNumTextureLoads++;
 #if OPENGL
                     glBegin(GL_QUADS);
-                    glTexCoord2f(0.0f, 1.024f);        glVertex3f(x + width, 0.0f, y);
-                    glTexCoord2f(1.024f, 1.024f);             glVertex3f(x, 0.0f, y);
-                    glTexCoord2f(1.024f, 0.0f);        glVertex3f(x, 0.0f, y + height);
+                    glTexCoord2f(0.0f, 1.0f);        glVertex3f(x + width, 0.0f, y);
+                    glTexCoord2f(1.0f, 1.0f);             glVertex3f(x, 0.0f, y);
+                    glTexCoord2f(1.0f, 0.0f);        glVertex3f(x, 0.0f, y + height);
                     glTexCoord2f(0.0f, 0.0f);   glVertex3f(x + width, 0.0f, y + height);
                     glEnd();
 #endif
@@ -1146,6 +1095,10 @@ static void render_object_shadows(void) {
         }
         list = list->next;
     }
+#if OPENGL
+    glEnable(GL_RDPQ_TEXTURING_N64);
+    glEnable(GL_RDPQ_MATERIAL_N64);
+#endif
     get_time_snapshot(PP_SHADOWS, DEBUG_SNAPSHOT_1_END);
     profiler_wait();
 }

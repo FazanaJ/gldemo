@@ -123,7 +123,7 @@ static void generate_health_block(int hpMin, int hpMax, int hpBase) {
 }
 
 static void render_health_bg(int numHealth, int hpMax) {
-    rdpq_debug_start();
+    //rdpq_debug_start();
     PlayerData *data = (PlayerData *) gPlayer->data;
     int heartSpeed = (gGameTimer * 0x200);
     if (data->health <= data->healthMax / 4) {
@@ -231,7 +231,7 @@ void loop(int updateRate, float updateRateF) {
         }
     }
     rspq_block_run(sHealthEmptyBlock);
-    rdpq_debug_stop();
+    //rdpq_debug_stop();
 }
 
 void init(void) {

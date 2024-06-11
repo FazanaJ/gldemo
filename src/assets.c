@@ -497,11 +497,16 @@ void asset_cycle(int updateRate) {
         gEnvironment->skyTimer -= updateRate;
         if (gEnvironment->skyTimer <= 0) {
             debugf("Freeing texture: %s.\n", gTextureIDs[gEnvironment->skyboxTextureID].file);
+            if (gEnvironment->skyInit) {
+                rspq_block_free(gEnvironment->skyInit);
+                gEnvironment->skyInit = NULL;
+            }
             for (int i = 0; i < 32; i++) {
+                if (gEnvironment->skySegment[i]) {
+                    rspq_block_free(gEnvironment->skySegment[i]);
+                    gEnvironment->skySegment[i] = NULL;
+                }
                 gNumMaterials--;
-#if OPENGL
-                glDeleteTextures(1, &gEnvironment->textureSegments[i]);
-#endif
             }
             sprite_free(gEnvironment->skySprite);
             gEnvironment->texGen = false;
@@ -541,22 +546,83 @@ void sky_texture_generate(Environment *e) {
     debugf("Loading texture: %s.", gTextureIDs[e->skyboxTextureID].file);
     e->skySprite = sprite_load(asset_dir(gTextureIDs[e->skyboxTextureID].file, DFS_SPRITE));
     surface_t surf = sprite_get_pixels(e->skySprite);
-    int x = 0;
-    int y = 0;
-    for (int i = 0; i < 32; i++) {
-        if (i == 16) {
-            y += 64;
-            x = 0;
-        }
-        gNumMaterials++;
+    tex_format_t fmt = sprite_get_format(e->skySprite);
+    rspq_block_begin();
+    rdpq_set_mode_standard();
 #if OPENGL
-        glGenTextures(1, &e->textureSegments[i]);
-        glBindTexture(GL_TEXTURE_2D, e->textureSegments[i]);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        surface_t surfPiece = surface_make_sub(&surf, x, y, 32, 64);
-        glSurfaceTexImageN64(GL_TEXTURE_2D, 0, &surfPiece, &(rdpq_texparms_t){.s.repeats = false, .t.repeats = false});
+    glEnable(GL_TEXTURE_2D);
+    glDisable(GL_CULL_FACE);
+    glColor3f(1.0f, 1.0f, 1.0f);
 #endif
+    rdpq_mode_filter(FILTER_BILINEAR);
+    rdpq_mode_combiner(RDPQ_COMBINER_TEX);
+    if (fmt == FMT_CI4 || fmt == FMT_CI8) {
+        int colours;
+        if (fmt == FMT_CI4) {
+            colours = 16;
+        } else {
+            colours = 256;
+        }
+        rdpq_mode_tlut(TLUT_RGBA16);
+        rdpq_tex_upload_tlut(sprite_get_palette(e->skySprite), 0, colours);
+    }
+    e->skyInit = rspq_block_end();
+    for (int i = 0, x = 0; i < 16; i++) {
+        gNumMaterials++;
+        rspq_block_begin();
+        rdpq_texparms_t parms = {
+            .s.repeats = 1,
+            .t.repeats = REPEAT_INFINITE,
+            .t.translate = 96,
+            .t.mirror = true,
+        };
+        rdpq_tex_upload_sub(TILE0, &surf, &parms, x, 0, x + 32, 64);
+#if OPENGL
+        float pX = 100.0f * sins((0x10000 / 16) * i);
+        float pZ = 100.0f * coss((0x10000 / 16) * i);
+        glBegin(GL_QUADS);
+        glTexCoord2f(i, 0.0f);
+        glVertex3f(pX * 0.66f, 75, pZ * 0.66f);
+        glTexCoord2f(i, 2.0f);
+        glVertex3f(pX, 0.0f, pZ);
+        pX = 100.0f * sins((0x10000 / 16) * (i + 1));
+        pZ = 100.0f * coss((0x10000 / 16) * (i + 1));
+        glTexCoord2f(i + 1, 2.0f);
+        glVertex3f(pX, 0.0f, pZ);
+        glTexCoord2f(i + 1, 0.0f);
+        glVertex3f(pX * 0.66f, 75, pZ * 0.66f);
+        glEnd();
+#endif
+        e->skySegment[i] = rspq_block_end();
+        x += 32;
+    }
+    for (int i = 0, x = 0; i < 16; i++) {
+        gNumMaterials++;
+        rspq_block_begin();
+        rdpq_texparms_t parms = {
+            .s.repeats = 1,
+            .t.repeats = REPEAT_INFINITE,
+            .t.translate = 32,
+            .t.mirror = true,
+        };
+        rdpq_tex_upload_sub(TILE0, &surf, &parms, x, 64, x + 32, 128);
+#if OPENGL
+        float pX = 100.0f * sins((0x10000 / 16) * i);
+        float pZ = 100.0f * coss((0x10000 / 16) * i);
+        glBegin(GL_QUADS);
+        glTexCoord2f(i, 0.0f);
+        glVertex3f(pX, 0.0f, pZ);
+        glTexCoord2f(i, 2.0f);
+        glVertex3f(pX * 0.66f, -75, pZ * 0.66f);
+        pX = 100.0f * sins((0x10000 / 16) * (i + 1));
+        pZ = 100.0f * coss((0x10000 / 16) * (i + 1));
+        glTexCoord2f(i + 1, 2.0f);
+        glVertex3f(pX * 0.66f, -75, pZ * 0.66f);
+        glTexCoord2f(i + 1, 0.0f);
+        glVertex3f(pX, 0.0f, pZ);
+        glEnd();
+#endif
+        e->skySegment[16 + i] = rspq_block_end();
         x += 32;
     }
     debugf(" Time: %2.3fs.\n", (double) (TIMER_MICROS(DEBUG_SNAPSHOT_1_END) / 1000000.0f));

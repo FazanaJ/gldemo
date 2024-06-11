@@ -66,9 +66,9 @@ typedef struct Environment {
     Texture skyboxTextureID;
     unsigned char texGen;
     char skyTimer;
-#if OPENGL
-    GLuint textureSegments[32];
-#elif TINY3D
+    rspq_block_t *skyInit;
+    rspq_block_t *skySegment[32];
+#if TINY3D
     T3DVertPacked *skyVerts;
 #endif
 } Environment;

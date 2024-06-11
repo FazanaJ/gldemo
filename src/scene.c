@@ -91,11 +91,17 @@ static void clear_scene(void) {
     }
     if (gEnvironment) {
         if (gEnvironment->texGen) {
-#if OPENGL
-            for (int i = 0; i < 32; i++) {
-                glDeleteTextures(1, &gEnvironment->textureSegments[i]);
+            if (gEnvironment->skyInit) {
+                rspq_block_free(gEnvironment->skyInit);
+                gEnvironment->skyInit = NULL;
             }
-#endif
+            for (int i = 0; i < 32; i++) {
+                if (gEnvironment->skySegment[i]) {
+                    rspq_block_free(gEnvironment->skySegment[i]);
+                    gEnvironment->skySegment[i] = NULL;
+                }
+                gNumMaterials--;
+            }
             sprite_free(gEnvironment->skySprite);
         }
         //free(gEnvironment);
