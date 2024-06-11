@@ -66,6 +66,7 @@ light_t lightNeutral = {
 };
 
 const short sLayerSizes[DRAW_TOTAL] = {
+    0x200, // Non ZBuffer
     0x3800, // Standard
     0x400, // Decal
     0x800, // Semitransparent
