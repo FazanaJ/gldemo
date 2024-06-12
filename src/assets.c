@@ -53,10 +53,10 @@ short gObjectModels[OBJ_TOTAL] = {
 
 short playerModelTextures[][9] = {
     {MATERIAL_FLATPRIM, 0, 0, 0, 0, 0, 0, 0, 0}, // Ears
-    {MATERIAL_FLATPRIM, 0, 0, 0, 0, 0, 0, 0, 0}, // Feet
-    {MATERIAL_ROCKSURFACE4, 0, 0, 0, 0, 0, 0, 0, 0}, // Hair
-    {MATERIAL_FLATPRIM, 0, 0, 0, 0, 0, 0, 0, 0}, // Hands
-    {MATERIAL_EYE1, MATERIAL_INTROSIGN2, MATERIAL_MOUTH1, MATERIAL_FLATPRIM, 0, 0, 0, 0, 0}, // Head
+    {MATERIAL_BODY1, 0, 0, 0, 0, 0, 0, 0, 0}, // Feet
+    {MATERIAL_FLATPRIM, 0, 0, 0, 0, 0, 0, 0, 0}, // Hair
+    {MATERIAL_BODY1, 0, 0, 0, 0, 0, 0, 0, 0}, // Hands
+    {MATERIAL_EYE1, MATERIAL_INTROSIGN2, MATERIAL_MOUTH1, MATERIAL_EYEBROW1, MATERIAL_FLATPRIM, 0, 0, 0, 0}, // Head
     {MATERIAL_TROUSERS, 0, 0, 0, 0, 0, 0, 0, 0}, // Legs
     {MATERIAL_FLATPRIM, 0, 0, 0, 0, 0, 0, 0, 0}, // Tail
     {MATERIAL_FLATPRIM, MATERIAL_SHIRT, 0, 0, 0, 0, 0, 0, 0}, // Torso
@@ -141,6 +141,7 @@ rdpq_combiner_t sCombinerTable[CC_TOTAL] = {
     RDPQ_COMBINER2((TEX1, TEX0, TEX1, TEX0), (0, 0, 0, ENV), (COMBINED, PRIM, SHADE, PRIM), (0, 0, 0, COMBINED)),
     RDPQ_COMBINER2((TEX0, PRIM, TEX1, PRIM), (TEX0, 0, TEX1, 0), (TEX1, 0, TEX1, COMBINED), (SHADE, 0, PRIM, COMBINED)),
     RDPQ_COMBINER2((PRIM, 0, SHADE, 0), (0, 0, 0, ENV), (PRIM, 0, SHADE, 0), (0, 0, 0, COMBINED)),
+    RDPQ_COMBINER2((TEX0, PRIM, TEX0_ALPHA, PRIM), (0, 0, 0, ENV), (COMBINED, 0, SHADE, 0), (0, 0, 0, ENV)),
 };
 
 void material_setup_constants(Material *m) {
@@ -165,11 +166,11 @@ void material_setup_constants(Material *m) {
     } else {
         sTexParams.s.repeats = REPEAT_INFINITE;
     }
-    /*if (gTextureIDs[m->tex0->spriteID].flags & TEX_CLAMP_V) {
+    if (gTextureIDs[m->tex0->spriteID].flags & TEX_CLAMP_V) {
         sTexParams.t.repeats = 0;
-    } else {*/
+    } else {
         sTexParams.t.repeats = REPEAT_INFINITE;
-    //}
+    }
     if (gTextureIDs[m->tex0->spriteID].flags & TEX_MIRROR_H) {
         sTexParams.s.mirror = MIRROR_REPEAT;
     } else {
@@ -181,7 +182,7 @@ void material_setup_constants(Material *m) {
         sTexParams.t.mirror = false;
     }
     sTexParams.s.translate = 0;
-    sTexParams.t.translate = m->tex0->sprite->height;
+    sTexParams.t.translate = 0;
     sTexParams.s.scale_log = gMaterialIDs[m->entry->materialID].shiftS0;
     sTexParams.t.scale_log = gMaterialIDs[m->entry->materialID].shiftT0;
 }
@@ -196,7 +197,7 @@ void material_run_partial(Material *m) {
         m->shiftT0 -= 1024;
     }
     sTexParams.s.translate = (float) m->shiftS0 * 0.125f;
-    sTexParams.t.translate = m->tex0->sprite->height + ((float) m->shiftT0 * 0.125f);
+    sTexParams.t.translate = (float) m->shiftT0 * 0.125f;
     sTexParams.s.scale_log = gMaterialIDs[m->entry->materialID].shiftS0;
     sTexParams.t.scale_log = gMaterialIDs[m->entry->materialID].shiftT0;
     if (m->tex1) {
@@ -570,26 +571,20 @@ void sky_texture_generate(Environment *e) {
     for (int i = 0, x = 0; i < 16; i++) {
         gNumMaterials++;
         rspq_block_begin();
-        rdpq_texparms_t parms = {
-            .s.repeats = 1,
-            .t.repeats = REPEAT_INFINITE,
-            .t.translate = 96,
-            .t.mirror = true,
-        };
-        rdpq_tex_upload_sub(TILE0, &surf, &parms, x, 0, x + 32, 64);
+        rdpq_tex_upload_sub(TILE0, &surf, NULL, x, 0, x + 32, 64);
 #if OPENGL
         float pX = 100.0f * sins((0x10000 / 16) * i);
         float pZ = 100.0f * coss((0x10000 / 16) * i);
         glBegin(GL_QUADS);
-        glTexCoord2f(i, 0.0f);
+        glTexCoord2f(0.0f, 1.0f);
         glVertex3f(pX * 0.66f, 75, pZ * 0.66f);
-        glTexCoord2f(i, 2.0f);
+        glTexCoord2f(0.0f, 2.0f);
         glVertex3f(pX, 0.0f, pZ);
         pX = 100.0f * sins((0x10000 / 16) * (i + 1));
         pZ = 100.0f * coss((0x10000 / 16) * (i + 1));
-        glTexCoord2f(i + 1, 2.0f);
+        glTexCoord2f(1.0f, 2.0f);
         glVertex3f(pX, 0.0f, pZ);
-        glTexCoord2f(i + 1, 0.0f);
+        glTexCoord2f(1.0f, 1.0f);
         glVertex3f(pX * 0.66f, 75, pZ * 0.66f);
         glEnd();
 #endif
@@ -599,26 +594,20 @@ void sky_texture_generate(Environment *e) {
     for (int i = 0, x = 0; i < 16; i++) {
         gNumMaterials++;
         rspq_block_begin();
-        rdpq_texparms_t parms = {
-            .s.repeats = 1,
-            .t.repeats = REPEAT_INFINITE,
-            .t.translate = 32,
-            .t.mirror = true,
-        };
-        rdpq_tex_upload_sub(TILE0, &surf, &parms, x, 64, x + 32, 128);
+        rdpq_tex_upload_sub(TILE0, &surf, NULL, x, 64, x + 32, 128);
 #if OPENGL
         float pX = 100.0f * sins((0x10000 / 16) * i);
         float pZ = 100.0f * coss((0x10000 / 16) * i);
         glBegin(GL_QUADS);
-        glTexCoord2f(i, 0.0f);
+        glTexCoord2f(0.0f, 0.0f);
         glVertex3f(pX, 0.0f, pZ);
-        glTexCoord2f(i, 2.0f);
+        glTexCoord2f(0.0f, 1.0f);
         glVertex3f(pX * 0.66f, -75, pZ * 0.66f);
         pX = 100.0f * sins((0x10000 / 16) * (i + 1));
         pZ = 100.0f * coss((0x10000 / 16) * (i + 1));
-        glTexCoord2f(i + 1, 2.0f);
+        glTexCoord2f(1.0f, 1.0f);
         glVertex3f(pX * 0.66f, -75, pZ * 0.66f);
-        glTexCoord2f(i + 1, 0.0f);
+        glTexCoord2f(1.0f, 0.0f);
         glVertex3f(pX, 0.0f, pZ);
         glEnd();
 #endif
@@ -931,8 +920,12 @@ static void load_object_model(Object *obj, int objectID) {
             m->colour = RGBA32(255, 255, 255, 255);
             if (modelID == 1) {
                 m->materialID = playerModelTextures[i][j];
-                if (m->materialID == MATERIAL_FLATPRIM) {
+                if (m->materialID == MATERIAL_FLATPRIM || m->materialID == MATERIAL_EYE1 || 
+                m->materialID == MATERIAL_MOUTH1 || m->materialID == MATERIAL_EYEBROW1 || m->materialID == MATERIAL_BODY1) {
                     m->colour = RGBA32(255, 126, 0, 255);
+                }
+                if (i == 2) {
+                    m->colour = RGBA32(127, 48, 0, 255);
                 }
             } else if (modelID == 4 || modelID == 5 || modelID == 6) {
                 m->materialID = MATERIAL_CRATE;

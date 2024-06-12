@@ -24,6 +24,7 @@ enum CombinerNames {
     CC_MULTITEX_SHADE_PRIM,
     CC_MULTITEX_WATER,
     CC_SHADE_PRIM,
+    CC_DECAL_SHADE_PRIM,
 
     CC_TOTAL
 };

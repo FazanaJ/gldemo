@@ -496,7 +496,7 @@ static void material_mode(int flags) {
     } else {
         if (gRenderSettings.cutout) {
             glDisable(GL_ALPHA_TEST);
-            rdpq_set_mode_standard();
+            rdpq_mode_alphacompare(0);
             gRenderSettings.cutout = false;
         }
     }

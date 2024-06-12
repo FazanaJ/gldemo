@@ -14,8 +14,8 @@ const TextureInfo gTextureIDs[] = {
 {"kitchentile.i8", 1664},
 {"introsign.i4", 1664},
 {"introsign2.i4", 1664},
-{"eye1.ia4", TEX_CLAMP_V | TEX_MIRROR_H},
-{"eyebrow1.ia4", 710},
+{"eye1.ia4", TEX_CLAMP_V | TEX_CLAMP_H},
+{"eyebrow1.ia4", TEX_CLAMP_V | TEX_CLAMP_H},
 {"mouth1.ia4", 2774},
 {"shirt.ci8", 707},
 {"trousers.ci8", 707},
@@ -26,4 +26,6 @@ const TextureInfo gTextureIDs[] = {
 {"railing.ia4", 1680},
 {"crate.i8", 1740},
 {"grass1.i4", 1740},
+{"body1.i8", TEX_MIRROR_H | TEX_CLAMP_V},
+{"eye1_b.ia4", TEX_CLAMP_V | TEX_CLAMP_H},
 };

@@ -22,6 +22,8 @@ enum TextureNames {
     TEXTURE_RAILING,
     TEXTURE_CRATE,
     TEXTURE_GRASS1,
+    TEXTURE_BODY1,
+    TEXTURE_EYE1_B,
 };
 
 enum MaterialNames {
@@ -46,5 +48,7 @@ enum MaterialNames {
     MATERIAL_RAILING,
     MATERIAL_CRATE,
     MATERIAL_FLATPRIM_XLU,
-    MATERIAL_GRASS0_NZB
+    MATERIAL_GRASS0_NZB,
+    MATERIAL_BODY1,
+    MATERIAL_EYE1_B
 };
