@@ -1223,7 +1223,7 @@ static void reset_shadow_perspective(void) {
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 #endif
-        material_mode(MAT_CAM_ONLY);
+        material_mode(0);
 #if OPENGL
         glEnable(GL_RDPQ_MATERIAL_N64);
 #endif

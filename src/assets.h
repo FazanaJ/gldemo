@@ -31,22 +31,19 @@ enum CombinerNames {
 
 enum MaterialFlags {
     MATERIAL_NULL,
-    MAT_CUTOUT =       (1 << 4), // Enables 1 bit alpha.
-    MAT_XLU =          (1 << 5), // Enables semitransparency.
-    MAT_LIGHTING =     (1 << 6), // Enables light calculation.
-    MAT_FOG =          (1 << 7), // Enables fog.
-    MAT_ENVMAP =       (1 << 8), // Enables environment mapping.
-    MAT_DEPTH_READ =   (1 << 9), // Enables depth write.
-    MAT_VTXCOL =       (1 << 10), // Enables vertex colours
-    MAT_DECAL =        (1 << 11), // Enables surface decal projection.
-    MAT_INTER =        (1 << 12), // Enables interpenetrating surfaces.
-    MAT_BACKFACE =     (1 << 13), // Enables backfaces
-    MAT_INVISIBLE =    (1 << 14), // Don't render.
-    MAT_INTANGIBLE =   (1 << 15), // Don't collide with anything.
-    MAT_CAM_ONLY =     (1 << 16), // Only collide with the camera.
-    MAT_NO_CAM =       (1 << 17), // Don't collide with the camera.
-    MAT_FRONTFACE =    (1 << 18), // Enables frontfaces
-    MAT_CI =           (1 << 19), // Use colour index
+    MAT_CUTOUT =       (1 << 0), // Enables 1 bit alpha.
+    MAT_XLU =          (1 << 1), // Enables semitransparency.
+    MAT_LIGHTING =     (1 << 2), // Enables light calculation.
+    MAT_FOG =          (1 << 3), // Enables fog.
+    MAT_ENVMAP =       (1 << 4), // Enables environment mapping.
+    MAT_DEPTH_READ =   (1 << 5), // Enables depth write.
+    MAT_VTXCOL =       (1 << 6), // Enables vertex colours
+    MAT_DECAL =        (1 << 7), // Enables surface decal projection.
+    MAT_INTER =        (1 << 8), // Enables interpenetrating surfaces.
+    MAT_BACKFACE =     (1 << 9), // Enables backfaces
+    MAT_INVISIBLE =    (1 << 10), // Don't render.
+    MAT_FRONTFACE =    (1 << 11), // Enables frontfaces
+    MAT_CI =           (1 << 12), // Use colour index
 };
 
 enum TextureFlags {
@@ -91,10 +88,13 @@ enum FontList {
 #define COLFLAG_SOUND_METAL     0x000C
 #define COLFLAG_SOUND_CARPET    0x000D
 #define COLFLAG_GRIP(x)         ((x & 0xF) << 4)
+#define COLFLAG_INTANGIBLE      0x0100
+#define COLFLAG_CAM_ONLY        0x0200
+#define COLFLAG_NO_CAM          0x0400
 
 typedef struct TextureInfo {
     char *file;
-    unsigned int flags;
+    unsigned short flags;
 } __attribute__((__packed__)) TextureInfo;
 
 typedef struct SpriteInfo {
@@ -105,7 +105,7 @@ typedef struct SpriteInfo {
 typedef struct MaterialInfo {
     short tex0;
     short tex1;
-    unsigned int flags;
+    unsigned short flags;
     short combiner;
     short collisionFlags;
     char shiftS0;

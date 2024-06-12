@@ -37,7 +37,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.setWindowTitle("MainWindow")
-        MainWindow.resize(640, 480)
+        MainWindow.resize(800, 600)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         MainWindow.setCentralWidget(self.centralwidget)
@@ -45,7 +45,7 @@ class Ui_MainWindow(object):
 
 
 def window_resize():
-    window.texList.resize(140, window.frameGeometry().height() - 22 - 80)
+    window.texList.resize(140, window.frameGeometry().height() - 22 - 112)
     window.saveTexButton.move(2, window.frameGeometry().height() - 20 - 80)
     window.newTexButton.move(2, window.frameGeometry().height() - 20 - 56)
     window.deleteTexButton.move(2, window.frameGeometry().height() - 20 - 32)
@@ -64,6 +64,7 @@ class Window(QtWidgets.QMainWindow):
         return super(Window, self).resizeEvent(event)
 
 app = QApplication(sys.argv)
+app.page = 0
 app.elementY = 0
 app.textureNames = []
 app.textureEnums = []
@@ -71,21 +72,6 @@ app.textureClampH = []
 app.textureClampV = []
 app.textureMirrorH = []
 app.textureMirrorV = []
-app.textureCutout = []
-app.textureXlu = []
-app.textureLighting = []
-app.textureFog = []
-app.textureEnvmap = []
-app.textureDepth = []
-app.textureVtxcol = []
-app.textureDecal = []
-app.textureInter = []
-app.textureBackface = []
-app.textureInvis = []
-app.textureIntangible = []
-app.textureCamOnly = []
-app.textureNoCam = []
-app.textureFrontface = []
 app.textureCategory = []
 app.textureCount = 0
 window = Window()
@@ -149,7 +135,13 @@ def create_slider(parent, x, y, w, h, max, align, hidden):
 
 def make_window():
     window.setWindowTitle("Texture Manager")
+    window.texManagerButton = create_button(window, 2, 4, 140, 24, "Textures", False)
+    window.texManagerButton.setVisible(True)
+    window.texManagerButton = create_button(window, 144, 4, 140, 24, "Materials", False)
+    window.texManagerButton.setVisible(True)
+
     window.texList = QListWidget(window)
+    window.texList.move(0, 32)
     window.saveTexButton = create_button(window, 2, 32, 140, 24, "Save Texture", False)
     window.newTexButton = create_button(window, 2, 32, 140, 24, "Add Texture", False)
     window.deleteTexButton = create_button(window, 2, 32, 140, 24, "Delete Texture", False)
@@ -157,32 +149,16 @@ def make_window():
     window.saveTexButton.setVisible(True)
     window.newTexButton.setVisible(True)
     window.deleteTexButton.setVisible(True)
-    app.elementY = 24
+    app.elementY = 32
     window.texNameInput = create_label(window, 160, app.elementY, 160, 16, "Texture Name", True)
     window.texName = create_input(window, 160, app.elementY, 160, 28, True)
 
     window.clampH = create_tickbox(window, 160, app.elementY, 160, 16, "Clamp H", True)
     window.clampV = create_tickbox(window, 160, app.elementY, 160, 16, "Clamp V", True)
-    app.elementY = 72
+    app.elementY = 80
     window.mirrorH = create_tickbox(window, 240, app.elementY, 160, 16, "Mirror H", True)
     window.mirrorV = create_tickbox(window, 240, app.elementY, 160, 16, "Mirror V", True)
-
-    app.elementY = 120
-    window.cutout = create_tickbox(window, 160, app.elementY, 160, 16, "Cutout", True)
-    window.xlu = create_tickbox(window, 160, app.elementY, 160, 16, "Semitransparent", True)
-    window.lighting = create_tickbox(window, 160, app.elementY, 160, 16, "Lighting", True)
-    window.fog = create_tickbox(window, 160, app.elementY, 160, 16, "Fog", True)
-    window.envmap = create_tickbox(window, 160, app.elementY, 160, 16, "Env Mapping", True)
-    window.depth = create_tickbox(window, 160, app.elementY, 160, 16, "Depth Buffer", True)
-    window.vtxcol = create_tickbox(window, 160, app.elementY, 160, 16, "Vertex Colours", True)
-    window.decal = create_tickbox(window, 160, app.elementY, 160, 16, "Decal", True)
-    window.inter = create_tickbox(window, 160, app.elementY, 160, 16, "Interpenetrating", True)
-    window.backface = create_tickbox(window, 160, app.elementY, 160, 16, "Enable Backface", True)
-    window.invis = create_tickbox(window, 160, app.elementY, 160, 16, "Hidden Geometry", True)
-    window.intangible = create_tickbox(window, 160, app.elementY, 160, 16, "Disable Collision", True)
-    window.camonly = create_tickbox(window, 160, app.elementY, 160, 16, "Camera Collision", True)
-    window.nocam = create_tickbox(window, 160, app.elementY, 160, 16, "Camera Passthrough", True)
-    window.frontface = create_tickbox(window, 160, app.elementY, 160, 16, "Enable Frontface", True)
+    window.texCategory = create_label(window, 160, app.elementY, 160, 16, "Folder:", True)
 
     window.texImage = QtWidgets.QLabel(window)
     window.texImage.move(160, app.elementY)
@@ -193,7 +169,8 @@ def init_tex_list():
     levelString = file.readlines()
     file.close()
     enumFound = False
-    for line in levelString:
+    for lineS in levelString:
+        line = lineS.strip()
         if enumFound == False:
             ln2 = line.find("gTextureIDs")
             if not ln2 == -1:
@@ -205,26 +182,12 @@ def init_tex_list():
             if ln == -1:
                 name = line[ln + 3:ln3]
                 flagStr = line.partition(",")[2]
-                flags = flagStr[ln + 2:-3]
+                flags = flagStr[1:-2]
+                category = ""
                 addClampH = False
                 addClampV = False
                 addMirrorH = False
                 addMirrorV = False
-                addCutout = False
-                addXlu = False
-                addLighting = False
-                addFog = False
-                addEnvmap = False
-                addDepth = False
-                addVtxcol = False
-                addDecal = False
-                addInter = False
-                addBackface = False
-                addInvis = False
-                addIntangible = False
-                addCamOnly = False
-                addNoCam = False
-                addFrontface = False
                 useNum = True
                 if (not flags.find("TEX_MIRROR_H") == -1):
                     addMirrorH = True
@@ -241,98 +204,8 @@ def init_tex_list():
                 if (not flags.find("TEX_CLAMP_V") == -1):
                     addClampV = True
                     useNum = False
-                if (not flags.find("MAT_CUTOUT") == -1):
-                    addCutout = True
-                    useNum = False
-                if (not flags.find("MAT_XLU") == -1):
-                    addXlu = True
-                    useNum = False
-                if (not flags.find("MAT_LIGHTING") == -1):
-                    addLighting = True
-                    useNum = False
-                if (not flags.find("MAT_FOG") == -1):
-                    addFog = True
-                    useNum = False
-                if (not flags.find("MAT_ENVMAP") == -1):
-                    addEnvmap = True
-                    useNum = False
-                if (not flags.find("MAT_DEPTH_READ") == -1):
-                    addDepth = True
-                    useNum = False
-                if (not flags.find("MAT_VTXCOL") == -1):
-                    addVtxcol = True
-                    useNum = False
-                if (not flags.find("MAT_DECAL") == -1):
-                    addDecal = True
-                    useNum = False
-                if (not flags.find("MAT_INTER") == -1):
-                    addInter = True
-                    useNum = False
-                if (not flags.find("MAT_BACKFACE") == -1):
-                    addBackface = True
-                    useNum = False
-                if (not flags.find("MAT_INVISIBLE") == -1):
-                    addInvis = True
-                    useNum = False
-                if (not flags.find("MAT_INTANGIBLE") == -1):
-                    addIntangible = True
-                    useNum = False
-                if (not flags.find("MAT_CAM_ONLY") == -1):
-                    addCamOnly = True
-                    useNum = False
-                if (not flags.find("MAT_NO_CAM") == -1):
-                    addNoCam = True
-                    useNum = False
-                if (not flags.find("MAT_FRONTFACE") == -1):
-                    addFrontface = True
-                    useNum = False
                 if useNum == True:
                     num = int(flags)
-                    if (num >= 262144):
-                        num -= 262144
-                        addFrontface = True
-                    if (num >= 131072):
-                        num -= 131072
-                        addNoCam = True
-                    if (num >= 65536):
-                        num -= 65536
-                        addCamOnly = True
-                    if (num >= 32768):
-                        num -= 32768
-                        addIntangible = True
-                    if (num >= 16384):
-                        num -= 16384
-                        addInvis = True
-                    if (num >= 8192):
-                        num -= 8192
-                        addBackface = True
-                    if (num >= 4096):
-                        num -= 4096
-                        addInter = True
-                    if (num >= 2048):
-                        num -= 2048
-                        addDecal = True
-                    if (num >= 1024):
-                        num -= 1024
-                        addVtxcol = True
-                    if (num >= 512):
-                        num -= 512
-                        addDepth = True
-                    if (num >= 256):
-                        num -= 256
-                        addEnvmap = True
-                    if (num >= 128):
-                        num -= 128
-                        addFog = True
-                    if (num >= 64):
-                        num -= 64
-                        addLighting = True
-                    if (num >= 32):
-                        num -= 32
-                        addXlu = True
-                    if (num >= 16):
-                        num -= 16
-                        addCutout = True
                     if (num >= 8):
                         num -= 8
                         addMirrorV = True
@@ -346,25 +219,15 @@ def init_tex_list():
                         num -= 1
                         addClampH = True
                 index = len(app.textureNames)
+                for dirpath, dirnames, filenames in os.walk(app.rootDir + "/assets/textures"):
+                    testName = name + ".png"
+                    if testName in filenames:
+                        folder_name = os.path.basename(dirpath)
+                        app.textureCategory.insert(index, folder_name)
                 app.textureClampH.insert(app.textureCount, addClampH)
                 app.textureClampV.insert(app.textureCount, addClampV)
                 app.textureMirrorH.insert(app.textureCount, addMirrorH)
                 app.textureMirrorV.insert(app.textureCount, addMirrorV)
-                app.textureCutout.insert(app.textureCount, addCutout)
-                app.textureXlu.insert(app.textureCount, addXlu)
-                app.textureLighting.insert(app.textureCount, addLighting)
-                app.textureFog.insert(app.textureCount, addFog)
-                app.textureEnvmap.insert(app.textureCount, addEnvmap)
-                app.textureDepth.insert(app.textureCount, addDepth)
-                app.textureVtxcol.insert(app.textureCount, addVtxcol)
-                app.textureDecal.insert(app.textureCount, addDecal)
-                app.textureInter.insert(app.textureCount, addInter)
-                app.textureBackface.insert(app.textureCount, addBackface)
-                app.textureInvis.insert(app.textureCount, addInvis)
-                app.textureIntangible.insert(app.textureCount, addIntangible)
-                app.textureCamOnly.insert(app.textureCount, addCamOnly)
-                app.textureNoCam.insert(app.textureCount, addNoCam)
-                app.textureFrontface.insert(app.textureCount, addFrontface)
                 app.textureNames.insert(index, name)
                 app.textureCount += 1
     enumFound = False
@@ -416,36 +279,6 @@ def write_textures():
                 totalFlags += 4
             if (app.textureMirrorV[numLines] == True):
                 totalFlags += 8
-            if (app.textureCutout[numLines] == True):
-                totalFlags += 16
-            if (app.textureXlu[numLines] == True):
-                totalFlags += 32
-            if (app.textureLighting[numLines] == True):
-                totalFlags += 64
-            if (app.textureFog[numLines] == True):
-                totalFlags += 128
-            if (app.textureEnvmap[numLines] == True):
-                totalFlags += 256
-            if (app.textureDepth[numLines] == True):
-                totalFlags += 512
-            if (app.textureVtxcol[numLines] == True):
-                totalFlags += 1024
-            if (app.textureDecal[numLines] == True):
-                totalFlags += 2048
-            if (app.textureInter[numLines] == True):
-                totalFlags += 4096
-            if (app.textureBackface[numLines] == True):
-                totalFlags += 8192
-            if (app.textureInvis[numLines] == True):
-                totalFlags += 16384
-            if (app.textureIntangible[numLines] == True):
-                totalFlags += 32768
-            if (app.textureCamOnly[numLines] == True):
-                totalFlags += 65536
-            if (app.textureNoCam[numLines] == True):
-                totalFlags += 131072
-            if (app.textureFrontface[numLines] == True):
-                totalFlags += 262144
             name = '{"' + app.textureNames[numLines] + '", ' + str(totalFlags) + '},\n'
             lines.insert(6, name)
             new = "".join(name)
@@ -493,21 +326,6 @@ def add_texture():
     app.textureClampV.insert(index, 0)
     app.textureMirrorH.insert(index, 0)
     app.textureMirrorV.insert(index, 0)
-    app.textureCutout.insert(index, 0)
-    app.textureXlu.insert(index, 0)
-    app.textureLighting.insert(index, 0)
-    app.textureFog.insert(index, 0)
-    app.textureEnvmap.insert(index, 0)
-    app.textureDepth.insert(index, 0)
-    app.textureVtxcol.insert(index, 0)
-    app.textureDecal.insert(index, 0)
-    app.textureInter.insert(index, 0)
-    app.textureBackface.insert(index, 0)
-    app.textureInvis.insert(index, 0)
-    app.textureIntangible.insert(index, 0)
-    app.textureCamOnly.insert(index, 0)
-    app.textureNoCam.insert(index, 0)
-    app.textureFrontface.insert(index, 0)
     window.texList.addItems(app.textureNames)
 
 def delete_texture():
@@ -518,21 +336,6 @@ def delete_texture():
         app.textureClampV.pop(rowNum)
         app.textureMirrorH.pop(rowNum)
         app.textureMirrorV.pop(rowNum)
-        app.textureCutout.pop(rowNum)
-        app.textureXlu.pop(rowNum)
-        app.textureLighting.pop(rowNum)
-        app.textureFog.pop(rowNum)
-        app.textureEnvmap.pop(rowNum)
-        app.textureDepth.pop(rowNum)
-        app.textureVtxcol.pop(rowNum)
-        app.textureDecal.pop(rowNum)
-        app.textureInter.pop(rowNum)
-        app.textureBackface.pop(rowNum)
-        app.textureInvis.pop(rowNum)
-        app.textureIntangible.pop(rowNum)
-        app.textureCamOnly.pop(rowNum)
-        app.textureNoCam.pop(rowNum)
-        app.textureFrontface.pop(rowNum)
         app.textureEnums.pop(rowNum)
         window.texList.clear()
         window.texList.addItems(app.textureNames)
@@ -544,24 +347,10 @@ def set_active_Texture():
     window.clampV.setChecked(app.textureClampV[rowNum])
     window.mirrorH.setChecked(app.textureMirrorH[rowNum])
     window.mirrorV.setChecked(app.textureMirrorV[rowNum])
-    window.cutout.setChecked(app.textureCutout[rowNum])
-    window.xlu.setChecked(app.textureXlu[rowNum])
-    window.lighting.setChecked(app.textureLighting[rowNum])
-    window.fog.setChecked(app.textureFog[rowNum])
-    window.envmap.setChecked(app.textureEnvmap[rowNum])
-    window.depth.setChecked(app.textureDepth[rowNum])
-    window.vtxcol.setChecked(app.textureVtxcol[rowNum])
-    window.decal.setChecked(app.textureDecal[rowNum])
-    window.inter.setChecked(app.textureInter[rowNum])
-    window.backface.setChecked(app.textureBackface[rowNum])
-    window.invis.setChecked(app.textureInvis[rowNum])
-    window.intangible.setChecked(app.textureIntangible[rowNum])
-    window.camonly.setChecked(app.textureCamOnly[rowNum])
-    window.nocam.setChecked(app.textureNoCam[rowNum])
-    window.frontface.setChecked(app.textureFrontface[rowNum])
     window.texName.clear()
     window.texName.setText(str(app.textureNames[rowNum]))
-    tex = QPixmap("../assets/textures/" + app.textureNames[rowNum] + ".png")
+    window.texCategory.setText("Folder: " + str(app.textureCategory[rowNum]))
+    tex = QPixmap(app.rootDir + "/assets/textures/" + str(app.textureCategory[rowNum]) + "/" + app.textureNames[rowNum] + ".png")
     window.texImage.setPixmap(tex)
     window.texImage.resize(tex.width(), tex.height())
 
@@ -571,21 +360,6 @@ def save_texture():
     app.textureClampV[rowNum] = window.clampV.isChecked()
     app.textureMirrorH[rowNum] = window.mirrorH.isChecked()
     app.textureMirrorV[rowNum] = window.mirrorV.isChecked()
-    app.textureCutout[rowNum] = window.cutout.isChecked()
-    app.textureXlu[rowNum] = window.xlu.isChecked()
-    app.textureLighting[rowNum] = window.lighting.isChecked()
-    app.textureFog[rowNum] = window.fog.isChecked()
-    app.textureEnvmap[rowNum] = window.envmap.isChecked()
-    app.textureDepth[rowNum] = window.depth.isChecked()
-    app.textureVtxcol[rowNum] = window.vtxcol.isChecked()
-    app.textureDecal[rowNum] = window.decal.isChecked()
-    app.textureInter[rowNum] = window.inter.isChecked()
-    app.textureBackface[rowNum] = window.backface.isChecked()
-    app.textureInvis[rowNum] = window.invis.isChecked()
-    app.textureIntangible[rowNum] = window.intangible.isChecked()
-    app.textureCamOnly[rowNum] = window.camonly.isChecked()
-    app.textureNoCam[rowNum] = window.nocam.isChecked()
-    app.textureFrontface[rowNum] = window.frontface.isChecked()
     app.textureNames[rowNum] = window.texName.text()
     enumName = "TEXTURE_" + app.textureNames[rowNum].upper()
     enumName = enumName.split(".", 1)[0]
