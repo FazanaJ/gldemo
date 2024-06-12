@@ -94,7 +94,9 @@ enum FontList {
 
 typedef struct TextureInfo {
     char *file;
-    unsigned short flags;
+    unsigned flags : 4;
+    unsigned flipbook : 5;
+    unsigned flipBookSpeed : 3;
 } __attribute__((__packed__)) TextureInfo;
 
 typedef struct SpriteInfo {

@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QListWidget, QLi
 from PyQt5.QtGui import QPixmap
 import configparser
 import sys
+import re
 import os
 
 def check_valid_directory():
@@ -37,7 +38,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.setWindowTitle("MainWindow")
-        MainWindow.resize(800, 600)
+        MainWindow.resize(640, 480)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         MainWindow.setCentralWidget(self.centralwidget)
@@ -68,12 +69,16 @@ app.page = 0
 app.elementY = 0
 app.textureNames = []
 app.textureEnums = []
+app.materialEnums = []
 app.textureClampH = []
 app.textureClampV = []
 app.textureMirrorH = []
 app.textureMirrorV = []
+app.textureFlipbookFrames = []
+app.textureFlipbookSpeed = []
 app.textureCategory = []
 app.textureCount = 0
+app.currentSelection = 0
 window = Window()
 app.config = configparser.ConfigParser()
 app.rootDir = ""
@@ -160,6 +165,11 @@ def make_window():
     window.mirrorV = create_tickbox(window, 240, app.elementY, 160, 16, "Mirror V", True)
     window.texCategory = create_label(window, 160, app.elementY, 160, 16, "Folder:", True)
 
+    window.texFlipbookInput = create_label(window, 160, app.elementY, 160, 16, "Flipbook Frame Count", True)
+    window.texFlipbookName = create_input(window, 160, app.elementY, 160, 28, True)
+    window.texFlipSpeedInput = create_label(window, 160, app.elementY, 160, 16, "Flipbook Speed", True)
+    window.texFlipSpeedName = create_input(window, 160, app.elementY, 160, 28, True)
+
     window.texImage = QtWidgets.QLabel(window)
     window.texImage.move(160, app.elementY)
     window.texImage.setVisible(True)
@@ -178,11 +188,11 @@ def init_tex_list():
         else:
             ln = line.find("};")
             ln3 = line.rfind('"')
-            ln4 = line.find('"')
             if ln == -1:
                 name = line[ln + 3:ln3]
                 flagStr = line.partition(",")[2]
-                flags = flagStr[1:-2]
+                matches = re.findall(r'\d+', flagStr)
+                flags = matches[0]
                 category = ""
                 addClampH = False
                 addClampV = False
@@ -228,13 +238,16 @@ def init_tex_list():
                 app.textureClampV.insert(app.textureCount, addClampV)
                 app.textureMirrorH.insert(app.textureCount, addMirrorH)
                 app.textureMirrorV.insert(app.textureCount, addMirrorV)
+                app.textureFlipbookFrames.insert(app.textureCount, matches[1])
+                app.textureFlipbookSpeed.insert(app.textureCount, matches[2])
                 app.textureNames.insert(index, name)
                 app.textureCount += 1
     enumFound = False
     file = open(app.rootDir + "/include/enums.h")
     levelString = file.readlines()
     file.close()
-    for line in levelString:
+    for lineS in levelString:
+        line = lineS.strip()
         if enumFound == False:
             ln2 = line.find("TextureNames")
             if not ln2 == -1:
@@ -246,6 +259,22 @@ def init_tex_list():
                 name = line[ln + 1:ln3]
                 index = len(app.textureEnums)
                 app.textureEnums.insert(index, name)
+            else:
+                break
+    enumFound = False
+    for lineS in levelString:
+        line = lineS.strip()
+        if enumFound == False:
+            ln2 = line.find("MaterialNames")
+            if not ln2 == -1:
+                enumFound = True
+        else:
+            ln = line.find("};")
+            ln3 = line.rfind(',')
+            if ln == -1:
+                name = line[ln + 1:ln3]
+                index = len(app.materialEnums)
+                app.materialEnums.insert(index, name)
     
     window.texList.addItems(app.textureNames)
 
@@ -279,7 +308,20 @@ def write_textures():
                 totalFlags += 4
             if (app.textureMirrorV[numLines] == True):
                 totalFlags += 8
-            name = '{"' + app.textureNames[numLines] + '", ' + str(totalFlags) + '},\n'
+            flipFrames = int(app.textureFlipbookFrames[numLines])
+            if (flipFrames < 2):
+                flipFrames = 0
+            if (flipFrames > 31):
+                flipFrames = 31
+            flipSpeed = int(app.textureFlipbookSpeed[numLines])
+            if flipFrames == 0:
+                flipSpeed = 0
+            else:
+                if (flipSpeed < 0):
+                    flipSpeed = 0
+                if (flipSpeed > 7):
+                    flipSpeed = 7
+            name = '    {"' + app.textureNames[numLines] + '", ' + str(totalFlags) + ', ' + str(flipFrames) + ', ' + str(flipSpeed) + '},\n'
             lines.insert(6, name)
             new = "".join(name)
             fp.write(new)
@@ -292,8 +334,25 @@ def write_textures():
         # move file pointer to the beginning of a file
         fp.seek(0)
         # truncate the file
-        fp.truncate()
+        fp.truncate(0)
         firstLine = ""
+        foundTitle = 0
+
+        fp.write("#pragma once\n\n")
+        fp.write("enum TextureNames {\n")
+        i = 0
+        while (i < len(app.textureEnums)):
+            fp.write("    " + str(app.textureEnums[i]) + ",\n")
+            i += 1
+        fp.write("};\n\n")
+        fp.write("enum MaterialNames {\n")
+        i = 0
+        while (i < len(app.materialEnums) - 1):
+            fp.write("    " + str(app.materialEnums[i]) + ",\n")
+            i += 1
+        fp.write("};\n\n")
+        return
+
         # start writing lines
         # iterate line and line number
         for number, line in enumerate(lines):
@@ -301,6 +360,7 @@ def write_textures():
             # note: list index start from 0
             if (not line.find("TextureNames") == -1):
                 firstLine = line
+                foundTitle = 1
             if (line.find(",") == -1 and line.find("};") == -1):
                 fp.write(line)
             
@@ -326,16 +386,20 @@ def add_texture():
     app.textureClampV.insert(index, 0)
     app.textureMirrorH.insert(index, 0)
     app.textureMirrorV.insert(index, 0)
+    app.textureFlipbookFrames.insert(index, 1)
+    app.textureFlipbookSpeed.insert(index, 0)
     window.texList.addItems(app.textureNames)
 
 def delete_texture():
     if (not window.texList.currentRow() == -1):
-        rowNum = window.texList.currentRow()
+        rowNum = app.currentSelection
         app.textureNames.pop(rowNum)
         app.textureClampH.pop(rowNum)
         app.textureClampV.pop(rowNum)
         app.textureMirrorH.pop(rowNum)
         app.textureMirrorV.pop(rowNum)
+        app.textureFlipbookFrames.pop(rowNum)
+        app.textureFlipbookSpeed.pop(rowNum)
         app.textureEnums.pop(rowNum)
         window.texList.clear()
         window.texList.addItems(app.textureNames)
@@ -343,10 +407,13 @@ def delete_texture():
 
 def set_active_Texture():
     rowNum = window.texList.currentRow()
+    app.currentSelection = rowNum
     window.clampH.setChecked(app.textureClampH[rowNum])
     window.clampV.setChecked(app.textureClampV[rowNum])
     window.mirrorH.setChecked(app.textureMirrorH[rowNum])
     window.mirrorV.setChecked(app.textureMirrorV[rowNum])
+    window.texFlipbookName.setText(app.textureFlipbookFrames[rowNum])
+    window.texFlipSpeedName.setText(app.textureFlipbookSpeed[rowNum])
     window.texName.clear()
     window.texName.setText(str(app.textureNames[rowNum]))
     window.texCategory.setText("Folder: " + str(app.textureCategory[rowNum]))
@@ -355,12 +422,14 @@ def set_active_Texture():
     window.texImage.resize(tex.width(), tex.height())
 
 def save_texture():
-    rowNum = window.texList.currentRow()
+    rowNum = app.currentSelection
     app.textureClampH[rowNum] = window.clampH.isChecked()
     app.textureClampV[rowNum] = window.clampV.isChecked()
     app.textureMirrorH[rowNum] = window.mirrorH.isChecked()
     app.textureMirrorV[rowNum] = window.mirrorV.isChecked()
     app.textureNames[rowNum] = window.texName.text()
+    app.textureFlipbookFrames[rowNum] = window.texFlipbookName.text()
+    app.textureFlipbookSpeed[rowNum] = window.texFlipSpeedName.text()
     enumName = "TEXTURE_" + app.textureNames[rowNum].upper()
     enumName = enumName.split(".", 1)[0]
     app.textureEnums[rowNum] = enumName
