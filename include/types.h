@@ -49,6 +49,10 @@ typedef struct Material {
     short shiftT0;
     short shiftS1;
     short shiftT1;
+
+    // Not part of data.
+    unsigned short flipbookFrame0;
+    unsigned short flipbookFrame1;
 } Material;
 
 typedef struct Environment {

@@ -187,7 +187,7 @@ void material_setup_constants(Material *m) {
     sTexParams.t.scale_log = gMaterialIDs[m->entry->materialID].shiftT0;
 }
 
-void material_run_partial(Material *m) {
+void material_run_tile0(Material *m) {
     m->shiftS0 += gMaterialIDs[m->entry->materialID].moveS0;
     if (m->shiftS0 > 1024) {
         m->shiftS0 -= 1024;
@@ -203,24 +203,49 @@ void material_run_partial(Material *m) {
     if (m->tex1) {
         rdpq_tex_multi_begin();
     }
+}
+
+void material_run_tile1(Material *m) {
+    m->shiftS1 += gMaterialIDs[m->entry->materialID].moveS1;
+    if (m->shiftS1 > 1024) {
+        m->shiftS1 -= 1024;
+    }
+    m->shiftT1 += gMaterialIDs[m->entry->materialID].moveT1;
+    if (m->shiftT1 > 1024) {
+        m->shiftT1 -= 1024;
+    }
+    sTexParams.s.translate = (float) m->shiftS1 * 0.125f;
+    sTexParams.t.translate = m->tex1->sprite->height + ((float) m->shiftT1 * 0.125f);
+    sTexParams.s.scale_log = gMaterialIDs[m->entry->materialID].shiftS1;
+    sTexParams.t.scale_log = gMaterialIDs[m->entry->materialID].shiftT1;
+}
+
+void material_run_partial(Material *m) {
+    material_run_tile0(m);
+    if (gTextureIDs[m->tex0->spriteID].flipbook == 0) {
+        surface_t surf = sprite_get_pixels(m->tex0->sprite);
+        rdpq_tex_upload(0, &surf, &sTexParams);
+    }
+    if (m->entry->material->tex1) {
+        if (gTextureIDs[m->tex1->spriteID].flipbook == 0) {
+            material_run_tile1(m);
+            surface_t surf = sprite_get_pixels(m->tex1->sprite);
+            rdpq_tex_upload(1, &surf, &sTexParams);
+            rdpq_tex_multi_end();
+        }
+    }
+}
+
+void material_run_flipbook(Material *m) {
+    material_run_tile0(m);
+    sTexParams.t.translate = 0;
+    int height = m->tex0->sprite->height / gTextureIDs[m->tex0->spriteID].flipbook;
+    int y = (height * (m->flipbookFrame0 >> 2 ));
     surface_t surf = sprite_get_pixels(m->tex0->sprite);
-    rdpq_tex_upload(0, &surf, &sTexParams);
-    if (m->tex1) {
-        m->shiftS1 += gMaterialIDs[m->entry->materialID].moveS1;
-        if (m->shiftS1 > 1024) {
-            m->shiftS1 -= 1024;
-        }
-        m->shiftT1 += gMaterialIDs[m->entry->materialID].moveT1;
-        if (m->shiftT1 > 1024) {
-            m->shiftT1 -= 1024;
-        }
-        sTexParams.s.translate = (float) m->shiftS1 * 0.125f;
-        sTexParams.t.translate = m->tex1->sprite->height + ((float) m->shiftT1 * 0.125f);
-        sTexParams.s.scale_log = gMaterialIDs[m->entry->materialID].shiftS1;
-        sTexParams.t.scale_log = gMaterialIDs[m->entry->materialID].shiftT1;
-        surface_t surf = sprite_get_pixels(m->tex1->sprite);
-        rdpq_tex_upload(1, &surf, &sTexParams);
-        rdpq_tex_multi_end();
+    rdpq_tex_upload_sub(TILE0, &surf, &sTexParams, 0, y, m->tex0->sprite->width, y + height);
+    m->flipbookFrame0 += 1;
+    if ((m->flipbookFrame0 >> 2) >= gTextureIDs[m->tex0->spriteID].flipbook) {
+        m->flipbookFrame0 = 0;
     }
 }
 
@@ -330,6 +355,8 @@ Material *material_init(int materialID) {
     list->material->entry = list;
     list->material->shiftS0 = 0;
     list->material->shiftS1 = 0;
+    list->material->flipbookFrame0 = 0;
+    list->material->flipbookFrame1 = 0;
     if (gMaterialIDs[materialID].tex0 != TEXTURE_NONE) {
         list->material->tex0 = sprite_try_load(gMaterialIDs[materialID].tex0);
         list->material->tex0Flags = gTextureIDs[gMaterialIDs[materialID].tex0].flags;

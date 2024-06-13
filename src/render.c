@@ -149,7 +149,7 @@ void init_renderer(void) {
     }
 
     if (gTempMaterials[0] == NULL) {
-        gTempMaterials[0] = material_init(MATERIAL_GRASS0);
+        gTempMaterials[0] = material_init(MATERIAL_FLIPBOOKTEST);
     }
 
     if (gTempMaterials[1] == NULL) {
@@ -628,7 +628,12 @@ void material_texture(Material *m) {
         }
         if (gMaterialIDs[m->entry->materialID].moveS0 || gMaterialIDs[m->entry->materialID].moveT0 ||
             gMaterialIDs[m->entry->materialID].moveS1 || gMaterialIDs[m->entry->materialID].moveT1) {
-            material_run_partial(m);
+            if (gTextureIDs[m->tex0->spriteID].flipbook == 0) {
+                material_run_partial(m);
+            }
+        }
+        if (gTextureIDs[m->tex0->spriteID].flipbook) {
+            material_run_flipbook(m);
         }
         gNumTextureLoads++;
         gPrevMaterialID = m->entry->materialID;

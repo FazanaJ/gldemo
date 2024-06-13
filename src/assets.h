@@ -160,3 +160,4 @@ void material_try_free(MaterialList *material);
 rspq_block_t *material_generate_dl(Material *m);
 void material_run(Material *m);
 void material_run_partial(Material *m);
+void material_run_flipbook(Material *m);
