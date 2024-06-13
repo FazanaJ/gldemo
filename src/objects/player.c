@@ -40,6 +40,14 @@ enum PlayerInput {
 
 static void player_forwardvel(Object *o, PlayerData *d, float vel, float updateRateF) {
     short angle = d->intendedYaw + d->offsetYaw;
+    float grip;
+    if (o->collision->grounded) {
+        grip = (float) (COL_GET_GRIP(o->collision->floorFlags));
+        grip /= 16.0f;
+    } else {
+        grip = 0.25f;
+    }
+    vel *= grip;
     o->movement->vel[0] += (vel * sins(angle)) * updateRateF;
     o->movement->vel[2] += (vel * coss(angle)) * updateRateF;
 }
@@ -94,14 +102,15 @@ static void player_act_move(Object *o, PlayerData *d, int updateRate, float upda
         if (d->forwardVel != 0.0f) {
             factor = 0.1f * updateRateF;
         }
-        o->faceAngle[1] = lerp_short(o->faceAngle[1], o->movement->moveAngle[1], factor * updateRateF);
+        short intendedAngle = d->intendedYaw + d->offsetYaw;
+        o->faceAngle[1] = lerp_short(o->faceAngle[1], intendedAngle, factor * updateRateF);
         d->cameraAngle = o->faceAngle[1];
     }
     player_grounded_common(o, d, updateRate, updateRateF);
     d->walkTimer -= (d->forwardVel * updateRateF) * 0.25f;
     if (d->walkTimer <= 0) {
-        object_footsteps(o->collision->floorFlags, o->pos);
-        d->walkTimer += 180;
+        object_footsteps(COL_GET_SOUND(o->collision->floorFlags), o->pos);
+        d->walkTimer += 120;
     }
 }
 
@@ -315,14 +324,15 @@ void loop(Object *obj, int updateRate, float updateRateF) {
 
     (sPlayerFunctions[(int) data->action])(obj, obj->data, updateRate, updateRateF);
     if (obj->collision->grounded) {
-        grip = 1.0f;
+        grip = (float) (COL_GET_GRIP(obj->collision->floorFlags));
+        grip /= 16.0f;
     } else {
         grip = 0.25f;
     }
     for (int i = 0; i < 3; i += 2) {
         obj->pos[i] += (obj->movement->vel[i] / 60.0f) * updateRateF;
         obj->movement->vel[i] = approachf(obj->movement->vel[i], 0.0f, (fabsf(obj->movement->vel[i] * 0.1f) * grip) * updateRateF);
-        if (fabsf(obj->movement->vel[i]) < 1.0f) {
+        if (fabsf(obj->movement->vel[i]) < 0.05f) {
             obj->movement->vel[i] = 0.0f;
         }
     }

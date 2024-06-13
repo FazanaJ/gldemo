@@ -412,7 +412,7 @@ void render_hud(int updateRate, float updateRateF) {
     }
     hud_healthbar(updateRateF);
 #if OPENGL
-    hud_minimap();
+    //hud_minimap();
 #endif
     render_hud_subtitles();
 

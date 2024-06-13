@@ -30,7 +30,7 @@ enum CombinerNames {
 };
 
 enum MaterialFlags {
-    MATERIAL_NULL,
+    MAT_NULL,
     MAT_CUTOUT =       (1 << 0), // Enables 1 bit alpha.
     MAT_XLU =          (1 << 1), // Enables semitransparency.
     MAT_LIGHTING =     (1 << 2), // Enables light calculation.
@@ -73,7 +73,7 @@ enum FontList {
     FONT_TOTAL
 };
 
-#define COLFLAG_NONE            0x0000
+#define COLFLAG_NULL            0x0000
 #define COLFLAG_SOUND_DIRT      0x0001
 #define COLFLAG_SOUND_GRASS     0x0002
 #define COLFLAG_SOUND_STONE     0x0003
@@ -91,6 +91,11 @@ enum FontList {
 #define COLFLAG_INTANGIBLE      0x0100
 #define COLFLAG_CAM_ONLY        0x0200
 #define COLFLAG_NO_CAM          0x0400
+#define COLFLAG_SHADOW          0x0800
+
+#define COL_GET_SOUND(x) ((x) & 0xF)
+#define COL_GET_GRIP(x) (((x) & 0xF0) >> 4)
+#define COL_GET_FLAG(x) (((x) & 0xF00) >> 8)
 
 typedef struct TextureInfo {
     char *file;
@@ -108,7 +113,7 @@ typedef struct MaterialInfo {
     short tex0;
     short tex1;
     unsigned short flags;
-    short combiner;
+    char combiner;
     short collisionFlags;
     char shiftS0;
     char shiftT0;

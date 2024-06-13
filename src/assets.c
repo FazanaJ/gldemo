@@ -166,11 +166,11 @@ void material_setup_constants(Material *m) {
     } else {
         sTexParams.s.repeats = REPEAT_INFINITE;
     }
-    if (gTextureIDs[m->tex0->spriteID].flags & TEX_CLAMP_V) {
+    /*if (gTextureIDs[m->tex0->spriteID].flags & TEX_CLAMP_V) {
         sTexParams.t.repeats = 0;
-    } else {
+    } else {*/
         sTexParams.t.repeats = REPEAT_INFINITE;
-    }
+    //}
     if (gTextureIDs[m->tex0->spriteID].flags & TEX_MIRROR_H) {
         sTexParams.s.mirror = MIRROR_REPEAT;
     } else {
@@ -182,7 +182,7 @@ void material_setup_constants(Material *m) {
         sTexParams.t.mirror = false;
     }
     sTexParams.s.translate = 0;
-    sTexParams.t.translate = 0;
+    sTexParams.t.translate = m->tex0->sprite->height;
     sTexParams.s.scale_log = gMaterialIDs[m->entry->materialID].shiftS0;
     sTexParams.t.scale_log = gMaterialIDs[m->entry->materialID].shiftT0;
 }
@@ -197,7 +197,7 @@ void material_run_partial(Material *m) {
         m->shiftT0 -= 1024;
     }
     sTexParams.s.translate = (float) m->shiftS0 * 0.125f;
-    sTexParams.t.translate = (float) m->shiftT0 * 0.125f;
+    sTexParams.t.translate = m->tex0->sprite->height + ((float) m->shiftT0 * 0.125f);
     sTexParams.s.scale_log = gMaterialIDs[m->entry->materialID].shiftS0;
     sTexParams.t.scale_log = gMaterialIDs[m->entry->materialID].shiftT0;
     if (m->tex1) {
@@ -215,7 +215,7 @@ void material_run_partial(Material *m) {
             m->shiftT1 -= 1024;
         }
         sTexParams.s.translate = (float) m->shiftS1 * 0.125f;
-        sTexParams.t.translate = (float) m->shiftT1 * 0.125f;
+        sTexParams.t.translate = m->tex1->sprite->height + ((float) m->shiftT1 * 0.125f);
         sTexParams.s.scale_log = gMaterialIDs[m->entry->materialID].shiftS1;
         sTexParams.t.scale_log = gMaterialIDs[m->entry->materialID].shiftT1;
         surface_t surf = sprite_get_pixels(m->tex1->sprite);
@@ -568,46 +568,54 @@ void sky_texture_generate(Environment *e) {
         rdpq_tex_upload_tlut(sprite_get_palette(e->skySprite), 0, colours);
     }
     e->skyInit = rspq_block_end();
+    rdpq_texparms_t parms = {
+        .s.translate = 0,
+        .t.translate = 0,
+        .s.scale_log = 1.0f,
+        .t.scale_log = 1.0f,
+    };
     for (int i = 0, x = 0; i < 16; i++) {
         gNumMaterials++;
         rspq_block_begin();
-        rdpq_tex_upload_sub(TILE0, &surf, NULL, x, 0, x + 32, 64);
+        rdpq_tex_upload_sub(TILE0, &surf, &parms, x, 0, x + 32, 64);
 #if OPENGL
         float pX = 100.0f * sins((0x10000 / 16) * i);
         float pZ = 100.0f * coss((0x10000 / 16) * i);
         glBegin(GL_QUADS);
-        glTexCoord2f(0.0f, 1.0f);
+        glTexCoord2f(i, 1.0f);
         glVertex3f(pX * 0.66f, 75, pZ * 0.66f);
-        glTexCoord2f(0.0f, 2.0f);
+        glTexCoord2f(i, 3.0f);
         glVertex3f(pX, 0.0f, pZ);
         pX = 100.0f * sins((0x10000 / 16) * (i + 1));
         pZ = 100.0f * coss((0x10000 / 16) * (i + 1));
-        glTexCoord2f(1.0f, 2.0f);
+        glTexCoord2f(i + 1.0f, 3.0f);
         glVertex3f(pX, 0.0f, pZ);
-        glTexCoord2f(1.0f, 1.0f);
+        glTexCoord2f(i + 1.0f, 1.0f);
         glVertex3f(pX * 0.66f, 75, pZ * 0.66f);
         glEnd();
 #endif
         e->skySegment[i] = rspq_block_end();
         x += 32;
     }
+    parms.t.translate = 64;
+    parms.t.repeats = REPEAT_INFINITE;
     for (int i = 0, x = 0; i < 16; i++) {
         gNumMaterials++;
         rspq_block_begin();
-        rdpq_tex_upload_sub(TILE0, &surf, NULL, x, 64, x + 32, 128);
+        rdpq_tex_upload_sub(TILE0, &surf, &parms, x, 64, x + 32, 128);
 #if OPENGL
         float pX = 100.0f * sins((0x10000 / 16) * i);
         float pZ = 100.0f * coss((0x10000 / 16) * i);
         glBegin(GL_QUADS);
-        glTexCoord2f(0.0f, 0.0f);
+        glTexCoord2f(i, 1.0f);
         glVertex3f(pX, 0.0f, pZ);
-        glTexCoord2f(0.0f, 1.0f);
+        glTexCoord2f(i, 3.0f);
         glVertex3f(pX * 0.66f, -75, pZ * 0.66f);
         pX = 100.0f * sins((0x10000 / 16) * (i + 1));
         pZ = 100.0f * coss((0x10000 / 16) * (i + 1));
-        glTexCoord2f(1.0f, 1.0f);
+        glTexCoord2f(i + 1.0f, 3.0f);
         glVertex3f(pX * 0.66f, -75, pZ * 0.66f);
-        glTexCoord2f(1.0f, 0.0f);
+        glTexCoord2f(i + 1.0f, 1.0f);
         glVertex3f(pX, 0.0f, pZ);
         glEnd();
 #endif

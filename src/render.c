@@ -867,6 +867,7 @@ void pop_render_list(int layer) {
     if (gRenderNodeHead[layer] == NULL) {
         return;
     }
+    static color_t prevPrim;
     RenderNode *renderList = gRenderNodeHead[layer];
     rdpq_mode_filter(FILTER_BILINEAR);
     while (renderList) {
@@ -877,7 +878,10 @@ void pop_render_list(int layer) {
         if (renderList->material) {
             material_set(renderList->material, renderList->flags);
         }
-        rdpq_set_prim_color(renderList->primColour);
+        //if (renderList->primColour != prevPrim) {
+            rdpq_set_prim_color(renderList->primColour);
+            prevPrim = renderList->primColour;
+        //}
         //rdpq_set_env_color(renderList->envColour);
         rspq_block_run(renderList->block);
         MATRIX_POP();
@@ -1001,7 +1005,7 @@ static void render_world(void) {
                     entry->matrix = NULL;
                     entry->primColour = c->primC;
                     //Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : c->material;
-                    add_render_node(entry, c->renderBlock, c->material, MATERIAL_NULL, layer);
+                    add_render_node(entry, c->renderBlock, c->material, MAT_NULL, layer);
                     c = c->next;
                 }
                 s->flags |= CHUNK_HAS_MODEL;
@@ -1129,13 +1133,13 @@ static void render_clutter(void) {
                 
                 mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
                 //Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[1];
-                add_render_node(entry, sBushBlock, gTempMaterials[1], MATERIAL_NULL, DRAW_OPA);
+                add_render_node(entry, sBushBlock, gTempMaterials[1], MAT_NULL, DRAW_OPA);
             } else if (obj->objectID == CLUTTER_ROCK) {
                 RenderNode *entry = (RenderNode *) render_alloc(sizeof(RenderNode), DRAW_OPA);
                 entry->matrix = (Matrix *) render_alloc(sizeof(Matrix), DRAW_OPA);
                 mtx_billboard(entry->matrix, obj->pos[0], obj->pos[1], obj->pos[2]);
                 //Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &gTempMaterials[0];
-                add_render_node(entry, sBushBlock, gTempMaterials[0], MATERIAL_NULL, DRAW_OPA);
+                add_render_node(entry, sBushBlock, gTempMaterials[0], MAT_NULL, DRAW_OPA);
             }
         }
         list = list->next;
@@ -1182,7 +1186,7 @@ static void render_objects(void) {
                 }
                 entry->primColour = m->colour;
                 //Material *mat = gUseOverrideMaterial ? &gOverrideMaterial : &m->material;
-                add_render_node(entry, m->block, m->material, MATERIAL_NULL, layer);
+                add_render_node(entry, m->block, m->material, MAT_NULL, layer);
                 /*if (obj->flags & OBJ_FLAG_OUTLINE) {
                     RenderNode *entry2 = (RenderNode *) render_alloc(sizeof(RenderNode), DRAW_XLU);
                     entry2->matrix = (Matrix *) render_alloc(sizeof(Matrix), DRAW_XLU);
