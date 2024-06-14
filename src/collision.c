@@ -265,6 +265,10 @@ void object_collide(Object *obj) {
             continue;
         }
         while (mesh) {
+            if (mesh->material && mesh->material->collisionFlags & COLFLAG_INTANGIBLE) {
+                mesh = mesh->next;
+                continue;
+            }
             ModelPrim *prim = (ModelPrim *) mesh->mesh;
             int numTris = prim->num_indices;
             attribute_t *attr = &prim->position;

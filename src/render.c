@@ -458,7 +458,7 @@ void matrix_ortho(void) {
 #endif
 }
 
-void set_particle_render_settings(void) {
+static void set_particle_render_settings(void) {
     rspq_block_run(gParticleMaterialBlock);
     gRenderSettings.cutout = false;
     gRenderSettings.xlu = true;
@@ -617,7 +617,7 @@ static void material_mode(int flags) {
     gPrevRenderFlags = flags;
 }
 
-void material_texture(Material *m) {
+static void material_texture(Material *m) {
     rspq_block_run(m->block);
     if (m->tex0) {
         if (!gRenderSettings.texture) {
@@ -647,7 +647,7 @@ void material_texture(Material *m) {
     }
 }
 
-void material_set(Material *material, int flags) {
+static void material_set(Material *material, int flags) {
     DEBUG_SNAPSHOT_1();
     flags |= material->flags;
     if (gPrevRenderFlags != flags) {
@@ -805,7 +805,7 @@ static void apply_render_settings(void) {
     }
 }
 
-void find_material_list(RenderNode *node, int layer) {
+static void find_material_list(RenderNode *node, int layer) {
     // idk if this section is faster, yet.
     if (node->material->entry == NULL) {
         goto lmao;
@@ -859,7 +859,7 @@ void find_material_list(RenderNode *node, int layer) {
     gPrevMatList = matList;
 }
 
-void add_render_node(RenderNode *entry, rspq_block_t *block, Material *material, int flags, int layer) {
+static void add_render_node(RenderNode *entry, rspq_block_t *block, Material *material, int flags, int layer) {
     DEBUG_SNAPSHOT_1();
     entry->block = block;
     entry->material = material;
@@ -868,13 +868,12 @@ void add_render_node(RenderNode *entry, rspq_block_t *block, Material *material,
     get_time_snapshot(PP_BATCH, DEBUG_SNAPSHOT_1_END);
 }
 
-void pop_render_list(int layer) {
+static void pop_render_list(int layer) {
     if (gRenderNodeHead[layer] == NULL) {
         return;
     }
     static color_t prevPrim;
     RenderNode *renderList = gRenderNodeHead[layer];
-    rdpq_mode_filter(FILTER_BILINEAR);
     while (renderList) {
         MATRIX_PUSH();
         if (renderList->matrix) {
@@ -883,10 +882,10 @@ void pop_render_list(int layer) {
         if (renderList->material) {
             material_set(renderList->material, renderList->flags);
         }
-        //if (renderList->primColour != prevPrim) {
+        if (color_to_packed32(renderList->primColour) != color_to_packed32(prevPrim)) {
             rdpq_set_prim_color(renderList->primColour);
             prevPrim = renderList->primColour;
-        //}
+        }
         //rdpq_set_env_color(renderList->envColour);
         rspq_block_run(renderList->block);
         MATRIX_POP();

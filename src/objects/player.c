@@ -43,7 +43,7 @@ static void player_forwardvel(Object *o, PlayerData *d, float vel, float updateR
     float grip;
     if (o->collision->grounded) {
         grip = (float) (COL_GET_GRIP(o->collision->floorFlags));
-        grip /= 16.0f;
+        grip /= 8.0f;
     } else {
         grip = 0.25f;
     }
@@ -325,7 +325,7 @@ void loop(Object *obj, int updateRate, float updateRateF) {
     (sPlayerFunctions[(int) data->action])(obj, obj->data, updateRate, updateRateF);
     if (obj->collision->grounded) {
         grip = (float) (COL_GET_GRIP(obj->collision->floorFlags));
-        grip /= 16.0f;
+        grip /= 8.0f;
     } else {
         grip = 0.25f;
     }

@@ -39,7 +39,7 @@ void object_footsteps(int stepID, float pos[3]) {
         soundID = SOUND_STEP_DIRT;
         break;
     case COLFLAG_SOUND_GLASS:
-        soundID = SOUND_STEP_STONE;
+        soundID = SOUND_STEP_GLASS;
         break;
     case COLFLAG_SOUND_GRASS:
         soundID = SOUND_STEP_GRASS;
@@ -57,7 +57,7 @@ void object_footsteps(int stepID, float pos[3]) {
         soundID = SOUND_STEP_SAND;
         break;
     case COLFLAG_SOUND_SNOW:
-        soundID = SOUND_STEP_DIRT;
+        soundID = SOUND_STEP_SNOW;
         break;
     case COLFLAG_SOUND_STONE:
         soundID = SOUND_STEP_STONE;

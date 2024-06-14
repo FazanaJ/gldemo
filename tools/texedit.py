@@ -674,6 +674,30 @@ def init_tex_list():
     app.combinerNames.pop(len(app.combinerNames) - 1)
     window.matCombiner.addItems(app.combinerNames)
 
+def write_enums():
+    with open(app.rootDir + "/include/enums.h", 'r+') as fp:
+    # read an store all lines into list
+        lines = fp.readlines()
+        # move file pointer to the beginning of a file
+        fp.seek(0)
+        # truncate the file
+        fp.truncate(0)
+
+        fp.write("#pragma once\n\n")
+        fp.write("enum TextureNames {\n")
+        i = 0
+        while (i < len(app.textureEnums)):
+            fp.write("    " + str(app.textureEnums[i]) + ",\n")
+            i += 1
+        fp.write("};\n\n")
+        fp.write("enum MaterialNames {\n")
+        i = 0
+        while (i < len(app.materialEnums)):
+            fp.write("    " + str(app.materialEnums[i]) + ",\n")
+            i += 1
+        fp.write("};\n\n")
+        fp.close()
+
 def write_textures():
     with open(app.rootDir + "/include/texture_Table.h", 'r+') as fp:
     # read an store all lines into list
@@ -744,30 +768,8 @@ def write_textures():
             fp.write(new)
             numLines += 1
         fp.write("};")
-    
-    with open(app.rootDir + "/include/enums.h", 'r+') as fp:
-    # read an store all lines into list
-        lines = fp.readlines()
-        # move file pointer to the beginning of a file
-        fp.seek(0)
-        # truncate the file
-        fp.truncate(0)
-        firstLine = ""
-        foundTitle = 0
-
-        fp.write("#pragma once\n\n")
-        fp.write("enum TextureNames {\n")
-        i = 0
-        while (i < len(app.textureEnums)):
-            fp.write("    " + str(app.textureEnums[i]) + ",\n")
-            i += 1
-        fp.write("};\n\n")
-        fp.write("enum MaterialNames {\n")
-        i = 0
-        while (i < len(app.materialEnums)):
-            fp.write("    " + str(app.materialEnums[i]) + ",\n")
-            i += 1
-        fp.write("};\n\n")
+        write_enums()
+        print("Saved textures!")
 
 def write_materials():
     with open(app.rootDir + "/include/material_table.h", 'r+') as fp:
@@ -915,6 +917,8 @@ def write_materials():
             fp.write(new)
             numLines += 1
         fp.write("};")
+        write_enums()
+        print("Saved materials!")
 
 def refresh_textures():
     window.matTex0.clear()
@@ -942,6 +946,50 @@ def add_texture():
     window.texList.addItems(app.textureNames)
     refresh_textures()
 
+def add_material():
+    window.matList.clear()
+    index = app.materialCount
+    app.materialCount += 1
+    name = "material" + str(index)
+    enum = "MATERIAL_" + name.upper()
+    app.materialNames.insert(index, name)
+    app.materialEnums.insert(index, enum)
+    app.materialShiftS0.insert(index, "0")
+    app.materialShiftS1.insert(index, "0")
+    app.materialShiftT0.insert(index, "0")
+    app.materialShiftT1.insert(index, "0")
+    app.materialMoveS0.insert(index, "0")
+    app.materialMoveS1.insert(index, "0")
+    app.materialMoveT0.insert(index, "0")
+    app.materialMoveT1.insert(index, "0")
+
+    app.renderCutout.insert(index, False)
+    app.renderXlu.insert(index, False)
+    app.renderLighting.insert(index, False)
+    app.renderFog.insert(index, True)
+    app.renderEnvmap.insert(index, False)
+    app.renderDepth.insert(index, True)
+    app.renderVtxcol.insert(index, True)
+    app.renderDecal.insert(index, False)
+    app.renderInter.insert(index, False)
+    app.renderBackface.insert(index, False)
+    app.renderInvis.insert(index, False)
+    app.renderFrontface.insert(index, False)
+    app.renderCI.insert(index, False)
+
+    app.colIntangible.insert(index, False)
+    app.colNocam.insert(index, False)
+    app.colCamonly.insert(index, False)
+    app.colShadow.insert(index, False)
+    app.colGrip.insert(index, 8)
+    app.colSound.insert(index, "None")
+    app.materialCombiner.insert(index, app.combinerNames[0])
+    app.materialTex0.insert(index, "None")
+    app.materialTex1.insert(index, "None")
+
+    window.matList.addItems(app.materialNames)
+    refresh_textures()
+
 def delete_texture():
     if (not window.texList.currentRow() == -1):
         rowNum = app.texSelection
@@ -956,6 +1004,50 @@ def delete_texture():
         window.texList.clear()
         window.texList.addItems(app.textureNames)
         write_textures()
+        refresh_textures()
+
+
+def delete_material():
+    if (not window.matList.currentRow() == -1):
+        rowNum = app.matSelection
+        
+        app.materialNames.pop(rowNum)
+        app.materialEnums.pop(rowNum)
+        app.materialShiftS0.pop(rowNum)
+        app.materialShiftS1.pop(rowNum)
+        app.materialShiftT0.pop(rowNum)
+        app.materialShiftT1.pop(rowNum)
+        app.materialMoveS0.pop(rowNum)
+        app.materialMoveS1.pop(rowNum)
+        app.materialMoveT0.pop(rowNum)
+        app.materialMoveT1.pop(rowNum)
+
+        app.renderCutout.pop(rowNum)
+        app.renderXlu.pop(rowNum)
+        app.renderLighting.pop(rowNum)
+        app.renderFog.pop(rowNum)
+        app.renderEnvmap.pop(rowNum)
+        app.renderDepth.pop(rowNum)
+        app.renderVtxcol.pop(rowNum)
+        app.renderDecal.pop(rowNum)
+        app.renderInter.pop(rowNum)
+        app.renderBackface.pop(rowNum)
+        app.renderInvis.pop(rowNum)
+        app.renderFrontface.pop(rowNum)
+        app.renderCI.pop(rowNum)
+
+        app.colIntangible.pop(rowNum)
+        app.colNocam.pop(rowNum)
+        app.colCamonly.pop(rowNum)
+        app.colShadow.pop(rowNum)
+        app.colGrip.pop(rowNum)
+        app.colSound.pop(rowNum)
+        app.materialCombiner.pop(rowNum)
+        app.materialTex0.pop(rowNum)
+        app.materialTex1.pop(rowNum)
+        window.matList.clear()
+        window.matList.addItems(app.materialNames)
+        write_materials()
         refresh_textures()
 
 def set_active_texture():
@@ -1106,7 +1198,9 @@ if check_valid_directory() is True:
     window.saveTexButton.clicked.connect(save_texture)
     window.newTexButton.clicked.connect(add_texture)
     window.deleteTexButton.clicked.connect(delete_texture)
+    window.newMatButton.clicked.connect(add_material)
     window.saveMatButton.clicked.connect(save_material)
+    window.deleteMatButton.clicked.connect(delete_material)
     window.texList.itemClicked.connect(set_active_texture)
     window.matList.itemClicked.connect(set_active_material)
     window.texManagerButton.clicked.connect(switch_window_tex)
