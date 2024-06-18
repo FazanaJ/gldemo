@@ -40,19 +40,18 @@ typedef struct Material {
     SpriteList *tex1;
     struct MaterialList *entry;
     rspq_block_t *block;
-    unsigned int flags;
+    unsigned short flags;
     short combiner;
-    char tex0Flags;
-    char tex1Flags;
     short collisionFlags;
     short shiftS0;
     short shiftT0;
     short shiftS1;
     short shiftT1;
-
-    // Not part of data.
     unsigned short flipbookFrame0;
     unsigned short flipbookFrame1;
+    char tex0Flags;
+    char tex1Flags;
+    char floorDecID;
 } Material;
 
 typedef struct Environment {

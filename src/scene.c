@@ -69,6 +69,9 @@ static void clear_scene(void) {
     gPlayer = NULL;
     if (gCurrentScene->model) {
         while (curChunk) {
+            if (curChunk->collision) {
+                free(curChunk->collision);
+            }
             SceneMesh *curMesh = curChunk->meshList;
             while (curMesh) {
                 SceneMesh *m = curMesh;
@@ -116,33 +119,6 @@ static void clear_scene(void) {
 }
 
 #if OPENGL
-typedef struct attribute_s {
-    uint32_t size;                  ///< Number of components per vertex. If 0, this attribute is not defined
-    uint32_t type;                  ///< The data type of each component (for example GL_FLOAT)
-    uint32_t stride;                ///< The byte offset between consecutive vertices. If 0, the values are tightly packed
-    void *pointer;                  ///< Pointer to the first value
-} attribute_t;
-
-/** @brief A single draw call that makes up part of a mesh (part of #mesh_t) */
-typedef struct ModelPrim {
-    uint32_t mode;                  ///< Primitive assembly mode (for example GL_TRIANGLES)
-    attribute_t position;           ///< Vertex position attribute, if defined
-    attribute_t color;              ///< Vertex color attribyte, if defined
-    attribute_t texcoord;           ///< Texture coordinate attribute, if defined
-    attribute_t normal;             ///< Vertex normals, if defined
-    attribute_t mtx_index;          ///< Matrix indices (aka bones), if defined
-    uint32_t vertex_precision;      ///< If the vertex positions use fixed point values, this defines the precision
-    uint32_t texcoord_precision;    ///< If the texture coordinates use fixed point values, this defines the precision
-    uint32_t index_type;            ///< Data type of indices (for example GL_UNSIGNED_SHORT)
-    uint32_t num_vertices;          ///< Number of vertices
-    uint32_t num_indices;           ///< Number of indices
-    uint32_t local_texture;         ///< Texture index in this model
-    uint32_t shared_texture;        ///< A shared texture index between other models
-    void *indices;                  ///< Pointer to the first index value. If NULL, indices are not used
-} ModelPrim;
-
-typedef int16_t u_int16_t __attribute__((aligned(1)));
-
 static void scene_mesh_boundbox(SceneChunk *c, SceneMesh *m) {
     ModelPrim *prim = (ModelPrim *) m->mesh;
     int numTris = prim->num_indices;
@@ -196,6 +172,66 @@ void scene_clear_chunk(SceneChunk *c) {
     c->flags &= ~CHUNK_HAS_MODEL;
 }
 
+void scene_generate_collision(SceneChunk *c) {
+    int triCount = c->collisionTriCount;
+    if (triCount == 0) {
+        return;
+    }
+    int cellCount = 1;
+    triCount -= 400;
+    while (triCount > 0) {
+        triCount -= 400;
+        cellCount *= 4;
+    }
+    unsigned int allocationSize = sizeof(CollisionCell);
+    c->collision = malloc(allocationSize);
+    c->collision->cellCount = cellCount;
+    c->collision->data = malloc((sizeof(CollisionData *) * cellCount) + (sizeof(CollisionData) * c->collisionTriCount));
+    float offsetX = c->bounds[0][0];
+    float offsetZ = c->bounds[0][2];
+    for (int i = 0; i < cellCount; i++) {
+        //(*c->collision->data)[i] = (void *) ((unsigned int )(*c->collision->data)[0] + (sizeof(CollisionData *) * i));
+    }
+    SceneMesh *m = c->meshList;
+
+    int triOffset = 0;
+
+    while (m) {
+        if (m->material->collisionFlags & COLFLAG_INTANGIBLE) {
+            m = m->next;
+            continue;
+        }
+        ModelPrim *prim = (ModelPrim *) m->mesh;
+        attribute_t *attr = &prim->position;
+        int numTris = prim->num_indices;
+        for (int i = 0; i < numTris; i += 3) {
+            unsigned short *indices = (unsigned short *) prim->indices;
+            u_int16_t *v1 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 0]);
+            u_int16_t *v2 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 1]);
+            u_int16_t *v3 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 2]);
+            
+            c->collision->data[triOffset].pos[0][0] = v1[0] - offsetX;
+            c->collision->data[triOffset].pos[0][1] = v1[1];
+            c->collision->data[triOffset].pos[0][2] = v1[2] - offsetZ;
+            c->collision->data[triOffset].pos[1][0] = v2[0] - offsetX;
+            c->collision->data[triOffset].pos[1][1] = v2[1];
+            c->collision->data[triOffset].pos[1][2] = v2[2] - offsetZ;
+            c->collision->data[triOffset].pos[2][0] = v3[0] - offsetX;
+            c->collision->data[triOffset].pos[2][1] = v3[1];
+            c->collision->data[triOffset].pos[2][2] = v3[2] - offsetZ;
+            int upperY = MAX(MAX(v1[1], v2[1]), v3[1]);
+            c->collision->data[triOffset].upperY = upperY;
+            int lowerY = MIN(MIN(v1[1], v2[1]), v3[1]);
+            c->collision->data[triOffset].upperY = lowerY;
+            float normals[3];
+            collision_normals(v1, v2, v3, normals, false);
+            c->collision->data[triOffset].normalY = normals[1] * 32767.0f;
+            triOffset++;
+        }
+        m = m->next;
+    }
+}
+
 void scene_generate_chunk(SceneMesh *s) {
     s->material = material_init(s->materialID);
     rspq_block_begin();
@@ -240,6 +276,9 @@ void load_scene(int sceneID) {
             c->meshList = NULL;
             c->flags = 0;
             c->chunkID = i;
+            c->collisionTriCount = 0;
+            c->collisionTimer = 0;
+            c->collision = NULL;
             chunkCount++;
             c->next = NULL;
             c->bounds[0][0] = 9999999.0f;
@@ -252,8 +291,17 @@ void load_scene(int sceneID) {
             for (int j = 0; j < primCount; j++) {
                 SceneMesh *m = malloc(sizeof(SceneMesh));
                 m->mesh = model64_get_primitive(mesh, j);
-                m->material = NULL;
                 m->materialID = sSceneTexIDs[gCurrentScene->sceneID][j];
+                if ((gMaterialIDs[m->materialID].collisionFlags & COLFLAG_INTANGIBLE) == false) {
+                    ModelPrim *prim = (ModelPrim *) m->mesh;
+                    c->collisionTriCount += prim->num_indices;
+                }
+                m->material = NULL;
+                if (gMaterialIDs[m->materialID].flags & MAT_INVISIBLE) {
+                    m->flags = MESH_INVISIBLE;
+                } else {
+                    m->flags = 0;
+                }
                 if (m->materialID == MATERIAL_WATER) {
                     m->primC = RGBA32(89, 125, 151, 64);
                 } else if (m->materialID == MATERIAL_FLATPRIM_XLU) {

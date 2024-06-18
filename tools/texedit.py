@@ -84,6 +84,7 @@ app.textureCount = 0
 
 app.materialSoundStrings = ["None", "Dirt", "Grass", "Stone", "Gravel", "Tile", "Wood", "Glass", "Water", "Mesh", "Sand", "Snow", "Metal", "Carpet"]
 app.materialSoundEnums = ["None", "COLFLAG_SOUND_DIRT", "COLFLAG_SOUND_GRASS", "COLFLAG_SOUND_STONE", "COLFLAG_SOUND_GRAVEL", "COLFLAG_SOUND_TILE", "COLFLAG_SOUND_WOOD", "COLFLAG_SOUND_GLASS", "COLFLAG_SOUND_WATER", "COLFLAG_SOUND_MESH", "COLFLAG_SOUND_SAND", "COLFLAG_SOUND_SNOW", "COLFLAG_SOUND_METAL", "COLFLAG_SOUND_CARPET"]
+app.materialFloorDecEnums = ["FLOORDEC_NONE", "FLOORDEC_GRASS", "FLOORDEC_PEBBLES", "FLOORDEC_STICKS", "FLOORDEC_LEAVES"]
 
 app.materialNames = []
 app.materialEnums = []
@@ -119,6 +120,11 @@ app.colIntangible = []
 app.colNocam = []
 app.colCamonly = []
 app.colShadow = []
+
+app.floorDecGrass = []
+app.floorDecPebbles = []
+app.floorDecSticks = []
+app.floorDecLeaves = []
 
 app.materialCount = 0
 
@@ -253,6 +259,12 @@ def switch_window_tex():
     window.matColNocam.setVisible(False)
     window.matColCamonly.setVisible(False)
     window.matColShadow.setVisible(False)
+
+    window.matFloorDecLabel.setVisible(False)
+    window.matFloorDecGrass.setVisible(False)
+    window.matFloorDecPebbles.setVisible(False)
+    window.matFloorDecSticks.setVisible(False)
+    window.matFloorDecLeaves.setVisible(False)
         
 def switch_window_mat():
     window.saveTexButton.setVisible(False)
@@ -323,6 +335,12 @@ def switch_window_mat():
     window.matColNocam.setVisible(True)
     window.matColCamonly.setVisible(True)
     window.matColShadow.setVisible(True)
+
+    window.matFloorDecLabel.setVisible(True)
+    window.matFloorDecGrass.setVisible(True)
+    window.matFloorDecPebbles.setVisible(True)
+    window.matFloorDecSticks.setVisible(True)
+    window.matFloorDecLeaves.setVisible(True)
 
 def make_window():
     window.setWindowTitle("Texture Manager")
@@ -417,6 +435,13 @@ def make_window():
     window.matColNocam = create_tickbox(window, 460, app.elementY, 160, 16, "Block Camera", False)
     window.matColCamonly = create_tickbox(window, 460, app.elementY, 160, 16, "Camera Only", False)
     window.matColShadow = create_tickbox(window, 460, app.elementY, 160, 16, "Allow Shadow", False)
+
+    app.elementY = 304
+    window.matFloorDecLabel = create_label(window, 336, app.elementY, 160, 16, "Floor Decoration", False)
+    window.matFloorDecGrass = create_tickbox(window, 336, app.elementY, 160, 16, "Grassy", False)
+    window.matFloorDecPebbles = create_tickbox(window, 336, app.elementY, 160, 16, "Pebbles", False)
+    window.matFloorDecSticks = create_tickbox(window, 336, app.elementY, 160, 16, "Sticks", False)
+    window.matFloorDecLeaves = create_tickbox(window, 336, app.elementY, 160, 16, "Leaves", False)
     window.show()
 
 def init_mat_list():
@@ -496,14 +521,14 @@ def init_mat_list():
                 else:
                     app.renderCI.insert(app.materialCount, False)
                 app.materialCombiner.insert(app.materialCount, str(matches[2]))
-                app.materialShiftS0.insert(app.materialCount, str(matches[4]))
-                app.materialShiftT0.insert(app.materialCount, str(matches[5]))
-                app.materialShiftS1.insert(app.materialCount, str(matches[6]))
-                app.materialShiftT1.insert(app.materialCount, str(matches[7]))
-                app.materialMoveS0.insert(app.materialCount, str(matches[8]))
-                app.materialMoveT0.insert(app.materialCount, str(matches[9]))
-                app.materialMoveS1.insert(app.materialCount, str(matches[10]))
-                app.materialMoveT1.insert(app.materialCount, str(matches[11][:-1]))
+                app.materialShiftS0.insert(app.materialCount, str(matches[5]))
+                app.materialShiftT0.insert(app.materialCount, str(matches[6]))
+                app.materialShiftS1.insert(app.materialCount, str(matches[7]))
+                app.materialShiftT1.insert(app.materialCount, str(matches[8]))
+                app.materialMoveS0.insert(app.materialCount, str(matches[9]))
+                app.materialMoveT0.insert(app.materialCount, str(matches[10]))
+                app.materialMoveS1.insert(app.materialCount, str(matches[11]))
+                app.materialMoveT1.insert(app.materialCount, str(matches[12][:-1]))
                 flags = matches[3]
                 if (not flags.find("COLFLAG_INTANGIBLE") == -1):
                     app.colIntangible.insert(app.materialCount, True)
@@ -540,6 +565,23 @@ def init_mat_list():
                         i+=1
                 else:
                     app.colSound.insert(app.materialCount, "None")
+                flags = matches[4]
+                if (not flags.find("FLOORDEC_GRASS") == -1):
+                    app.floorDecGrass.insert(app.materialCount, True)
+                else:
+                    app.floorDecGrass.insert(app.materialCount, False)
+                if (not flags.find("FLOORDEC_PEBBLES") == -1):
+                    app.floorDecPebbles.insert(app.materialCount, True)
+                else:
+                    app.floorDecPebbles.insert(app.materialCount, False)
+                if (not flags.find("FLOORDEC_STICKS") == -1):
+                    app.floorDecSticks.insert(app.materialCount, True)
+                else:
+                    app.floorDecSticks.insert(app.materialCount, False)
+                if (not flags.find("FLOORDEC_LEAVES") == -1):
+                    app.floorDecLeaves.insert(app.materialCount, True)
+                else:
+                    app.floorDecLeaves.insert(app.materialCount, False)
                 app.materialCount += 1
     window.matList.addItems(app.materialNames)
 
@@ -903,6 +945,26 @@ def write_materials():
                 if (app.colShadow[numLines] == True):
                     colFlags += " | COLFLAG_SHADOW"
             name += colFlags + ", "
+            decFlags = ""
+            firstEnum = False
+            if (app.floorDecGrass[numLines] == True):
+                firstEnum = True
+                decFlags += "FLOORDEC_GRASS"
+            if (app.floorDecPebbles[numLines] == True):
+                if (firstEnum == True):
+                    decFlags += " | "
+                decFlags += "FLOORDEC_PEBBLES"
+            if (app.floorDecSticks[numLines] == True):
+                if (firstEnum == True):
+                    decFlags += " | "
+                decFlags += "FLOORDEC_STICKS"
+            if (app.floorDecLeaves[numLines] == True):
+                if (firstEnum == True):
+                    decFlags += " | "
+                decFlags += "FLOORDEC_LEAVES"
+            if (decFlags == ""):
+                decFlags = "FLOORDEC_NONE"
+            name += decFlags + ", "
             name += app.materialShiftS0[numLines] + ", "
             name += app.materialShiftT0[numLines] + ", "
             name += app.materialShiftS1[numLines] + ", "
@@ -977,6 +1039,11 @@ def add_material():
     app.renderFrontface.insert(index, False)
     app.renderCI.insert(index, False)
 
+    app.floorDecGrass.insert(index, False)
+    app.floorDecPebbles.insert(index, False)
+    app.floorDecSticks.insert(index, False)
+    app.floorDecLeaves.insert(index, False)
+
     app.colIntangible.insert(index, False)
     app.colNocam.insert(index, False)
     app.colCamonly.insert(index, False)
@@ -1043,6 +1110,10 @@ def delete_material():
         app.colGrip.pop(rowNum)
         app.colSound.pop(rowNum)
         app.materialCombiner.pop(rowNum)
+        app.floorDecGrass.pop(rowNum)
+        app.floorDecPebbles.pop(rowNum)
+        app.floorDecSticks.pop(rowNum)
+        app.floorDecLeaves.pop(rowNum)
         app.materialTex0.pop(rowNum)
         app.materialTex1.pop(rowNum)
         window.matList.clear()
@@ -1093,6 +1164,11 @@ def set_active_material():
     window.matFlagFrontface.setChecked(app.renderFrontface[rowNum])
     window.matFlagCI.setChecked(app.renderCI[rowNum])
 
+    window.matFloorDecGrass.setChecked(app.floorDecGrass[rowNum])
+    window.matFloorDecPebbles.setChecked(app.floorDecPebbles[rowNum])
+    window.matFloorDecSticks.setChecked(app.floorDecSticks[rowNum])
+    window.matFloorDecLeaves.setChecked(app.floorDecLeaves[rowNum])
+
     window.matColIntangible.setChecked(app.colIntangible[rowNum])
     window.matColNocam.setChecked(app.colNocam[rowNum])
     window.matColCamonly.setChecked(app.colCamonly[rowNum])
@@ -1125,6 +1201,7 @@ def set_active_material():
             window.matColSoundInput.setCurrentIndex(i)
             break
         i += 1
+    i = 0
 
 def save_texture():
     rowNum = app.texSelection
@@ -1168,6 +1245,11 @@ def save_material():
     app.renderInvis[rowNum] = window.matFlagInvis.isChecked()
     app.renderFrontface[rowNum] = window.matFlagFrontface.isChecked()
     app.renderCI[rowNum] = window.matFlagCI.isChecked()
+
+    app.floorDecGrass[rowNum] = window.matFloorDecGrass.isChecked()
+    app.floorDecPebbles[rowNum] = window.matFloorDecPebbles.isChecked()
+    app.floorDecSticks[rowNum] = window.matFloorDecSticks.isChecked()
+    app.floorDecLeaves[rowNum] = window.matFloorDecLeaves.isChecked()
 
     app.colIntangible[rowNum] = window.matColIntangible.isChecked()
     app.colNocam[rowNum] = window.matColNocam.isChecked()

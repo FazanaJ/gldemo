@@ -29,4 +29,6 @@ const TextureInfo gTextureIDs[] = {
     {"body1.i8", TEX_CLAMP_V | TEX_MIRROR_H, 0, 0},
     {"eye1_b.ia4", TEX_CLAMP_H | TEX_CLAMP_V, 0, 0},
     {"flipbooktest.ci8", TEX_NULL, 31, 1},
+    {"rockside3.i4", TEX_NULL, 0, 0},
+    {"rockside4.i4", TEX_NULL, 0, 0},
 };

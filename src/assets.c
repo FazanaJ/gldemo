@@ -567,6 +567,19 @@ void asset_cycle(int updateRate) {
         }
         objList = objList->next;
     }
+
+    SceneChunk *sceneList = gCurrentScene->chunkList;
+    while (sceneList) {
+        if (sceneList->collisionTimer > 0) {
+            sceneList->collisionTimer -= updateRate;
+            if (sceneList->collisionTimer <= 0) {
+                free(sceneList->collision->data);
+                free(sceneList->collision);
+                sceneList->collision = NULL;
+            }
+        }
+        sceneList = sceneList->next;
+    }
 }
 
 void sky_texture_generate(Environment *e) {

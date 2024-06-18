@@ -420,6 +420,7 @@ static void project_camera(void) {
     float nearClip = 5.0f;
     float farClip = 1000.0f;
     float fov = gCamera->fov / 50.0f;
+    static float prevFov = 0.0f;
 
 #if OPENGL
     glMatrixMode(GL_PROJECTION);
@@ -435,15 +436,18 @@ static void project_camera(void) {
     float aspect = display_get_width() / display_get_height();
     //glDepthRange(50.0f, 500.0f);
 
-    gHalfFovVert = (gCamera->fov + 2.0f) * 180.0f + 0.5f;
-    gHalfFovHor = aspect * gHalfFovVert;
-    float cx, sx;
-    sx = sins(gHalfFovVert);
-    cx = coss(gHalfFovVert);
-    gHalfFovVert = sx / cx;
-    sx = sins(gHalfFovHor);
-    cx = coss(gHalfFovHor);
-    gHalfFovHor = sx / cx;
+    if (prevFov != fov) {
+        gHalfFovVert = (gCamera->fov + 2.0f) * 180.0f + 0.5f;
+        gHalfFovHor = aspect * gHalfFovVert;
+        float cx, sx;
+        sx = sins(gHalfFovVert);
+        cx = coss(gHalfFovVert);
+        gHalfFovVert = sx / cx;
+        sx = sins(gHalfFovHor);
+        cx = coss(gHalfFovHor);
+        gHalfFovHor = sx / cx;
+        prevFov = fov;
+    }
 }
 
 void matrix_ortho(void) {
@@ -989,6 +993,12 @@ static void render_world(void) {
                 SceneMesh *c = s->meshList;
                 i++;
                 while (c != NULL) {
+                    if (c->flags & MESH_INVISIBLE) {
+                        s->flags |= CHUNK_HAS_MODEL;
+                        c->material = material_init(c->materialID);
+                        c = c->next;
+                        continue;
+                    }
                     int layer;
 
                     if (c->renderBlock == NULL) {
@@ -1231,7 +1241,7 @@ static void reset_shadow_perspective(void) {
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 #endif
-        material_mode(0);
+        material_mode(MAT_NULL);
 #if OPENGL
         glEnable(GL_RDPQ_MATERIAL_N64);
 #endif

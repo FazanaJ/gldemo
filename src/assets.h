@@ -54,6 +54,14 @@ enum TextureFlags {
     TEX_MIRROR_V =  (1 << 3),
 };
 
+enum FloorDecFlags {
+    FLOORDEC_NONE,
+    FLOORDEC_GRASS =    (1 << 0),
+    FLOORDEC_PEBBLES =  (1 << 1),
+    FLOORDEC_STICKS =   (1 << 2),
+    FLOORDEC_LEAVES =   (1 << 3),
+};
+
 enum FileFormat {
     DFS_SPRITE,
     DFS_WAV64,
@@ -115,6 +123,7 @@ typedef struct MaterialInfo {
     unsigned short flags;
     char combiner;
     short collisionFlags;
+    char floorDecID;
     char shiftS0;
     char shiftT0;
     char shiftS1;

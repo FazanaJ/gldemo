@@ -44,10 +44,11 @@ typedef struct SceneMesh {
 typedef struct SceneChunk {
     struct SceneChunk *next;
     struct CollisionCell *collision;
+    float bounds[2][3];
     SceneMesh *meshList;
     short flags;
     short chunkID;
-    float bounds[2][3];
+    short collisionTriCount;
     unsigned char *visibility;
     unsigned char collisionTimer;
 } SceneChunk;
@@ -101,3 +102,4 @@ extern char *sSceneTable[SCENE_TOTAL];
 void load_scene(int sceneID);
 void scene_clear_chunk(SceneChunk *c);
 void scene_generate_chunk(SceneMesh *s);
+void scene_generate_collision(SceneChunk *c);
