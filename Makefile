@@ -47,8 +47,6 @@ N64_CFLAGS += $(DEF_INC_CFLAGS) \
 	-mno-check-zero-division \
 	-funsafe-math-optimizations \
 	-fsingle-precision-constant \
-	-fno-unroll-loops \
-	-fno-peel-loops \
 	-falign-functions=32 \
 	-fno-merge-constants \
     -fno-strict-aliasing \

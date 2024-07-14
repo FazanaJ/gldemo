@@ -229,6 +229,7 @@ void play_sound_spatial_pitch(int soundID, float pos[3], float pitch) {
 }
 
 void set_background_music(int seqID, int fadeTime) {
+    return;
     sNextSequenceID = seqID;
     sSequenceFadeTimerSet = fadeTime;
     sSequenceFadeTimer = fadeTime;

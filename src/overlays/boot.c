@@ -136,7 +136,7 @@ void set_region_type(int region) {
 #if OPENGL
     gl_init();
 #elif TINY3D
-    t3d_init();
+    t3d_init((T3DInitParams){});
     rdpq_init();
 #endif
     init_renderer();
@@ -168,7 +168,7 @@ void init_audio(void) {
     for (int i = 0; i < VOICE_TOTAL; i++) {
         wav64_open(&sVoiceTable[i].sound.sound, asset_dir(sVoiceTable[i].sound.path, DFS_WAV64));
     }
-    //set_background_music(1, 0);
+    set_background_music(1, 0);
     for (int i = 0; i < CHANNEL_MAX_NUM; i++) {
         gChannelVol[i] = 1.0f;
         mixer_ch_set_limits(i, 16, 22050, 0);
@@ -189,4 +189,5 @@ void init_game(void) {
     load_font(FONT_MVBOLI);
     gGlobalTimer = 0;
     gGameTimer = 0;
+    display_set_fps_limit(60.0f);
 }

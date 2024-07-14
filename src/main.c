@@ -50,11 +50,13 @@ void reset_display(void) {
 #if OPENGL
     gl_init();
 #elif TINY3D
-    t3d_init();
+    t3d_init((T3DInitParams){});
     rdpq_init();
 #endif
     init_renderer();
 }
+
+static unsigned int deltaTime = 0;
 
 /**
  * Generate the delta time values.
@@ -63,7 +65,6 @@ void reset_display(void) {
 */
 static inline void update_game_time(int *updateRate, float *updateRateF) {
     static unsigned int prevTime = 0;
-    static unsigned int deltaTime = 0;
     static unsigned int curTime;
     
     curTime = timer_ticks();
@@ -86,6 +87,10 @@ static inline void update_game_time(int *updateRate, float *updateRateF) {
             deltaTime = 0;
         }
     }
+}
+
+void reset_game_time(void) {
+    deltaTime = 0;
 }
 
 void boot_game(void) {

@@ -14,7 +14,7 @@
                 "${workspaceFolder}/include/global.h"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/mips-linux-gnu-gcc",
+            "compilerPath": "C:\\msys64\\mingw64\\bin\\gcc.exe",
             "cStandard": "gnu17",
             "cppStandard": "gnu++14",
             "intelliSenseMode": "linux-gcc-x86"

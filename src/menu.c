@@ -449,7 +449,7 @@ static void process_options_menu(int updateRate) {
         case 3:
             menu_set_reset(MENU_TITLE);
             transition_into_scene(SCENE_INTRO, TRANSITION_FULLSCREEN_IN, 30, TRANSITION_FULLSCREEN_OUT);
-            //set_background_music(1, 30);
+            set_background_music(1, 30);
             break;
         }
     }
@@ -482,7 +482,7 @@ static void process_sceneselect_menu(int updateRate) {
         input_clear(INPUT_A);
         transition_into_scene(gMenuSelection[1], TRANSITION_FULLSCREEN_IN, 30, TRANSITION_FULLSCREEN_OUT);
         menu_set_reset(MENU_CLOSED);
-        //set_background_music(0, 30);
+        set_background_music(0, 30);
     } else if (input_pressed(INPUT_B, 3) && sMenuSwapTimer == 0) {
         goback:
         play_sound_global(SOUND_MENU_CLICK);
@@ -549,7 +549,7 @@ static void process_title_menu(int updateRate) {
     if (gMenuMode2 && sKeyboard == false) {
         menu_set_reset(MENU_CLOSED);
         transition_into_scene(SCENE_TESTAREA, TRANSITION_FULLSCREEN_IN, 30, TRANSITION_FULLSCREEN_OUT);
-        //set_background_music(0, 30);
+        set_background_music(0, 30);
         gMenuMode2 = 0;
     }
 }

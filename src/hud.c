@@ -433,5 +433,42 @@ void render_hud(int updateRate, float updateRateF) {
         render_panel((gFrameBuffers->width / 2) - 64, (gFrameBuffers->height / 2) - 64, (gFrameBuffers->width / 2) + 64, (gFrameBuffers->height / 2) - 32, 0, 0xFFFFFFFF);
         text_outline(NULL, (gFrameBuffers->width / 2) - 40, (gFrameBuffers->height / 2) - 40, "Press Blart", RGBA32(0, 0, 0, 255));
     }
+
+    /*char textBytes[12];
+    static int balls = 0;
+
+    if (input_pressed(INPUT_CRIGHT, 3)) {
+        input_clear(INPUT_CRIGHT);
+        balls++;
+
+        switch (balls) {
+            case 0:
+            display_set_fps_limit(60.0f);
+            break;
+            case 1:
+            display_set_fps_limit(40.0f);
+            break;
+            case 2:
+            display_set_fps_limit(33.3333f);
+            break;
+            case 3:
+            display_set_fps_limit(30.0f);
+            break;
+            case 4:
+            display_set_fps_limit(20.0f);
+            break;
+            case 5:
+            display_set_fps_limit(15.0f);
+            break;
+            case 6:
+            display_set_fps_limit(60.0f);
+            balls = 0;
+            break;
+        }
+    }
+
+    sprintf(textBytes, "FPS: %2.2f", (double) display_get_fps());
+    text_outline(NULL, 32, 80, textBytes, RGBA32(255, 255, 255, 255));*/
+
     get_time_snapshot(PP_HUD, DEBUG_SNAPSHOT_1_END);
 }

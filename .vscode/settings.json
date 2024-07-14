@@ -30,5 +30,6 @@
         "talksprite_table.h": "c",
         "scene.h": "c",
         "save.h": "c"
-    }
+    },
+    "C_Cpp.default.compilerPath": "/usr/bin/mips-linux-gnu-gcc"
 }

@@ -77,3 +77,4 @@ extern unsigned int gGameTimer;
 extern char gResetDisplay;
 
 void reset_display(void);
+void reset_game_time(void);

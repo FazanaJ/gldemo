@@ -172,6 +172,7 @@ void scene_clear_chunk(SceneChunk *c) {
     c->flags &= ~CHUNK_HAS_MODEL;
 }
 
+#if OPENGL
 void scene_generate_collision(SceneChunk *c) {
     int triCount = c->collisionTriCount;
     if (triCount == 0) {
@@ -206,6 +207,7 @@ void scene_generate_collision(SceneChunk *c) {
         int numTris = prim->num_indices;
         for (int i = 0; i < numTris; i += 3) {
             unsigned short *indices = (unsigned short *) prim->indices;
+            float mulFactorF = (int) (1 << (prim->vertex_precision));
             u_int16_t *v1 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 0]);
             u_int16_t *v2 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 1]);
             u_int16_t *v3 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 2]);
@@ -231,6 +233,7 @@ void scene_generate_collision(SceneChunk *c) {
         m = m->next;
     }
 }
+#endif
 
 void scene_generate_chunk(SceneMesh *s) {
     s->material = material_init(s->materialID);

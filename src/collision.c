@@ -97,7 +97,6 @@ static void collision_surface_side(float *posF, int16_t *pos, u_int16_t *v0, u_i
 
     float offset = normal[0] * posF[0] + normal[1] * posF[1] + normal[2] * posF[2] + normal[3];
 
-
     if (fabsf(offset) > size) {
         return;
     }

@@ -373,7 +373,11 @@ Material *material_init(int materialID) {
         list->material->tex1 = NULL;
         list->material->shiftT1 = 0;
     }
-    list->material->block = material_generate_dl(list->material);
+    if ((list->material->flags & MAT_INVISIBLE) == false) {
+        list->material->block = material_generate_dl(list->material);
+    } else {
+        list->material->block = NULL;
+    }
     debugf(" Time: %2.3fs.\n", (double) (TIMER_MICROS(DEBUG_SNAPSHOT_1_END) / 1000000.0f));
 #ifdef PUPPYPRINT_DEBUG
     gNumMaterials++;

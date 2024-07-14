@@ -663,23 +663,25 @@ static void material_set(Material *material, int flags) {
     get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
 }
 
+static void render_sky_flat(Environment *e) {
+    DEBUG_SNAPSHOT_1();
+    int width = display_get_width();
+    int height = display_get_height();
+    rdpq_set_mode_fill(RGBA32((e->skyColourTop[0] + e->skyColourBottom[0]) / 2,
+                              (e->skyColourTop[1] + e->skyColourBottom[1]) / 2,
+                              (e->skyColourTop[2] + e->skyColourBottom[2]) / 2,
+                               255));
+    rdpq_fill_rectangle(0, 0, width, height);
+    rdpq_set_mode_standard();
+    get_time_snapshot(PP_BG, DEBUG_SNAPSHOT_1_END);
+}
+
 static void render_sky_gradient(Environment *e) {
     DEBUG_SNAPSHOT_1();
     if (sRenderSkyBlock == NULL) {
         sRenderSkyBlock = sky_gradient_generate(e);
     }
-    if (gConfig.graphics != G_PERFORMANCE) {
-        rspq_block_run(sRenderSkyBlock);
-    } else {
-        int width = display_get_width();
-        int height = display_get_height();
-        rdpq_set_mode_fill(RGBA32((e->skyColourTop[0] + e->skyColourBottom[0]) / 2,
-                                  (e->skyColourTop[1] + e->skyColourBottom[1]) / 2,
-                                  (e->skyColourTop[2] + e->skyColourBottom[2]) / 2,
-                                   255));
-        rdpq_fill_rectangle(0, 0, width, height);
-        rdpq_set_mode_standard();
-    }
+    rspq_block_run(sRenderSkyBlock);
     get_time_snapshot(PP_BG, DEBUG_SNAPSHOT_1_END);
 }
 
@@ -689,25 +691,24 @@ static void render_sky_texture(Environment *e) {
     if (e->texGen == false) {
         sky_texture_generate(e);
         e->texGen = true;
-    } else {
-        Matrix mtx;
-        MATRIX_PUSH();
-        mtx_translate(&mtx, gCamera->pos[0], gCamera->pos[1] + 50.0f, gCamera->pos[2]);
-        MATRIX_MUL(mtx.m, gMatrixStackPos, gMatrixStackPos - 1);
-        material_mode(MAT_CI);
-        // run block
-        int base = gCamera->yaw + 0x8000;
-        rspq_block_run(e->skyInit);
-        for (int i = 0; i < 32; i++) {
-            short rot = base - ((0x10000 / 16) * i);
-            if (fabs(rot) >= 0x4000) {
-                continue;
-            }
-            rspq_block_run(e->skySegment[i]);
-        }
-        rdpq_mode_dithering(DITHER_SQUARE_SQUARE);
-        MATRIX_POP();
     }
+    Matrix mtx;
+    MATRIX_PUSH();
+    mtx_translate(&mtx, gCamera->pos[0], gCamera->pos[1] + 50.0f, gCamera->pos[2]);
+    MATRIX_MUL(mtx.m, gMatrixStackPos, gMatrixStackPos - 1);
+    material_mode(MAT_CI);
+    // run block
+    int base = gCamera->yaw + 0x8000;
+    rspq_block_run(e->skyInit);
+    for (int i = 0; i < 32; i++) {
+        short rot = base - ((0x10000 / 16) * i);
+        if (fabs(rot) >= 0x4000) {
+            continue;
+        }
+        rspq_block_run(e->skySegment[i]);
+    }
+    rdpq_mode_dithering(DITHER_SQUARE_SQUARE);
+    MATRIX_POP();
     get_time_snapshot(PP_BG, DEBUG_SNAPSHOT_1_END);
 }
 
@@ -1005,6 +1006,11 @@ static void render_world(void) {
                         scene_generate_chunk(c);
                     }
 
+                    if (c->material->flags & MAT_INVISIBLE) {
+                        c = c->next;
+                        continue;
+                    }
+
                     if ((c->material->flags & MAT_DEPTH_READ) == false) {
                         layer = DRAW_NZB;
                     } else if (c->material->flags & MAT_DECAL) {
@@ -1014,7 +1020,7 @@ static void render_world(void) {
                     } else {
                         layer = DRAW_OPA;
                     }
-                    
+
                     RenderNode *entry = (RenderNode *) render_alloc(sizeof(RenderNode), layer);
                     entry->matrix = NULL;
                     entry->primColour = c->primC;
@@ -1268,12 +1274,15 @@ static void generate_dynamic_shadows(void) {
     
     while (list) {
         obj = list->obj;
-        if (obj->flags & OBJ_FLAG_SHADOW_DYNAMIC && obj->flags & OBJ_FLAG_IN_VIEW && !(obj->flags & OBJ_FLAG_INVISIBLE) && obj->gfx && obj->overlay) {
+        if (obj->header->dynamicShadow == NULL) {
+            list = list->next;
+            continue;
+        }
+        if (obj->flags & OBJ_FLAG_SHADOW_DYNAMIC && obj->flags & OBJ_FLAG_IN_VIEW && !(obj->flags & OBJ_FLAG_INVISIBLE) && obj->gfx) {
+            if (obj->overlay == NULL) {
+                obj_overlay_init(obj, obj->objectID);
+            }
             if (obj->gfx->dynamicShadow == false) {
-                if (obj->header->dynamicShadow == NULL) {
-                    list = list->next;
-                    continue;
-                }
                 shadow_generate(obj);
             }
             rdpq_attach(&obj->gfx->dynamicShadow->surface, NULL);
@@ -1397,11 +1406,12 @@ void render_game(int updateRate, float updateRateF) {
         glDisable(GL_MULTISAMPLE_ARB);
         rdpq_mode_antialias(AA_NONE);
         render_ztarget_scissor();
-        if (gEnvironment->skyboxTextureID == -1 || gConfig.graphics == G_PERFORMANCE) {
-            render_sky_gradient(gEnvironment);
-        }
         project_camera();
-        if (gEnvironment->skyboxTextureID != -1 && gConfig.graphics != G_PERFORMANCE) {
+        if (gConfig.graphics == G_PERFORMANCE) {
+            render_sky_flat(gEnvironment);
+        } else if (gEnvironment->skyboxTextureID == -1) {
+            render_sky_gradient(gEnvironment);
+        } else {
             render_sky_texture(gEnvironment);
         }
         apply_render_settings();
