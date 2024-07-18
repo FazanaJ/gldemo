@@ -5,7 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "/opt/libdragon/**",
-                "C:/sm64-decomp/libdragon/include/**"
+                "E:/n64/t3d/src/t3d/**",
+                "E:/n64/libdragon/include/**"
             ],
             "forcedInclude": [
                 "${workspaceFolder}/include/config.h",

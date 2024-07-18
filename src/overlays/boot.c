@@ -128,17 +128,13 @@ void set_region_type(int region) {
     __boot_tvtype = region; // Writes to osTvType
     display_init(sVideoModes[(unsigned) gConfig.screenMode], DEPTH_16_BPP, 3, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
     //gZBuffer = surface_alloc(FMT_RGBA16, display_get_width(), display_get_height());
-    gZBuffer.flags = FMT_RGBA16 | SURFACE_FLAGS_OWNEDBUFFER;
+    /*gZBuffer.flags = FMT_RGBA16 | SURFACE_FLAGS_OWNEDBUFFER;
     gZBuffer.width = display_get_width();
     gZBuffer.height = display_get_height();
     gZBuffer.stride = TEX_FORMAT_PIX2BYTES(FMT_RGBA16, display_get_width());
-    gZBuffer.buffer = (void *) ((0x80800000 - 0x10000) - ((display_get_width() * display_get_height()) * 2));
-#if OPENGL
-    gl_init();
-#elif TINY3D
+    gZBuffer.buffer = (void *) ((0x80800000 - 0x10000) - ((display_get_width() * display_get_height()) * 2));*/
     t3d_init((T3DInitParams){});
     rdpq_init();
-#endif
     init_renderer();
 }
 
@@ -189,5 +185,4 @@ void init_game(void) {
     load_font(FONT_MVBOLI);
     gGlobalTimer = 0;
     gGameTimer = 0;
-    display_set_fps_limit(60.0f);
 }

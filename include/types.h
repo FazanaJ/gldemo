@@ -55,11 +55,7 @@ typedef struct Material {
 } Material;
 
 typedef struct Environment {
-#if OPENGL
-    GLfloat fogColour[3];
-#elif TINY3D
     unsigned char fogColour[3];
-#endif
     unsigned char skyColourTop[3];
     unsigned char skyColourBottom[3];
     GLfloat fogNear;
@@ -71,13 +67,12 @@ typedef struct Environment {
     char skyTimer;
     rspq_block_t *skyInit;
     rspq_block_t *skySegment[32];
-#if TINY3D
     T3DVertPacked *skyVerts;
-#endif
+    T3DMat4FP *skyMtx;
 } Environment;
 
-#if OPENGL
-typedef model64_t Model3D;
-#elif TINY3D
 typedef T3DModel Model3D;
-#endif
+
+typedef struct {
+    GLfloat m[4][4];
+} Matrix;

@@ -16,7 +16,7 @@ static unsigned short sPrevHealthMax;
 static short sHealthPosX;
 static short sHealthPosY;
 
-static void generate_health_block(int hpMin, int hpMax, int hpBase) {
+tstatic void generate_health_block(int hpMin, int hpMax, int hpBase) {
     int x = 0;
     int y = 0;
     int i;
@@ -122,7 +122,7 @@ static void generate_health_block(int hpMin, int hpMax, int hpBase) {
     sPrevHealthMax = hpMax;
 }
 
-static void render_health_bg(int numHealth, int hpMax) {
+tstatic void render_health_bg(int numHealth, int hpMax) {
     //rdpq_debug_start();
     PlayerData *data = (PlayerData *) gPlayer->data;
     int heartSpeed = (gGameTimer * 0x200);

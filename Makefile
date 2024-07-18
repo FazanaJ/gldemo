@@ -6,7 +6,7 @@ include $(T3D_INST)/t3d.mk
 FAST_COMPILE = true
 ASSET_LEVEL_COMPRESS = 2
 ARCHIVE_LEVEL_COMPRESS = 3
-GFXUCODE = opengl
+GFXUCODE = tiny3d
 SAVETYPE = eeprom16k
 ifeq ($(FAST_COMPILE),true)
   N64_ROM_ELFCOMPRESS = 1
@@ -70,7 +70,8 @@ DSO_MODULES = boot.dso \
 	minimap.dso \
 	options.dso \
 	pakmenu.dso \
-	keyboard.dso
+	keyboard.dso \
+	lightsource.dso
 
 DSO_LIST = $(addprefix filesystem/, $(DSO_MODULES))
 
@@ -191,13 +192,13 @@ else ifeq ($(GFXUCODE),tiny3d)
 filesystem/%.t3dm: assets/models/%.glb
 	@mkdir -p $(dir $@)
 	@echo "    [MODEL] $@"
-	$(T3D_GLTF_TO_3D) "$<" $@
+	$(T3D_GLTF_TO_3D) "$<" $@ --ignore-materials --base-scale=64
 	$(N64_BINDIR)/mkasset $(COMPRESS_LEVEL) -o filesystem $@
 
 filesystem/%.t3dm: assets/archives/%.glb
 	@mkdir -p $(dir $@)
 	@echo "    [MODEL] $@"
-	$(T3D_GLTF_TO_3D) "$<" $@
+	$(T3D_GLTF_TO_3D) "$<" $@ --ignore-materials --base-scale=64
 	$(N64_BINDIR)/mkasset --compress $(ARCHIVE_LEVEL_COMPRESS) -o filesystem $@
 endif
 
@@ -230,6 +231,8 @@ n64brew_SRC = src/objects/barrel.c
 filesystem/barrel.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 n64brew_SRC = src/objects/testsphere.c
 filesystem/testsphere.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
+n64brew_SRC = src/objects/lightsource.c
+filesystem/lightsource.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)
 
 n64brew_SRC = src/scenes/intro.c
 filesystem/intro.dso: $(n64brew_SRC:%.c=$(BUILD_DIR)/%.o)

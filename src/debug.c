@@ -78,22 +78,68 @@ void get_cpu_time(int diff) {
     gDebugData->cpuTime[TIME_AGGREGATE] += time;
 }
 
-void get_rsp_time(int diff) {
-    int time = (diff * 10) / 625;
-    if (time > 99999) {
-        time = 99999;
-    }
-    gDebugData->rspTime[gDebugData->iteration] += time;
-    gDebugData->rspTime[TIME_AGGREGATE] += time;
+
+#define RCP_TICKS_TO_USECS(ticks) (((ticks) * 1000000ULL) / RCP_FREQUENCY)
+
+static bool debug_profile_is_idle(uint32_t index) {
+  return index == RSPQ_PROFILE_CSLOT_WAIT_CPU || index == RSPQ_PROFILE_CSLOT_WAIT_RDP
+    || index == RSPQ_PROFILE_CSLOT_WAIT_RDP_SYNCFULL || index == RSPQ_PROFILE_CSLOT_WAIT_RDP_SYNCFULL_MULTI;
 }
 
-void get_rdp_time(int diff) {
-    int time = (diff * 10) / 625;
-    if (time > 99999) {
-        time = 99999;
+typedef struct {
+  uint32_t calls;
+  int32_t timeUs;
+  uint32_t index;
+  color_t color;
+  bool isIdle;
+  const char *name;
+} ProfileSlot;
+
+void get_rsp_time(int diff) {
+    const uint32_t SLOT_COUNT = RSPQ_PROFILE_SLOT_COUNT + 1;
+    uint64_t totalTicks = 0;
+    uint32_t timeTotalBusy = 0;
+    uint32_t timeTotalWait = 0;
+    ProfileSlot slots[SLOT_COUNT];
+    for(size_t i = 0; i < RSPQ_PROFILE_SLOT_COUNT; i++)
+    {
+      ProfileSlot *slot = &slots[i];
+      slot->index = i;
+      slot->isIdle = debug_profile_is_idle(i);
+      slot->name = gDebugData->rspData.slots[i].name;
+
+      if(slot->name == NULL)continue;
+
+      totalTicks += gDebugData->rspData.slots[i].total_ticks;
+
+      slot->calls = (uint32_t)(gDebugData->rspData.slots[i].sample_count / gDebugData->rspData.frame_count);
+      slot->timeUs = RCP_TICKS_TO_USECS(gDebugData->rspData.slots[i].total_ticks / gDebugData->rspData.frame_count);
+
+      if(slot->isIdle) {
+        timeTotalWait += slot->timeUs;
+      } else {
+        timeTotalBusy += slot->timeUs;
+      }
     }
-    gDebugData->rdpTime[gDebugData->iteration] += time;
-    gDebugData->rdpTime[TIME_AGGREGATE] += time;
+
+    // Calc. global times
+    uint64_t dispatchTicks = gDebugData->rspData.total_ticks > totalTicks ? gDebugData->rspData.total_ticks - totalTicks : 0;
+    uint64_t dispatchTime = RCP_TICKS_TO_USECS(dispatchTicks / gDebugData->rspData.frame_count);
+    uint64_t rdpTimeBusy = RCP_TICKS_TO_USECS(gDebugData->rspData.rdp_busy_ticks / gDebugData->rspData.frame_count);
+
+    // Add dispatch time into the slots
+    slots[SLOT_COUNT - 1] = (ProfileSlot){
+      .index = SLOT_COUNT - 1,
+      .name = "Cmd process",
+      .calls = 0,
+      .timeUs = dispatchTime
+    };
+    timeTotalBusy += dispatchTime;
+
+    gDebugData->rdpTime[gDebugData->iteration] += rdpTimeBusy;
+    gDebugData->rdpTime[TIME_AGGREGATE] += rdpTimeBusy;
+    gDebugData->rspTime[gDebugData->iteration] += timeTotalBusy;
+    gDebugData->rspTime[TIME_AGGREGATE] += timeTotalBusy;
 }
 
 void profiler_wait(void) {
@@ -104,14 +150,19 @@ void profiler_wait(void) {
     }
 }
 
+extern unsigned char sResetTime;
+
 void process_profiler(void) {
 
-    if ((gGlobalTimer % 8) == 0) {
+    if ((gGlobalTimer % 8) == 0 && sResetTime == false) {
+        //rspq_wait();
         rspq_profile_get_data(&gDebugData->rspData);
         rspq_profile_reset();
     }
-
-    get_rsp_time(gDebugData->rspData.total_ticks / 8);
+    
+    if (gDebugData->rspData.frame_count != 0) {
+        get_rsp_time(0);
+    }
     rspq_profile_next_frame();
 
     for (int i = 0; i < PP_TOTAL; i++) {

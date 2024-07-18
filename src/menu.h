@@ -86,3 +86,4 @@ void free_menu_display(void);
 void menu_reset_display(void);
 void menutext_bar(MenuListEntry *m, int size);
 void menu_input_string(char *string);
+int menu_pause_check(int updateRate, float updateRateF);

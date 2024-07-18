@@ -22,9 +22,6 @@ typedef struct PlayerData {
 	char playerID;
 	char attackCombo;
 	char weaponOut;
-
-
-	short walkTimer;
 } PlayerData;
 
 typedef struct ProjectileData {

@@ -15,5 +15,5 @@ typedef short Texture;
 #include "types.h"
 
 #if !defined(OPENGL) && !defined(TINY3D)
-    #define OPENGL 1
+    #define TINY3D 1
 #endif

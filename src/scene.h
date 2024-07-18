@@ -7,6 +7,8 @@
 #define MAP_OBJ 0
 #define MAP_CLU 1
 
+#define WORLD_SCALE 0.5328f
+
 enum SceneNames {
     SCENE_INTRO,
     SCENE_TESTAREA,
@@ -35,6 +37,8 @@ typedef struct SceneMesh {
     primitive_t *mesh;
     Material *material;
     rspq_block_t *renderBlock;
+    T3DMat4FP mtx;
+    char *second;
     color_t primC;
     short materialID;
     unsigned char step;
@@ -99,7 +103,7 @@ extern Environment *gEnvironment;
 extern char gSceneUpdate;
 extern char *sSceneTable[SCENE_TOTAL];
 
-void load_scene(int sceneID);
+void load_scene(int sceneID, int updateRate, float updateRateF);
 void scene_clear_chunk(SceneChunk *c);
 void scene_generate_chunk(SceneMesh *s);
 void scene_generate_collision(SceneChunk *c);

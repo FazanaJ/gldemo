@@ -18,11 +18,14 @@
 #include "talk.h"
 #include "screenshot.h"
 
-surface_t gZBuffer;
+//surface_t gZBuffer;
 surface_t *gFrameBuffers;
 unsigned int gGlobalTimer;
 unsigned int gGameTimer;
 char gResetDisplay = false;
+#ifdef PUPPYPRINT_DEBUG
+sprite_t *gUVTest = NULL;
+#endif
 
 static const resolution_t RESOLUTION_304x224 = {SCREEN_WIDTH, SCREEN_HEIGHT, false};
 static const resolution_t RESOLUTION_384x224 = {SCREEN_WIDTH_16_10, SCREEN_HEIGHT, false};
@@ -37,26 +40,28 @@ static const resolution_t sVideoModes[] = {
 Config gConfig;
 
 void reset_display(void) {
-    gl_close();
     rdpq_close();
     display_close();
     display_init(sVideoModes[(int) gConfig.screenMode], DEPTH_16_BPP, 3, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
     //gZBuffer = surface_alloc(FMT_RGBA16, display_get_width(), display_get_height());
-    gZBuffer.flags = FMT_RGBA16 | SURFACE_FLAGS_OWNEDBUFFER;
+    /*gZBuffer.flags = FMT_RGBA16 | SURFACE_FLAGS_OWNEDBUFFER;
     gZBuffer.width = display_get_width();
     gZBuffer.height = display_get_height();
     gZBuffer.stride = TEX_FORMAT_PIX2BYTES(FMT_RGBA16, display_get_width());
-    gZBuffer.buffer = (void *) ((0x80800000 - 0x10000) - ((display_get_width() * display_get_height()) * 2));
-#if OPENGL
-    gl_init();
-#elif TINY3D
-    t3d_init((T3DInitParams){});
+    gZBuffer.buffer = (void *) ((0x80800000 - 0x10000) - ((display_get_width() * display_get_height()) * 2));*/
+    //t3d_init((T3DInitParams){});
     rdpq_init();
-#endif
     init_renderer();
 }
 
-static unsigned int deltaTime = 0;
+
+static unsigned int sDeltaTime = 0;
+static unsigned int sPrevTime = 0;
+static unsigned int sCurTime;
+static unsigned int sDeltaTimePrev = 0;
+unsigned char sResetTime = false;
+static unsigned char sPrevDelta;
+static float sPrevDeltaF;
 
 /**
  * Generate the delta time values.
@@ -64,33 +69,45 @@ static unsigned int deltaTime = 0;
  * Multiply the float value by 1.2 for PAL users. For integer, use timer_int(int timer) to set a region corrected timer instead.
 */
 static inline void update_game_time(int *updateRate, float *updateRateF) {
-    static unsigned int prevTime = 0;
-    static unsigned int curTime;
     
-    curTime = timer_ticks();
+    sCurTime = timer_ticks();
     // Convert it to float too, and make it 20% faster on PAL systems.
-    *updateRateF = ((float) TIMER_MICROS(curTime - prevTime) / 16666.666f);
+    *updateRateF = ((float) TIMER_MICROS(sCurTime - sPrevTime) / 16666.666f);
     if (gConfig.regionMode == PAL50) {
         *updateRateF *= 1.2f;
     }
     if (*updateRateF <= 0.0001f) {
         *updateRateF = 0.0001f;
     }
-    deltaTime += TIMER_MICROS(curTime - prevTime);
-    prevTime = curTime;
-    deltaTime -= 16666;
+    sDeltaTime += TIMER_MICROS(sCurTime - sPrevTime);
+    sPrevTime = sCurTime;
+    sDeltaTime -= 16666;
     *updateRate = LOGIC_60FPS;
-    while (deltaTime > 16666) {
-        deltaTime -= 16666;
+    while (sDeltaTime > 16666) {
+        sDeltaTime -= 16666;
         *updateRate = *updateRate + 1;
         if (*updateRate == LOGIC_15FPS) {
-            deltaTime = 0;
+            sDeltaTime = 0;
         }
+    }
+
+    if (sResetTime) {
+        sResetTime = false;
+        sDeltaTime = sDeltaTimePrev;
+        sPrevTime = sCurTime + sDeltaTimePrev;
+        *updateRateF = sPrevDeltaF;
+        *updateRate = sPrevDelta;
     }
 }
 
 void reset_game_time(void) {
-    deltaTime = 0;
+    sResetTime = true;
+}
+
+void deltatime_snapshot(int updateRate, float updateRateF) {
+    sPrevDelta = updateRate;
+    sPrevDeltaF = updateRateF;
+    sDeltaTimePrev = sDeltaTime;
 }
 
 void boot_game(void) {
@@ -108,7 +125,10 @@ int main(void) {
     float updateRateF;
 
     boot_game();
-    load_scene(SCENE_INTRO);
+#ifdef PUPPYPRINT_DEBUG
+    gUVTest = sprite_load(asset_dir("uvtest.ci8", DFS_SPRITE));
+#endif
+    load_scene(SCENE_INTRO, LOGIC_60FPS, LOGIC_60FPS);
 
     while (1) {
         reset_profiler_times();

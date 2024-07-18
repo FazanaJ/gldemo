@@ -8,7 +8,7 @@
 #include "debug.h"
 #include "math_util.h"
 
-void collision_normals(u_int16_t *v0, u_int16_t *v1, u_int16_t *v2, float *normals, int w) {
+void collision_normals(int16_t *v0, int16_t *v1, int16_t *v2, float *normals, int w) {
     float nx, ny, nz;
     float mag;
     
@@ -52,8 +52,8 @@ void collision_normals(u_int16_t *v0, u_int16_t *v1, u_int16_t *v2, float *norma
     }
 }
 
-static float collision_surface_down(float *posF, int16_t *pos, u_int16_t *v0, u_int16_t *v1, u_int16_t *v2, float *normY) {
-    int posCheck = pos[1] + 15;
+static float collision_surface_down(int *pos, int16_t *v0, int16_t *v1, int16_t *v2, float *normY) {
+    int posCheck = pos[1] + 120;
     if (posCheck < v0[1] && posCheck < v1[1] && posCheck < v2[1]) {
         return -30000;
     }
@@ -76,18 +76,19 @@ static float collision_surface_down(float *posF, int16_t *pos, u_int16_t *v0, u_
         return v0[1];
     }
 
-    float y = -(posF[0] * normals[0] + normals[2] * posF[2] + normals[3]) / normals[1];
+    float y = -(pos[0] * normals[0] + normals[2] * pos[2] + normals[3]) / normals[1];
 
-    if (posF[1] - (y -78.0f) < 0.0f) {
+    if (pos[1] - (y -78.0f) < 0.0f) {
         return -30000;
     } else {
         *normY = normals[1];
         return y;
     }
+    return -30000;
 }
 
-static void collision_surface_side(float *posF, int16_t *pos, u_int16_t *v0, u_int16_t *v1, u_int16_t *v2, float size, Object *obj, float mulFactorF) {
-    int posCheck = pos[1] + 15;
+tstatic void collision_surface_side(int *pos, int16_t *v0, int16_t *v1, int16_t *v2, float size, Object *obj) {
+    int posCheck = pos[1] + (15 * 8);
     if (posCheck < v0[1] && posCheck < v1[1] && posCheck < v2[1]) {
         return;
     }
@@ -95,7 +96,7 @@ static void collision_surface_side(float *posF, int16_t *pos, u_int16_t *v0, u_i
     float normal[4];
     collision_normals(v0, v1, v2, normal, true);
 
-    float offset = normal[0] * posF[0] + normal[1] * posF[1] + normal[2] * posF[2] + normal[3];
+    float offset = normal[0] * (float) pos[0] + normal[1] * (float) pos[1] + normal[2] * (float) pos[2] + normal[3];
 
     if (fabsf(offset) > size) {
         return;
@@ -145,7 +146,7 @@ static void collision_surface_side(float *posF, int16_t *pos, u_int16_t *v0, u_i
         }
     }
 
-    float of = ((size - offset) / mulFactorF) * 5.0f;
+    float of = ((size - offset) * WORLD_SCALE);
 
     obj->pos[0] += normal[0] * of;
     obj->pos[2] += normal[2] * of;
@@ -216,66 +217,72 @@ float collision_floor_hitbox(Object *obj, float x, float y, float z) {
 }
 
 void object_collide(Object *obj) {
-#if OPENGL
     DEBUG_SNAPSHOT_1();
     SceneChunk *chunk = gCurrentScene->chunkList;
     float peakY = -30000.0f;
-    float scale = 1.0f;
     float recordNorm = 1.0f;
     float normY = 1.0f;
     int recordFlags = 0;
+    int pos[3];
+
+    pos[0] = obj->pos[0] / WORLD_SCALE;
+    pos[1] = obj->pos[1] / WORLD_SCALE;
+    pos[2] = obj->pos[2] / WORLD_SCALE;
 
     while (chunk) {
         SceneMesh *mesh = chunk->meshList;
         if (obj->pos[0] < chunk->bounds[0][0] || obj->pos[0] > chunk->bounds[1][0] || 
-            obj->pos[1] < chunk->bounds[0][1] || obj->pos[1] - 10.0f > chunk->bounds[1][1] || 
-            obj->pos[2] < chunk->bounds[0][2] || obj->pos[2] > chunk->bounds[1][2]) {
+            obj->pos[1] < chunk->bounds[0][1] || obj->pos[1] - 80.0f > chunk->bounds[1][1] || 
+            obj->pos[2] < chunk->bounds[0][2] || obj->pos[2] > chunk->bounds[1][2] || !(chunk->flags & CHUNK_HAS_MODEL)) {
             chunk = chunk->next;
             continue;
         }
         if (chunk->collision == NULL) {
-            scene_generate_collision(chunk);
+            //scene_generate_collision(chunk);
         }
-        chunk->collisionTimer = 30;
+        //chunk->collisionTimer = 30;
         while (mesh) {
             if (mesh->material && mesh->material->collisionFlags & COLFLAG_INTANGIBLE) {
                 mesh = mesh->next;
                 continue;
             }
-            ModelPrim *prim = (ModelPrim *) mesh->mesh;
-            int numTris = prim->num_indices;
-            attribute_t *attr = &prim->position;
-            float mulFactorF = (int) (1 << (prim->vertex_precision));
-            float plF[3] = {((obj->pos[0]) * mulFactorF) / 5, (((obj->pos[1]) + 15 - (10 * obj->collision->floorNorm)) * mulFactorF) / 5, ((obj->pos[2]) * mulFactorF) / 5};
-            int16_t pl[3] = {plF[0], plF[1], plF[2]};
-
-            for (int i = 0; i < numTris; i += 3) {
-                unsigned short *indices = (unsigned short *) prim->indices;
-                u_int16_t *v1 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 0]);
-                u_int16_t *v2 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 1]);
-                u_int16_t *v3 = (u_int16_t *) (attr->pointer + attr->stride * indices[i + 2]);
-                float normals[3];
-                collision_normals(v1, v2, v3, normals, false);
-                if (fabsf(normals[1] < 0.3f)) {
-                    collision_surface_side(plF, pl, v1, v2, v3, (4.0f * mulFactorF) / 5.0f, obj, mulFactorF);
-                } else {
-                    float h = collision_surface_down(plF, pl, v1, v2, v3, &normY);
-                    if (h > peakY) {
-                        peakY = h;
-                        scale = mulFactorF;
-                        recordNorm = normY;
-                        recordFlags = mesh->material->collisionFlags;
+            T3DObject *t = (T3DObject *) mesh->mesh;
+            for (int i = 0; i < t->numParts; i++) {
+                const T3DObjectPart *part = &t->parts[i];
+                for (int j = 0; j < part->numIndices; j += 3) {
+                    int16_t vertex[3][3];
+                    for (int l = 0; l < 3; l++) {
+                        int ind = part->indices[j + l];
+                        for (int k = 0; k < 3; k++) {
+                            if ((ind % 2) == 0) {
+                                vertex[l][k] = part->vert[ind / 2].posA[k];
+                            } else {
+                                vertex[l][k] = part->vert[ind / 2].posB[k];
+                            }
+                        }
                     }
+                    float normals[3];
+                    collision_normals(vertex[0], vertex[1], vertex[2], normals, false);
+                    if (fabsf(normals[1] < 0.3f)) {
+                        collision_surface_side(pos, vertex[0], vertex[1], vertex[2], (4.0f * 8.0f), obj);
+                    } else {
+                        float h = collision_surface_down(pos, vertex[0], vertex[1], vertex[2], &normY);
+                        if (h > peakY) {
+                            peakY = h;
+                            recordNorm = normY;
+                            recordFlags = mesh->material->collisionFlags;
+                        }
+                    }
+                    //debugf("X0: %d, Y0: %d, Z0: %d, X1: %d, Y1: %d, Z1: %d, X2: %d, Y2: %d, Z2: %d\n",
+                    //vertex[0][0], vertex[0][1], vertex[0][2], vertex[1][0], vertex[1][1], vertex[1][2], vertex[2][0], vertex[2][1], vertex[2][2]);
                 }
-
             }
             mesh = mesh->next;
         }
         chunk = chunk->next;
     }
-    obj->collision->floorHeight = (peakY / scale) * 5;
+    obj->collision->floorHeight = (peakY * WORLD_SCALE);
     obj->collision->floorNorm = recordNorm;
     obj->collision->floorFlags = recordFlags;
     get_time_snapshot(PP_COLLISION, DEBUG_SNAPSHOT_1_END);
-    #endif
 }

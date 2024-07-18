@@ -11,9 +11,9 @@ int tempTimer = 0;
 
 void init(Object *obj) {
     tempTimer = 0;
-    obj->scale[0] = 3.0f;
-    obj->scale[1] = 0.5f;
-    obj->scale[2] = 3.0f;
+    obj->scale[0] = 3.0f * 0.1f;
+    obj->scale[1] = 0.5f * 0.1f;
+    obj->scale[2] = 3.0f * 0.1f;
 }
 
 void loop(Object *obj, int updateRate, float updateRateF) {
@@ -48,7 +48,7 @@ ObjectEntry entry = {
     .loopFunc = loop,
     .name = "Crate",
     .flags = OBJ_FLAG_MOVE | OBJ_FLAG_TANGIBLE,
-    .viewDist = OBJ_DIST(100),
+    .viewDist = OBJ_DIST(1000),
     .viewWidth = 4,
     .viewHeight = 8,
     .hitbox = &bbox,

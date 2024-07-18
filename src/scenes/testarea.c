@@ -8,16 +8,16 @@
 
 ObjectMap objects[] = {
     {OBJ_PLAYER, MAP_OBJ, /*Yaw*/ 0, /*X*/ 0, /*Y*/ 0, /*Z*/ 0},
-    {OBJ_NPC, MAP_OBJ, /*Yaw*/ 0, /*X*/ 50, /*Y*/ 0, /*Z*/ 0},
-    {CLUTTER_ROCK, MAP_CLU, /*Yaw*/ 0, /*X*/ 20, /*Y*/ 0, /*Z*/ 40},
-    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 10, /*Y*/ 0, /*Z*/ 45},
-    {CLUTTER_ROCK, MAP_CLU, /*Yaw*/ 0, /*X*/ 35, /*Y*/ 0, /*Z*/ -100},
-    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 75, /*Y*/ 0, /*Z*/ -25},
-    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 60, /*Y*/ 0, /*Z*/ 40},
-    {CLUTTER_ROCK, MAP_CLU, /*Yaw*/ 0, /*X*/ -25, /*Y*/ 0, /*Z*/ 45},
-    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ -95, /*Y*/ 0, /*Z*/ 40},
-    {CLUTTER_ROCK, MAP_CLU, /*Yaw*/ 0, /*X*/ 45, /*Y*/ 0, /*Z*/ 0},
-    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 75, /*Y*/ 0, /*Z*/ -75},
+    {OBJ_NPC, MAP_OBJ, /*Yaw*/ 0, /*X*/ 50 * 8, /*Y*/ 0, /*Z*/ 0},
+    {CLUTTER_FLIPBOOKTEST, MAP_CLU, /*Yaw*/ 0, /*X*/ 20 * 8, /*Y*/ 0, /*Z*/ 40 * 8},
+    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 10 * 8, /*Y*/ 0, /*Z*/ 45 * 8},
+    {CLUTTER_ROCK, MAP_CLU, /*Yaw*/ 0, /*X*/ 35 * 8, /*Y*/ 0, /*Z*/ -100 * 8},
+    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 75 * 8, /*Y*/ 0, /*Z*/ -25 * 8},
+    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 60 * 8, /*Y*/ 0, /*Z*/ 40 * 8},
+    {CLUTTER_ROCK, MAP_CLU, /*Yaw*/ 0, /*X*/ -25 * 8, /*Y*/ 0, /*Z*/ 45 * 8},
+    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ -95 * 8, /*Y*/ 0, /*Z*/ 40 * 8},
+    {CLUTTER_ROCK, MAP_CLU, /*Yaw*/ 0, /*X*/ 45 * 8, /*Y*/ 0, /*Z*/ 0},
+    {CLUTTER_BUSH, MAP_CLU, /*Yaw*/ 0, /*X*/ 75 * 8, /*Y*/ 0, /*Z*/ -75 * 8},
 
     {-1, MAP_CLU, /*Yaw*/ 0, /*X*/ 75, /*Y*/ -75, /*Z*/ 0},
 };
@@ -33,8 +33,8 @@ SceneMap map = {
 SceneHeader header = {
     /*Model*/           "testarea",
     /*Objects*/         objects, 
-    /*Fog Near*/        150, 
-    /*Fog Far*/         400, 
+    /*Fog Near*/        450, 
+    /*Fog Far*/         900, 
     /*Fog Colour*/      {125, 78, 37},
     /*Light Colour*/    {0xFF, 0xFF, 0xFF},
     /*Light Ambient*/   {0xFF, 0xFF, 0xFF},

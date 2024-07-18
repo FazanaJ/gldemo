@@ -47,14 +47,14 @@ static sprite_t *sTransferPakIcon;
 static entry_structure_t *sPakSource;
 static entry_structure_t *sPakFiles[16];
 
-static void pak_reset_menu(void) {
+tstatic void pak_reset_menu(void) {
     sPakMode = PAK_MODE_SELECT_SOURCE;
     sPakScroll = 0.0f;
     sPakScrollTarget = 0.0f;
     sPakOption = 0;
 }
 
-static void pakmenu_reset(void) {
+tstatic void pakmenu_reset(void) {
     sPakExists = false;
     save_find_paks();
     if (gControllerPaks[(int) sPakID] != JOYPAD_ACCESSORY_TYPE_CONTROLLER_PAK) {

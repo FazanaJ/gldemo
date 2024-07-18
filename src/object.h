@@ -1,11 +1,14 @@
 #pragma once
 
+#include <t3d/t3danim.h>
+#include <t3d/t3dskeleton.h>
+
 #include "../include/global.h"
 #include "object_data.h"
 #include "render.h"
 
 #define OBJ_DIST(x) (x >> 4)
-#define FLOOR_MARGIN 1.5f
+#define FLOOR_MARGIN 12.0f
 
 enum ObjectFlags {
 	OBJ_FLAG_NONE,
@@ -30,6 +33,7 @@ enum ObjectIDs {
 	OBJ_CRATE,
 	OBJ_BARREL,
 	OBJ_TESTSPHERE,
+	OBJ_LIGHTSOURCE,
 
 	OBJ_TOTAL
 };
@@ -37,7 +41,10 @@ enum ObjectIDs {
 enum ClutterIDs {
 	CLUTTER_NULL,
 	CLUTTER_BUSH,
+	CLUTTER_FLIPBOOKTEST,
 	CLUTTER_ROCK,
+
+	CLUTTER_TOTAL
 };
 
 enum MatrixTypes {
@@ -99,7 +106,9 @@ typedef struct DynamicShadow {
 	unsigned short angle[3];
 	float camPos[3];
 	float camFocus[3];
-	GLuint tex[9];
+    T3DMat4FP *mtx[2];
+    T3DVertPacked *verts;
+	rspq_block_t *block;
 } DynamicShadow;
 
 typedef struct ObjectModel {
@@ -108,6 +117,7 @@ typedef struct ObjectModel {
 	void (*func)(struct Object *obj, int updateRate, float updateRateF);
 	rspq_block_t *block;
 	primitive_t *prim;
+	int second;
 	color_t colour;
 	short materialID;
 	char matrixBehaviour;
@@ -145,6 +155,19 @@ typedef struct ObjectMovement {
 	// pad: 0x02
 } ObjectMovement;
 
+typedef struct ObjectAnimation {
+	T3DAnim *inst;
+	T3DSkeleton skeleton;
+	T3DSkeleton skelBlend;
+	char *name[2];
+	float animBlend;
+	float speed[2];
+	float framePrev[2];
+	unsigned short id[2];
+	unsigned short idPrev[2];
+	char stage[2];
+} ObjectAnimation;
+
 typedef struct Object {
 	ObjectGraphics *gfx;
 	float pos[3];
@@ -164,11 +187,7 @@ typedef struct Object {
 	void *data;
 	ObjectCollision *collision;
 	ObjectMovement *movement;
-	char *animName;
-	float animSpeed;
-	
-	unsigned short animID;
-	unsigned short animIDPrev;
+	ObjectAnimation *animation;
 	
 	char overlayTimer;
 } Object;
@@ -190,6 +209,7 @@ typedef struct Clutter {
 	float viewDist;
 	float scale[3];
 	unsigned int flags;
+	T3DMat4FP matrix;
 } Clutter;
 
 typedef struct ClutterList {
@@ -246,10 +266,11 @@ typedef struct ParticleList {
 } ParticleList;
 
 typedef struct ModelList {
-	void *model64;
+	T3DModel *model64;
 	ObjectModel *entry;
 	struct ModelList *next;
 	struct ModelList *prev;
+	T3DChunkAnim **animData;
 	short id;
 	char timer;
 	char active;
@@ -263,9 +284,9 @@ typedef struct ObjectEntry {
 #endif
     unsigned short data;
     unsigned short flags;
-	unsigned char viewDist;
-	unsigned char viewWidth;
-	unsigned char viewHeight;
+	unsigned short viewDist;
+	unsigned short viewWidth;
+	unsigned short viewHeight;
 	unsigned char pad;
 	DynamicShadowData *dynamicShadow;
 	Hitbox *hitbox;

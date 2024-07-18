@@ -14,6 +14,7 @@
 #include "scene.h"
 #include "assets.h"
 #include "audio.h"
+#include "screenshot.h"
 
 ObjectList *gObjectListHead = NULL;
 ObjectList *gObjectListTail = NULL;
@@ -74,7 +75,7 @@ void object_footsteps(int stepID, float pos[3]) {
     play_sound_spatial_pitch(soundID, pos, pitch);
 }
 
-static void object_move(Object *obj, float updateRateF) {
+tstatic void object_move(Object *obj, float updateRateF) {
     if (obj->movement->forwardVel != 0.0f) {
         float vel = obj->movement->forwardVel / 20.0f;
         obj->pos[0] += (vel * sins(obj->movement->moveAngle[1])) * updateRateF;
@@ -82,7 +83,7 @@ static void object_move(Object *obj, float updateRateF) {
     }
 }
 
-static void object_platform_displacement(Object *obj) {
+tstatic void object_platform_displacement(Object *obj) {
     Object *p = obj->collision->platform;
     if (obj->movement->vel[1] <= 0.0f && obj->pos[1] <= obj->collision->hitboxHeight + FLOOR_MARGIN) {
         float diff[3];
@@ -95,10 +96,10 @@ static void object_platform_displacement(Object *obj) {
     }
 }
 
-static void object_gravity(Object *obj, float updateRateF) {
-    float weightMax = -(obj->movement->weight * 10.0f);
+tstatic void object_gravity(Object *obj, float updateRateF) {
+    float weightMax = -(obj->movement->weight * 7.5f);
     if (obj->movement->vel[1] > weightMax) {
-        obj->movement->vel[1] -= (obj->movement->weight / 10.0f) * updateRateF;
+        obj->movement->vel[1] -= (obj->movement->weight / 7.5f) * updateRateF;
         if (obj->movement->vel[1] < weightMax) {
             obj->movement->vel[1] = weightMax;
         }
@@ -110,7 +111,7 @@ static void object_gravity(Object *obj, float updateRateF) {
         } else {
             height = -30000.0f;
         }
-        obj->pos[1] += (obj->movement->vel[1] / 10.0f) * updateRateF;
+        obj->pos[1] += (obj->movement->vel[1] / 1.5f) * updateRateF;
         if (obj->movement->vel[1] < 0.0f && obj->pos[1] - height < FLOOR_MARGIN) {
             obj->pos[1] = height;
             obj->movement->vel[1] = 0.0f;
@@ -251,7 +252,7 @@ static int object_hit_platform_round(Object *obj, Object *testObj) {
     return false;
 }
 
-static void object_hit_block_block(Object *obj, Object *testObj) {
+tstatic void object_hit_block_block(Object *obj, Object *testObj) {
     if (fabsf(obj->pos[0] - testObj->pos[0]) < gHitboxSize[0][0] + gHitboxSize[1][0] &&
         fabsf(obj->pos[2] - testObj->pos[2]) < gHitboxSize[0][2] + gHitboxSize[1][2]) {
         //Hitbox *h = obj->hitbox;
@@ -263,7 +264,7 @@ static void object_hit_block_block(Object *obj, Object *testObj) {
 }
 
 
-static void object_hit_block_cylinder(Object *obj, Object *testObj) {
+tstatic void object_hit_block_cylinder(Object *obj, Object *testObj) {
     if (fabsf(obj->pos[0] - testObj->pos[0]) < gHitboxSize[0][0] + gHitboxSize[1][0] &&
         fabsf(obj->pos[2] - testObj->pos[2]) < gHitboxSize[0][2] + gHitboxSize[1][2]) {
         Hitbox *h = obj->hitbox;
@@ -296,11 +297,11 @@ static void object_hit_block_cylinder(Object *obj, Object *testObj) {
     }
 }
 
-static void object_hit_block_sphere(Object *obj, Object *testObj) {
+tstatic void object_hit_block_sphere(Object *obj, Object *testObj) {
     
 }
 
-static void object_hit_cylinder_cylinder(Object *obj, Object *testObj) {
+tstatic void object_hit_cylinder_cylinder(Object *obj, Object *testObj) {
         float relX = (obj->pos[0] - testObj->pos[0]);
         float relZ = (obj->pos[2] - testObj->pos[2]);
         float radiusX = gHitboxSize[0][0] + gHitboxSize[1][0];
@@ -348,7 +349,7 @@ static void object_hit_cylinder_cylinder(Object *obj, Object *testObj) {
     }
 }
 
-static void object_hit_cylinder_sphere(Object *obj, Object *testObj) {
+tstatic void object_hit_cylinder_sphere(Object *obj, Object *testObj) {
     float relX = (obj->pos[0] - testObj->pos[0]);
     float relZ = (obj->pos[2] - testObj->pos[2]);
     float radiusX = gHitboxSize[0][0] + gHitboxSize[1][0];
@@ -396,11 +397,11 @@ static void object_hit_cylinder_sphere(Object *obj, Object *testObj) {
     }
 }
 
-static void object_hit_sphere_sphere(Object *obj, Object *testObj) {
+tstatic void object_hit_sphere_sphere(Object *obj, Object *testObj) {
     
 }
 
-static void object_hit_cylinder(Object *obj, Object *testObj) {
+tstatic void object_hit_cylinder(Object *obj, Object *testObj) {
     switch (testObj->hitbox->type) {
     case HITBOX_BLOCK:
         object_hit_block_cylinder(obj, testObj);
@@ -414,7 +415,7 @@ static void object_hit_cylinder(Object *obj, Object *testObj) {
     }
 }
 
-static void object_hit_block(Object *obj, Object *testObj) {
+tstatic void object_hit_block(Object *obj, Object *testObj) {
     switch (testObj->hitbox->type) {
     case HITBOX_BLOCK:
         object_hit_block_block(obj, testObj);
@@ -428,7 +429,7 @@ static void object_hit_block(Object *obj, Object *testObj) {
     }
 }
 
-static void object_hit_sphere(Object *obj, Object *testObj) {
+tstatic void object_hit_sphere(Object *obj, Object *testObj) {
     switch (testObj->hitbox->type) {
     case HITBOX_BLOCK:
         object_hit_block_sphere(obj, testObj);
@@ -442,13 +443,13 @@ static void object_hit_sphere(Object *obj, Object *testObj) {
     }
 }
 
-static void (*sObjectHitFuncs[])(Object *, Object *) = {
+tstatic void (*sObjectHitFuncs[])(Object *, Object *) = {
     object_hit_block,
     object_hit_sphere,
     object_hit_cylinder,
 };
 
-static void object_hitbox(Object *obj) {
+tstatic void object_hitbox(Object *obj) {
     DEBUG_SNAPSHOT_1();
     if ((obj->hitbox) == NULL) {
         return;
@@ -486,23 +487,65 @@ static void object_hitbox(Object *obj) {
     get_time_snapshot(PP_HITBOXES, DEBUG_SNAPSHOT_1_END);
 }
 
-static void object_animate(Object *obj, float updateRateF) {
-    if (obj->animID != obj->animIDPrev) {
-#if OPENGL
-        model64_anim_play(obj->gfx->listEntry->model64, obj->animName, MODEL64_ANIM_SLOT_0, false, 0.0f);
-        model64_anim_set_loop(obj->gfx->listEntry->model64, MODEL64_ANIM_SLOT_0, true);
-#endif
-        obj->animID = obj->animIDPrev;
+tstatic void object_animate(Object *obj, float updateRateF) {
+    DEBUG_SNAPSHOT_1();
+    int vis = obj->flags & OBJ_FLAG_IN_VIEW;
+    ObjectAnimation *anim = obj->animation;
+    for (int i = 0; i < 2; i++) {
+        T3DSkeleton *skel;
+        if (anim->id[i] == ANIM_NONE) {
+            continue;
+        }
+        if (i == 0) {
+            skel = &anim->skeleton;
+        } else {
+            skel = &anim->skelBlend;
+        }
+        if (anim->id[i] != anim->idPrev[i]) {
+            anim->idPrev[i] = anim->id[i];
+            t3d_anim_attach(&anim->inst[anim->id[i]], skel);
+            if (vis) {
+                t3d_skeleton_reset(skel);
+            }
+        }
     }
-#if OPENGL
-    model64_anim_set_speed(obj->gfx->listEntry->model64, MODEL64_ANIM_SLOT_0, obj->animSpeed * updateRateF);
-#endif
+    if (anim->id[0] != ANIM_NONE) {
+        float animSpeed = updateRateF * anim->speed[0];
+        if (vis) {
+            t3d_anim_update(&anim->inst[anim->id[0]], animSpeed);
+        } else {
+            t3d_anim_set_time(&anim->inst[anim->id[0]], anim->inst[anim->id[0]].time + animSpeed);
+        }
+        float time = anim->inst[anim->id[0]].time;
+        if (anim->framePrev[0] > time) {
+            anim->stage[0] = 0;
+        }
+        anim->framePrev[0] = time;
+        if (anim->id[1] != ANIM_NONE) {
+            float time = anim->inst[anim->id[1]].time;
+            if (anim->framePrev[1] > time) {
+                anim->stage[1] = 0;
+            }
+            anim->framePrev[1] = time;
+            animSpeed = updateRateF * anim->speed[1];
+            if (vis) {
+                t3d_anim_update(&anim->inst[anim->id[1]], animSpeed);
+                t3d_skeleton_blend(&anim->skeleton, &anim->skeleton, &anim->skelBlend, anim->animBlend);
+            } else {
+                t3d_anim_set_time(&anim->inst[anim->id[1]], anim->inst[anim->id[1]].time + animSpeed);
+            }
+        }
+        if (vis) {
+            t3d_skeleton_update(&anim->skeleton);
+        }
+    }
+    get_time_snapshot(PP_ANIMATION, DEBUG_SNAPSHOT_1_END);
 }
 
 /**
  * Loop through every element in the object list and run their loop function.
 */
-static void update_objects(int updateRate, float updateRateF) {
+tstatic void update_objects(int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
     if (gObjectListHead == NULL) {
         get_time_snapshot(PP_OBJECTS, DEBUG_SNAPSHOT_1_END);
@@ -565,7 +608,7 @@ static void update_objects(int updateRate, float updateRateF) {
                 object_gravity(obj, updateRateF);
             }
         }
-        if (obj->animID != ANIM_NONE) {
+        if (obj->animation) {
             object_animate(obj, updateRateF);
         }
         if (obj->hitbox && obj->flags & OBJ_FLAG_TANGIBLE) {
@@ -605,7 +648,7 @@ static void update_objects(int updateRate, float updateRateF) {
     add_time_offset(PP_OBJECTS, DEBUG_GET_TIME_1_END(PP_PLAYER));
 }
 
-static void update_clutter(int updateRate, float updateRateF) {
+tstatic void update_clutter(int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
     if (gClutterListHead == NULL) {
         get_time_snapshot(PP_CLUTTER, DEBUG_SNAPSHOT_1_END);
@@ -630,7 +673,7 @@ static void update_clutter(int updateRate, float updateRateF) {
     get_time_snapshot(PP_CLUTTER, DEBUG_SNAPSHOT_1_END);
 }
 
-static void update_particles(int updateRate, float updateRateF) {
+tstatic void update_particles(int updateRate, float updateRateF) {
     DEBUG_SNAPSHOT_1();
     if (gParticleListHead == NULL) {
         get_time_snapshot(PP_PARTICLES, DEBUG_SNAPSHOT_1_END);
@@ -673,10 +716,12 @@ static void update_particles(int updateRate, float updateRateF) {
 }
 
 void update_game_entities(int updateRate, float updateRateF) {
-    if (gSceneUpdate == 0 || gMenuStatus != MENU_CLOSED || gCamera->mode == CAMERA_PHOTO) {
-        gSceneUpdate = 1;
-        reset_game_time();
+    if (gSceneUpdate == false || gMenuStatus != MENU_CLOSED || gCamera->mode == CAMERA_PHOTO || gScreenshotStatus != SCREENSHOT_NONE) {
+        gSceneUpdate = true;
     } else {
+        if (menu_pause_check(updateRate, updateRateF)) {
+            return;
+        }
         update_objects(updateRate, updateRateF);
         update_clutter(updateRate, updateRateF);
         update_particles(updateRate, updateRateF);

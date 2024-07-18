@@ -31,4 +31,5 @@ const TextureInfo gTextureIDs[] = {
     {"flipbooktest.ci8", TEX_NULL, 31, 1},
     {"rockside3.i4", TEX_NULL, 0, 0},
     {"rockside4.i4", TEX_NULL, 0, 0},
+    {"envmap.i8", TEX_CLAMP_H | TEX_CLAMP_V, 0, 0},
 };

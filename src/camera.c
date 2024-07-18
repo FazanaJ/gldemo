@@ -18,8 +18,8 @@ Camera *gCamera = NULL;
 
 void camera_reset(void) {
     gCamera->pitch = 0x3400;
-    gCamera->zoom = 275;
-    gCamera->intendedZoom = 275;
+    gCamera->zoom = 800;
+    gCamera->intendedZoom = 800;
     gCamera->yawTarget = 0x8000;
     gCamera->yaw = 0x8000;
     gCamera->fov = 50.0f;
@@ -29,13 +29,13 @@ void camera_reset(void) {
     } else {
         gCamera->mode = CAMERA_CUTSCENE;
     }
-    gCamera->focus[0] = 0;
-    gCamera->focus[2] = 0;
-    gCamera->focus[1] = 1;
+    gCamera->focus[0] = 0.0f;
+    gCamera->focus[2] = 0.0f;
+    gCamera->focus[1] = 8.0f;
 
-    gCamera->pos[0] = 5.0f;
+    gCamera->pos[0] = 40.0f;
     gCamera->pos[2] = 0.0f;
-    gCamera->pos[1] = 1.0f;
+    gCamera->pos[1] = 8.0f;
 }
 
 void camera_init(void) {
@@ -56,7 +56,7 @@ void camera_shake(Camera *c, int updateRate, float updateRateF) {
     }
 }
 
-static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
+tstatic void camera_update_target(Camera *c, int updateRate, float updateRateF) {
     float zoom;
     float stickX = input_stick_x(STICK_LEFT);
     float stickY = input_stick_y(STICK_LEFT);
@@ -112,8 +112,8 @@ static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
     c->zoom = lerp(c->zoom, c->intendedZoom, 0.05f * updateRateF);
 
     c->viewPitch = c->pitch + c->lookPitch;
-    zoom = (float) (c->zoomAdd + c->zoom + c->targetZoom) / 20.0f;
-    pan = (float) c->pan / 20.0f;
+    zoom = (c->zoomAdd + c->zoom + c->targetZoom) >> 3;
+    pan = c->pan / 20.0f;
 
     float intendedFocus[3];
 
@@ -154,11 +154,11 @@ static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
 
     c->focus[0] = intendedFocus[0] + c->lookFocus[0];
     c->focus[2] = intendedFocus[2] + c->lookFocus[2];
-    c->focus[1] = intendedFocus[1] + c->lookFocus[1] + 10.0f + c->shakePos;
+    c->focus[1] = intendedFocus[1] + c->lookFocus[1] + 70.0f + c->shakePos;
 
     c->pos[0] = intendedFocus[0] + ((zoom) * coss(c->yaw - 0x4000));
     c->pos[2] = intendedFocus[2] - ((zoom) * sins(c->yaw - 0x4000));
-    c->pos[1] = intendedFocus[1] + 10.0f + (11.5f * sins(c->viewPitch + 0x4000)) + (c->shakePos * 1.25f);
+    c->pos[1] = intendedFocus[1] + 70.0f + (70.0f * sins(c->viewPitch + 0x4000)) + (c->shakePos * 1.25f);
 
     if (input_held(INPUT_R)) {
         input_clear(INPUT_R);
@@ -169,7 +169,7 @@ static void camera_update_target(Camera *c, int updateRate, float updateRateF) {
     }
 }
 
-static void camera_update_photo(Camera *c, int updateRate, float updateRateF) {
+tstatic void camera_update_photo(Camera *c, int updateRate, float updateRateF) {
     float stickMag = input_stick_mag(STICK_LEFT);
     unsigned short stickAngle = input_stick_angle(STICK_LEFT);
     

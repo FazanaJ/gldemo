@@ -7,6 +7,8 @@
 #include "object.h"
 
 #define ANIM_NONE 65535
+#define MOD_CLUTTER 0
+#define MOD_OBJECT 1
 
 enum Languages {
     LANG_ENGLISH,
@@ -14,6 +16,7 @@ enum Languages {
 
     LANG_TOTAL
 };
+
 
 enum CombinerNames {
     CC_TEX_SHADE,
@@ -170,3 +173,4 @@ rspq_block_t *material_generate_dl(Material *m);
 void material_run(Material *m);
 void material_run_partial(Material *m);
 void material_run_flipbook(Material *m);
+void clutter_model_generate(struct Clutter *obj);

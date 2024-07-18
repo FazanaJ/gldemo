@@ -1,4 +1,6 @@
 #include <libdragon.h>
+#include <t3d/t3danim.h>
+#include <t3d/t3dskeleton.h>
 
 #include "../../include/global.h"
 
@@ -13,6 +15,10 @@
 #include "../collision.h"
 #include "../main.h"
 #include "../talk.h"
+
+#define ANIM_IDLE 0
+#define ANIM_RUN 1
+#define ANIM_WALK 2
 
 enum PlayerAction {
     PLAYER_ACT_IDLE,
@@ -38,7 +44,55 @@ enum PlayerInput {
     PLAYER_INPUT_L_HELD = (1 << 8),
 };
 
-static void player_forwardvel(Object *o, PlayerData *d, float vel, float updateRateF) {
+void player_anim_idle(Object *o, PlayerData *d) {
+    ObjectAnimation *a = o->animation;
+    float vel = MIN(d->intendedMag, 1.0f) * 24.0f;
+    int stepSound = false;
+    if (vel > 1.0f) {
+        float spd;
+        float blend;
+        float clamp2 = MIN(vel, 16.0f);
+        spd = 0.02f + (clamp2 / 300.0f);
+        if (vel > 8.0f) {
+            a->id[0] = ANIM_WALK;
+            a->id[1] = ANIM_RUN;
+            float clamp = MIN(vel - 8.0f, 16.0f);
+            a->animBlend = (clamp) / 16.0f;
+            if (a->framePrev[0] >= 0.0f && a->stage[0] == 0) {
+                a->stage[0] = 1;
+                stepSound = true;
+            } else if (a->framePrev[0] >= 1.0f && a->stage[0] == 1) {
+                a->stage[0] = 2;
+                stepSound = true;
+            }
+        } else {
+            a->id[0] = ANIM_IDLE;
+            a->id[1] = ANIM_WALK;
+            float clamp = MIN(vel, 8.0f);
+            a->animBlend = (clamp) / 8.0f;
+            if (a->framePrev[1] >= 0.0f && a->stage[1] == 0) {
+                a->stage[1] = 1;
+                stepSound = true;
+            } else if (a->framePrev[1] >= 1.0f && a->stage[1] == 1) {
+                a->stage[1] = 2;
+                stepSound = true;
+            }
+        }
+        a->speed[0] = spd;
+        a->speed[1] = spd;
+    } else {
+        a->id[0] = ANIM_IDLE;
+        a->id[1] = ANIM_NONE;
+        a->animBlend = 0.0f;
+        a->speed[0] = 0.04f;
+    }
+    
+    if (stepSound) {
+        object_footsteps(COL_GET_SOUND(o->collision->floorFlags), o->pos);
+    }
+}
+
+tstatic void player_forwardvel(Object *o, PlayerData *d, float vel, float updateRateF) {
     short angle = d->intendedYaw + d->offsetYaw;
     float grip;
     if (o->collision->grounded) {
@@ -52,7 +106,7 @@ static void player_forwardvel(Object *o, PlayerData *d, float vel, float updateR
     o->movement->vel[2] += (vel * coss(angle)) * updateRateF;
 }
 
-static void player_attack(Object *o, PlayerData *d, int updateRate, float updateRateF) {
+tstatic void player_attack(Object *o, PlayerData *d, int updateRate, float updateRateF) {
     if (d->input & PLAYER_INPUT_B_PRESSED) {
         if (d->weaponOut == false) {
             d->weaponOut = true;
@@ -65,7 +119,7 @@ static void player_attack(Object *o, PlayerData *d, int updateRate, float update
     }
 }
 
-static void player_grounded_common(Object *o, PlayerData *d, int updateRate, float updateRateF) {
+tstatic void player_grounded_common(Object *o, PlayerData *d, int updateRate, float updateRateF) {
     if (d->input & PLAYER_INPUT_A_PRESSED) {
         if (d->playerID != -1) {
             input_clear(INPUT_A);
@@ -76,9 +130,10 @@ static void player_grounded_common(Object *o, PlayerData *d, int updateRate, flo
     } else {
         player_attack(o, d, 32.0f, 1.0f);
     }
+    player_anim_idle(o, d);
 }
 
-static void player_act_idle(Object *o, PlayerData *d, int updateRate, float updateRateF) {
+tstatic void player_act_idle(Object *o, PlayerData *d, int updateRate, float updateRateF) {
     o->movement->vel[1] = 0.0f;
     if (o->movement->vel[0] != 0.0f || o->movement->vel[2] != 0.0f) {
         o->movement->moveAngle[1] = atan2s(o->movement->vel[2], o->movement->vel[0]);
@@ -86,10 +141,9 @@ static void player_act_idle(Object *o, PlayerData *d, int updateRate, float upda
     if ((d->input & PLAYER_INPUT_L_HELD) == false) {
         player_grounded_common(o, d, updateRate, updateRateF);
     }
-    d->walkTimer = 0;
 }
 
-static void player_act_move(Object *o, PlayerData *d, int updateRate, float updateRateF) {
+tstatic void player_act_move(Object *o, PlayerData *d, int updateRate, float updateRateF) {
     float factor;
     player_forwardvel(o, d, 3.0f * d->intendedMag, updateRateF);
     if (d->forwardVel == 0.0f) {
@@ -107,14 +161,9 @@ static void player_act_move(Object *o, PlayerData *d, int updateRate, float upda
         d->cameraAngle = o->faceAngle[1];
     }
     player_grounded_common(o, d, updateRate, updateRateF);
-    d->walkTimer -= (d->forwardVel * updateRateF) * 0.25f;
-    if (d->walkTimer <= 0) {
-        object_footsteps(COL_GET_SOUND(o->collision->floorFlags), o->pos);
-        d->walkTimer += 120;
-    }
 }
 
-static void player_act_air(Object *o, PlayerData *d, int updateRate, float updateRateF) {
+tstatic void player_act_air(Object *o, PlayerData *d, int updateRate, float updateRateF) {
     player_forwardvel(o, d, 1.0f * d->intendedMag, updateRateF);
     o->movement->moveAngle[1] = atan2s(o->movement->vel[2], o->movement->vel[0]);
     if (gZTargetTimer == 0) {
@@ -138,7 +187,7 @@ static void player_act_air(Object *o, PlayerData *d, int updateRate, float updat
             }
         }
 
-        if (grabbed) {
+        /*if (grabbed) {
             d->action = PLAYER_ACT_LEDGE;
             d->climbPos[0] = posX;
             d->climbPos[1] = height;
@@ -147,24 +196,24 @@ static void player_act_air(Object *o, PlayerData *d, int updateRate, float updat
             o->movement->vel[1] = 0.0f;
             o->movement->vel[2] = 0.0f;
             d->weaponOut = false;
-        }
+        }*/
     }
 }
 
-static void player_act_action(Object *o, PlayerData *d, int updateRate, float updateRateF) {
+tstatic void player_act_action(Object *o, PlayerData *d, int updateRate, float updateRateF) {
     o->movement->vel[0] = approachf(o->movement->vel[0], 0.0f, 2.0f * updateRateF);
     o->movement->vel[2] = approachf(o->movement->vel[2], 0.0f, 2.0f * updateRateF);
 }
 
-static void player_act_action_move(Object *o, PlayerData *d, int updateRate, float updateRateF) {
+tstatic void player_act_action_move(Object *o, PlayerData *d, int updateRate, float updateRateF) {
     
 }
 
-static void player_act_swim(Object *o, PlayerData *d, int updateRate, float updateRateF) {
+tstatic void player_act_swim(Object *o, PlayerData *d, int updateRate, float updateRateF) {
     
 }
 
-static void player_act_ledge(Object *o, PlayerData *d, int updateRate, float updateRateF) {
+tstatic void player_act_ledge(Object *o, PlayerData *d, int updateRate, float updateRateF) {
     o->flags &= ~OBJ_FLAG_GRAVITY;
     if (d->input & PLAYER_INPUT_A_PRESSED) {
         if (d->playerID != -1) {
@@ -178,7 +227,7 @@ static void player_act_ledge(Object *o, PlayerData *d, int updateRate, float upd
     }
 }
 
-static void (*sPlayerFunctions[])(Object *, PlayerData *, int, float) = {
+tstatic void (*sPlayerFunctions[])(Object *, PlayerData *, int, float) = {
     player_act_idle,
     player_act_move,
     player_act_air,
@@ -198,10 +247,12 @@ void init(Object *obj) {
     data->cameraAngle = 0;
     data->playerID = 0;
     obj->movement->weight = 5.0f;
-    data->walkTimer = 0;
+
+    obj->animation->id[0] = ANIM_IDLE;
+    obj->animation->speed[0] = 0.04f;
 }
 
-static void player_input(Object *o, PlayerData *d) {
+tstatic void player_input(Object *o, PlayerData *d) {
     if (gCurrentController == -1 && d->playerID != -1) {
         return;
     }
@@ -330,7 +381,7 @@ void loop(Object *obj, int updateRate, float updateRateF) {
         grip = 0.25f;
     }
     for (int i = 0; i < 3; i += 2) {
-        obj->pos[i] += (obj->movement->vel[i] / 60.0f) * updateRateF;
+        obj->pos[i] += (obj->movement->vel[i] / 7.5f) * updateRateF;
         obj->movement->vel[i] = approachf(obj->movement->vel[i], 0.0f, (fabsf(obj->movement->vel[i] * 0.1f) * grip) * updateRateF);
         if (fabsf(obj->movement->vel[i]) < 0.05f) {
             obj->movement->vel[i] = 0.0f;
@@ -348,18 +399,18 @@ DynamicShadowData shadow = {
     .texH = 192,
     .planeW = 20.0f,
     .planeH = 45.0f,
-    .offset = -7.0f,
-    .camPos = {-11.0f, 7.0f, 0.0f},
-    .camFocus = {11.0f, 7.0f, 0.0f},
+    .offset = 2.0f,
+    .camPos = {-11.0f * 8, 7.0f * 8, 0.0f},
+    .camFocus = {11.0f * 8, 7.0f * 8, 0.0f},
 };
 
 Hitbox bbox = {
     .type = HITBOX_CYLINDER,
     .offsetY = 0,
-    .width = 3.0f,
-    .length = 3.0f,
+    .width = 24.0f,
+    .length = 24.0f,
     .weight = 100.0f,
-    .height = 14.0f,
+    .height = 112.0f,
 };
 
 ObjectEntry entry = {
@@ -368,7 +419,7 @@ ObjectEntry entry = {
     .name = "Player",
     .data = sizeof(PlayerData),
     .flags = OBJ_FLAG_MOVE | OBJ_FLAG_GRAVITY | OBJ_FLAG_COLLISION | OBJ_FLAG_SHADOW_DYNAMIC | OBJ_FLAG_TANGIBLE,
-    .viewDist = OBJ_DIST(100),
+    .viewDist = OBJ_DIST(800),
     .viewWidth = 3,
     .viewHeight = 14,
     .dynamicShadow = &shadow,

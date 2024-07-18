@@ -34,7 +34,8 @@
     "", \
     "Culling", \
     "Background", \
-    "Hitboxes"
+    "Hitboxes", \
+    "Animation"
 
 
 enum ProfileTimers {
@@ -64,6 +65,7 @@ enum ProfileTimers {
     PP_CULLING,
     PP_BG,
     PP_HITBOXES,
+    PP_ANIMATION,
 
     PP_TOTAL
 };
@@ -140,7 +142,7 @@ void profiler_wait(void);
 #define DEBUG_GET_TIME_1_END(index) get_profiler_time(index) - compare1
 #define DEBUG_GET_TIME_2_END(index) get_profiler_time(index) - compare2
 #define DEBUG_GET_TIME_3_END(index) get_profiler_time(index) - compare3
-#define DEBUG_MATRIX_OP() gDebugData->matrixOps++
+#define DEBUG_//MATRIX_OP() gDebugData->matrixOps++
 #else
 #define reset_profiler_times()
 #define get_time_snapshot(index, diff)
@@ -171,5 +173,5 @@ void profiler_wait(void);
 #define DEBUG_GET_TIME_1_END(index)
 #define DEBUG_GET_TIME_2_END(index)
 #define DEBUG_GET_TIME_3_END(index)
-#define DEBUG_MATRIX_OP()
+#define DEBUG_//MATRIX_OP()
 #endif

@@ -75,6 +75,8 @@ extern char gZTargetTimer;
 extern unsigned int gGlobalTimer;
 extern unsigned int gGameTimer;
 extern char gResetDisplay;
+extern sprite_t *gUVTest;
 
 void reset_display(void);
 void reset_game_time(void);
+void deltatime_snapshot(int updateRate, float updateRateF);

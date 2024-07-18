@@ -65,7 +65,7 @@ static char *sOptionTextVsync[LANG_TOTAL] = {
 
 extern int __boot_tvtype;
 
-static void menu_change_pal60(void) {
+tstatic void menu_change_pal60(void) {
     if (gConfig.regionMode == PAL60) {
         gConfig.regionMode = NTSC60;
     }
@@ -73,7 +73,7 @@ static void menu_change_pal60(void) {
     menu_reset_display();
 }
 
-static void menu_set_sound(void) {
+tstatic void menu_set_sound(void) {
     gMusicVolume = (float) gConfig.musicVolume / (float) 10.0f;
     gSoundVolume = (float) gConfig.soundVolume / (float) 10.0f;
     set_music_volume(gMusicVolume);

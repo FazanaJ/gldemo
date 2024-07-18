@@ -21,11 +21,11 @@ void screenshot_generate(void) {
         surface_free(&gScreenshot);
     }
     gScreenshot = surface_alloc(gScreenshotType, display_get_width(), display_get_height());
-    rdpq_attach_clear(&gScreenshot, &gZBuffer);
-    
+    rdpq_attach_clear(&gScreenshot, display_get_zbuf());
 }
 
 void screenshot_clear(void) {
     surface_free(&gScreenshot);
     gScreenshotStatus = SCREENSHOT_NONE;
+    reset_game_time();
 }

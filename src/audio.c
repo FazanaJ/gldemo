@@ -72,7 +72,7 @@ void sound_channel_on(int channel) {
     sChannelMask &= ~(1 << channel);
 }
 
-static void update_sequence(int updateRate) {
+tstatic void update_sequence(int updateRate) {
     if (sNextSequenceID != sCurrentSequenceID) {
         sSequenceFadeTimer -= updateRate;
         if (sSequenceFadeTimer < 0) {
@@ -102,7 +102,7 @@ static void update_sequence(int updateRate) {
     }
 }
 
-static void update_sound(float updateRateF) {
+tstatic void update_sound(float updateRateF) {
     for (int i = 0; i < gSoundChannelNum; i++) {
         if (sChannelMask & (1 << i)) {
             if (gChannelVol[i] > 0.0f) {
@@ -178,7 +178,7 @@ void play_sound_global_pitch(int soundID, float pitch) {
 static int get_sound_pan(int channel, float pos[3]) {
     float volume = 1.0f;
     float pan;
-    float dist = SQR(100.0f);
+    float dist = SQR(800.0f);
     volume = 1.0f - (DIST3(pos, gCamera->pos) / dist);
     if (gConfig.soundMode == SOUND_MONO) {
         pan = 0.5f;

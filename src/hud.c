@@ -35,7 +35,7 @@ void text_outline(rdpq_textparms_t *parms, int x, int y, char *text, color_t col
     rdpq_text_print(parms, FONT_MVBOLI, x, y, text);
 }
 
-static void render_ztarget(void) {
+tstatic void render_ztarget(void) {
     int targetPos;
     if (gConfig.regionMode == TV_PAL) {
         targetPos = gZTargetTimer * (1.5f * 1.2f);
@@ -139,7 +139,7 @@ void clear_subtitle(SubtitleData *subtitle) {
     free(subtitle);
 }
 
-static void process_subtitle_timers(int updateRate, float updateRateF) {
+tstatic void process_subtitle_timers(int updateRate, float updateRateF) {
     if (sSubtitleHead == NULL) {
         return;
     }
@@ -174,7 +174,7 @@ static void process_subtitle_timers(int updateRate, float updateRateF) {
     }
 }
 
-static void render_hud_subtitles(void) {
+tstatic void render_hud_subtitles(void) {
     if (sSubtitleHead == NULL) {
         return;
     }
@@ -253,13 +253,13 @@ void transition_into_scene(int sceneID, int transitionType, int timer, int trans
     gTransitionSceneOut = transitionOut;
 }
 
-static void transition_timer(int updateRate) {
+tstatic void transition_timer(int updateRate, float updateRateF) {
     if (gTransitionType != TRANSITION_NONE) {
         gTransitionTimer += updateRate;
         if (gTransitionTimer > gTransitionTarget) {
             gTransitionTimer = gTransitionTarget;
             if (gTransitionScene != -1) {
-                load_scene(gTransitionScene);
+                load_scene(gTransitionScene, updateRate, updateRateF);
                 gTransitionScene = -1;
                 if (gTransitionSceneOut) {
                     transition_set(gTransitionSceneOut, gTransitionTarget);
@@ -285,12 +285,12 @@ inline void transition_clear(void) {
 }
 
 void process_hud(int updateRate, float updateRateF) {
-    transition_timer(updateRate);
+    transition_timer(updateRate, updateRateF);
     process_subtitle_timers(updateRate, updateRateF);
     talk_update(updateRate);
 }
 
-static void transition_render_fullscreen(void) {
+tstatic void transition_render_fullscreen(void) {
     int offset;
     if (gTransitionType == TRANSITION_FULLSCREEN_OUT) {
         offset = gTransitionTarget - gTransitionTimer;
@@ -304,7 +304,7 @@ static void transition_render_fullscreen(void) {
     rdpq_fill_rectangle(0, 0, display_get_width(), display_get_height());
 }
 
-static void transition_render(void) {
+tstatic void transition_render(void) {
     switch (gTransitionType) {
     case TRANSITION_NONE:
         return;
@@ -315,7 +315,7 @@ static void transition_render(void) {
     }
 }
 
-static void render_camera_hud(void) {
+tstatic void render_camera_hud(void) {
     if (gCameraHudToggle == 0) {
         return;
     }
@@ -371,7 +371,7 @@ void hud_healthbar(float updateRateF) {
     }
 }
 
-void hud_minimap(void) {
+void hud_minimap(float updateRateF) {
     static void *ovl = NULL;
     static void (*func)(int, float);
     //overlay_run(0, updateRateF, "healthbar", sRenderHealth, &func, &ovl);
@@ -384,7 +384,7 @@ void hud_minimap(void) {
             (*init)();
             func = dlsym(ovl, "loop");
         }
-        (*func)(0, 0);
+        (*func)(0, updateRateF);
     } else {
         if (ovl != NULL) {
             void (*destroy)() = dlsym(ovl, "destroy");
@@ -411,10 +411,13 @@ void render_hud(int updateRate, float updateRateF) {
         sRenderMinimap = true;
     }
     hud_healthbar(updateRateF);
-#if OPENGL
-    //hud_minimap();
-#endif
+    hud_minimap(updateRateF);
     render_hud_subtitles();
+
+    /*if (gPlayer && gPlayer->gfx->dynamicShadow) {
+        rdpq_set_mode_standard();
+        rdpq_tex_blit(&gPlayer->gfx->dynamicShadow->surface, 32, 32, NULL);
+    }*/
 
     if (input_pressed(INPUT_CDOWN, 0)) {
         add_subtitle("You have pressed C down!", 120);

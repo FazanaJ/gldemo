@@ -15,8 +15,8 @@ ObjectMap objects[] = {
 SceneHeader header = {
     /*Model*/           "testarea3",
     /*Objects*/         objects, 
-    /*Fog Near*/        150, 
-    /*Fog Far*/         400, 
+    /*Fog Near*/        600, 
+    /*Fog Far*/         1250, 
     /*Fog Colour*/      {125, 78, 37},
     /*Light Colour*/    {0xFF, 0xFF, 0xFF},
     /*Light Ambient*/   {0xFF, 0xFF, 0xFF},

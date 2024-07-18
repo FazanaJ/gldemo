@@ -7,26 +7,12 @@
 #include "assets.h"
 #include "object.h"
 
-#if OPENGL
-#define MATRIX_PUSH() glPushMatrix()
-#define MATRIX_POP() glPopMatrix()
-#define MATRIX_MUL(x, stackPos, stackPrev) glMultMatrixf((GLfloat *) x)
-#define MODEL_LOAD(x) model64_load(asset_dir(x, DFS_MODEL64))
-#define MODEL_FREE(x) model64_free(x)
-#elif TINY3D
-#define MATRIX_PUSH() gMatrixStackPos++;
-#define MATRIX_POP() gMatrixStackPos--;
-//#define MATRIX_MUL(x, stackPos, stackPrev) t3d_matrix_set_mul((T3DMat4FP *) x, stackPos, stackPrev)
-#define MATRIX_MUL(x, stackPos, stackPrev)
+#define SEGMENT_MATRIX  0x01
+#define SEGMENT_BONES   0x02
+#define SEGMENT_VERTS   0x03
+
 #define MODEL_LOAD(x) t3d_model_load(asset_dir(x, DFS_MODEL64))
 #define MODEL_FREE(x) t3d_model_free(x)
-#else
-#define MATRIX_PUSH()
-#define MATRIX_POP()
-#define MATRIX_MUL(x, stackPos, stackPrev)
-#define MODEL_LOAD(x) 0
-#define MODEL_FREE(x)
-#endif
 
 enum DrawLayer {
     DRAW_NZB,   // No Z Buffer
@@ -51,17 +37,15 @@ typedef struct {
     const float radius;
 } light_t;
 
-typedef struct {
-    GLfloat m[4][4];
-} Matrix;
-
 typedef struct RenderNode {
     rspq_block_t *block;
-    Matrix *matrix;
+    T3DMat4FP *matrix;
     Material *material;
     unsigned int flags;
     color_t envColour;
     color_t primColour;
+    T3DMat4FP *skel;
+    struct ObjectModel *objMod;
     struct RenderNode *next;
     struct RenderNode *prev;
 } RenderNode;
@@ -81,8 +65,8 @@ extern unsigned int gSortPos[DRAW_TOTAL];
 extern const short sLayerSizes[DRAW_TOTAL];
 extern void *gSortHeap[DRAW_TOTAL];
 extern int gSortRecord[DRAW_TOTAL];
-extern char gMatrixStackPos;
 
 void init_renderer(void);
 void render_game(int updateRate, float updateRateF);
 void matrix_ortho(void);
+void clutter_matrix(Matrix *mtx, int matrixBehaviour, float *pos, unsigned short *angle, float *scale);

@@ -174,7 +174,7 @@ void talk_update(int updateRate) {
     }
 }
 
-static void talk_render_bubble(void) {
+tstatic void talk_render_bubble(void) {
     float w = display_get_width();
     float h = display_get_height();
     rdpq_set_mode_standard();
@@ -200,7 +200,7 @@ static void talk_render_bubble(void) {
     rdpq_mode_blender(0);
 }
 
-static void talk_render_text(void) {
+tstatic void talk_render_text(void) {
     TalkControl *t = gTalkControl;
     TalkText *curText = t->curText;
     t->endChar = strlen(curText[t->curLine].string);

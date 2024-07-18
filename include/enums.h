@@ -27,6 +27,7 @@ enum TextureNames {
     TEXTURE_FLIPBOOKTEST,
     TEXTURE_ROCKSIDE3,
     TEXTURE_ROCKSIDE4,
+    TEXTURE_ENVMAP,
 };
 
 enum MaterialNames {
@@ -55,5 +56,6 @@ enum MaterialNames {
     MATERIAL_BODY1,
     MATERIAL_EYE1_B,
     MATERIAL_FLIPBOOKTEST,
+    MATERIAL_REFLECTION,
 };
 

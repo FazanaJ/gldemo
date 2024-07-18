@@ -15,7 +15,7 @@ Input gInputData;
 static char sPakDetectionTimer = 0;
 static short sRumbleTimer = 0;
 
-static void input_set_id(void) {
+tstatic void input_set_id(void) {
     for (int i = 0; i < 4; i++) {
         joypad_inputs_t pad = joypad_get_inputs(i);
         if (joypad_is_connected(i) && pad.btn.start) {

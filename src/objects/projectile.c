@@ -28,7 +28,7 @@ ObjectEntry entry = {
     .name = "Projectile",
     .data = sizeof(ProjectileData),
     .flags = OBJ_FLAG_MOVE,
-    .viewDist = OBJ_DIST(100),
+    .viewDist = OBJ_DIST(1000),
     .viewWidth = 1,
     .viewHeight = 1,
 };

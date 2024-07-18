@@ -4,6 +4,7 @@
 #include <GL/gl_integration.h>
 #include <malloc.h>
 #include <t3d/t3d.h>
+#include <t3d/rsp/rsp_tiny3d.h>
 
 #include "assets.h"
 #include "../include/global.h"
@@ -30,6 +31,7 @@ char *sObjectOverlays[OBJ_TOTAL] = {
     "crate",
     "testsphere",
     "barrel",
+    "lightsource"
 };
 
 char *gModelIDs[OBJ_TOTAL] = {
@@ -39,6 +41,7 @@ char *gModelIDs[OBJ_TOTAL] = {
     "crate",
     "testsphere",
     "testcylinder",
+    "bottombillboard_mirror"
 };
 
 short gObjectModels[OBJ_TOTAL] = {
@@ -49,17 +52,19 @@ short gObjectModels[OBJ_TOTAL] = {
     4,
     5,
     6,
+    2,
 };
 
-short playerModelTextures[][9] = {
-    {MATERIAL_FLATPRIM, 0, 0, 0, 0, 0, 0, 0, 0}, // Ears
-    {MATERIAL_BODY1, 0, 0, 0, 0, 0, 0, 0, 0}, // Feet
-    {MATERIAL_FLATPRIM, 0, 0, 0, 0, 0, 0, 0, 0}, // Hair
-    {MATERIAL_BODY1, 0, 0, 0, 0, 0, 0, 0, 0}, // Hands
-    {MATERIAL_EYE1, MATERIAL_INTROSIGN2, MATERIAL_MOUTH1, MATERIAL_EYEBROW1, MATERIAL_FLATPRIM, 0, 0, 0, 0}, // Head
-    {MATERIAL_TROUSERS, 0, 0, 0, 0, 0, 0, 0, 0}, // Legs
-    {MATERIAL_FLATPRIM, 0, 0, 0, 0, 0, 0, 0, 0}, // Tail
-    {MATERIAL_FLATPRIM, MATERIAL_SHIRT, 0, 0, 0, 0, 0, 0, 0}, // Torso
+short gClutterModels[CLUTTER_TOTAL] = {
+    0,
+    7,
+    3,
+    2
+};
+
+short playerModelTextures[] = {
+    MATERIAL_INTROSIGN2, MATERIAL_FLATPRIM, MATERIAL_EYE1, MATERIAL_TROUSERS, MATERIAL_FLATPRIM, 
+    MATERIAL_SHIRT, MATERIAL_BODY1, MATERIAL_BODY1, MATERIAL_MOUTH1, MATERIAL_FLATPRIM, MATERIAL_FLATPRIM, MATERIAL_FLATPRIM, MATERIAL_FLATPRIM, MATERIAL_FLATPRIM
 };
 
 MaterialList *gMaterialListHead;
@@ -100,11 +105,7 @@ void init_materials(void) {
 static char *sFileFormatString[] = {
     "sprite",
     "wav64",
-#if OPENGL
-    "model64",
-#elif TINY3D
     "t3dm",
-#endif
     "xm64",
     "font64",
     "dso"
@@ -135,9 +136,9 @@ rdpq_texparms_t sTexParams;
 rdpq_combiner_t sCombinerTable[CC_TOTAL] = {
     RDPQ_COMBINER_TEX_SHADE,
     RDPQ_COMBINER2((TEX1, TEX0, TEX1, TEX0), (0, 0, 0, ENV), (COMBINED, 0, SHADE, 0), (0, 0, 0, COMBINED)),
-    RDPQ_COMBINER2((TEX1, TEX0, TEX1, TEX0), (0, 0, 0, ENV), (COMBINED, 0, SHADE, 0), (0, 0, 0, COMBINED)),
     RDPQ_COMBINER_TEX_FLAT,
     RDPQ_COMBINER2((TEX1, TEX0, TEX1, TEX0), (0, 0, 0, ENV), (COMBINED, 0, PRIM, 0), (0, 0, 0, COMBINED)),
+    RDPQ_COMBINER2((TEX0, 0, SHADE, 0), (0, 0, 0, ENV), (COMBINED, 0, PRIM, 0), (0, 0, 0, COMBINED)),
     RDPQ_COMBINER2((TEX1, TEX0, TEX1, TEX0), (0, 0, 0, ENV), (COMBINED, PRIM, SHADE, PRIM), (0, 0, 0, COMBINED)),
     RDPQ_COMBINER2((TEX0, PRIM, TEX1, PRIM), (TEX0, 0, TEX1, 0), (TEX1, 0, TEX1, COMBINED), (SHADE, 0, PRIM, COMBINED)),
     RDPQ_COMBINER2((PRIM, 0, SHADE, 0), (0, 0, 0, ENV), (PRIM, 0, SHADE, 0), (0, 0, 0, COMBINED)),
@@ -160,14 +161,13 @@ void material_setup_constants(Material *m) {
         }
         rdpq_tex_upload_tlut(pallette, 0, palletteSize);
     }
-    glTexSizeN64(m->tex0->sprite->width, m->tex0->sprite->height);
     if (gTextureIDs[m->tex0->spriteID].flags & TEX_CLAMP_H) {
-        sTexParams.s.repeats = 0;
+        sTexParams.s.repeats = 1;
     } else {
         sTexParams.s.repeats = REPEAT_INFINITE;
     }
     /*if (gTextureIDs[m->tex0->spriteID].flags & TEX_CLAMP_V) {
-        sTexParams.t.repeats = 0;
+        sTexParams.t.repeats = 1;
     } else {*/
         sTexParams.t.repeats = REPEAT_INFINITE;
     //}
@@ -181,10 +181,10 @@ void material_setup_constants(Material *m) {
     } else {
         sTexParams.t.mirror = false;
     }
-    sTexParams.s.translate = 0;
-    sTexParams.t.translate = m->tex0->sprite->height;
+    /*sTexParams.s.translate = 0;
+    sTexParams.t.translate = 0;
     sTexParams.s.scale_log = gMaterialIDs[m->entry->materialID].shiftS0;
-    sTexParams.t.scale_log = gMaterialIDs[m->entry->materialID].shiftT0;
+    sTexParams.t.scale_log = gMaterialIDs[m->entry->materialID].shiftT0;*/
 }
 
 void material_run_tile0(Material *m) {
@@ -197,9 +197,22 @@ void material_run_tile0(Material *m) {
         m->shiftT0 -= 1024;
     }
     sTexParams.s.translate = (float) m->shiftS0 * 0.125f;
-    sTexParams.t.translate = m->tex0->sprite->height + ((float) m->shiftT0 * 0.125f);
-    sTexParams.s.scale_log = gMaterialIDs[m->entry->materialID].shiftS0;
-    sTexParams.t.scale_log = gMaterialIDs[m->entry->materialID].shiftT0;
+    sTexParams.t.translate = (float) m->shiftT0 * 0.125f;
+    int size = m->tex0->sprite->width;
+    int scaleS = 0;
+    while (size > 32) {
+        size >>= 1;
+        scaleS--;
+    }
+    int flipbook = gTextureIDs[m->tex0->spriteID].flipbook + 1;
+    size = m->tex0->sprite->height / flipbook;
+    int scaleT = 0;
+    while (size > 32) {
+        size >>= 1;
+        scaleT--;
+    }
+    sTexParams.s.scale_log = gMaterialIDs[m->entry->materialID].shiftS0 + scaleS;
+    sTexParams.t.scale_log = gMaterialIDs[m->entry->materialID].shiftT0 + scaleT;
     if (m->tex1) {
         rdpq_tex_multi_begin();
     }
@@ -215,9 +228,22 @@ void material_run_tile1(Material *m) {
         m->shiftT1 -= 1024;
     }
     sTexParams.s.translate = (float) m->shiftS1 * 0.125f;
-    sTexParams.t.translate = m->tex1->sprite->height + ((float) m->shiftT1 * 0.125f);
-    sTexParams.s.scale_log = gMaterialIDs[m->entry->materialID].shiftS1;
-    sTexParams.t.scale_log = gMaterialIDs[m->entry->materialID].shiftT1;
+    sTexParams.t.translate = (float) m->shiftT1 * 0.125f;
+    int size = m->tex1->sprite->width;
+    int scaleS = 0;
+    while (size > 32) {
+        size >>= 1;
+        scaleS--;
+    }
+    int flipbook = gTextureIDs[m->tex0->spriteID].flipbook + 1;
+    size = m->tex1->sprite->height / flipbook;
+    int scaleT = 0;
+    while (size > 32) {
+        size >>= 1;
+        scaleT--;
+    }
+    sTexParams.s.scale_log = gMaterialIDs[m->entry->materialID].shiftS1 + scaleS;
+    sTexParams.t.scale_log = gMaterialIDs[m->entry->materialID].shiftT1 + scaleT;
 }
 
 void material_run_partial(Material *m) {
@@ -294,7 +320,7 @@ static SpriteList *sprite_try_load(int spriteID) {
     return list;
 }
 
-static void sprite_try_free(SpriteList *sprite) {
+tstatic void sprite_try_free(SpriteList *sprite) {
     sprite->refCount--;
     if (sprite->refCount > 0) {
         return;
@@ -430,6 +456,8 @@ void shadow_generate(Object *obj) {
     debugf("Allocating dynamic shadow for [%s] object.", sObjectOverlays[obj->objectID]);
     obj->gfx->dynamicShadow = malloc(sizeof(DynamicShadow));
     DynamicShadow *d = obj->gfx->dynamicShadow;
+    d->mtx[0] = malloc_uncached(sizeof(T3DMat4FP));
+    d->mtx[1] = malloc_uncached(sizeof(T3DMat4FP));
     d->texW = obj->header->dynamicShadow->texW;
     d->texH = obj->header->dynamicShadow->texH;
     d->planeW = obj->header->dynamicShadow->planeW;
@@ -477,26 +505,111 @@ void shadow_generate(Object *obj) {
     int texLoads = d->texCount - 1;
     int stepW = MIN(MIN(d->texW, 64), d->texW / w);
     int stepH = MIN(MIN(d->texH, 64), d->texH / h);
-    for (int i = 0; i < h; i++) {
-        x = 0;
-        for (int j = 0; j < w; j++) {
-#if OPENGL
-            glGenTextures(1, &d->tex[texLoads]);
-            glBindTexture(GL_TEXTURE_2D, d->tex[texLoads--]);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            surface_t surf = surface_make_sub(&d->surface, x, y, stepW, stepH);
-            glSurfaceTexImageN64(GL_TEXTURE_2D, 0, &surf, &(rdpq_texparms_t){.s.repeats = true, .t.repeats = true});
-#endif
-            x += stepW;
+    rspq_block_begin();
+    d->verts = malloc_uncached(sizeof(T3DVertPacked) * (d->texCount * 2));
+    rdpq_sync_pipe();
+    rdpq_set_prim_color(RGBA32(0, 0, 0, 127));
+    rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    rdpq_mode_combiner(RDPQ_COMBINER_TEX_FLAT);
+    t3d_state_set_drawflags(T3D_FLAG_TEXTURED | T3D_FLAG_DEPTH | T3D_FLAG_CULL_FRONT | T3D_FLAG_SHADED);
+    x = -32;
+    int z = ((w - 1) * 64) + 16 + d->offset;
+    int uvX = 0;
+    int uvY = 0;
+    for (int i = 0, j = 0; i < 6; i++, j += 2) {
+        d->verts[i] = (T3DVertPacked){
+            .posA = {x, 0, z}, .stA[0] = uvX, .stA[1] = uvY,
+            .posB = {x, 0, z - 32}, .stB[0] = uvX, .stB[1] = uvY + 2048,
+        };
+        x += 32;
+        if (x > 32) {
+            x = -32;
+            z -= 64;
+            uvX = 0;
+            uvY += 4096;
+        } else {
+            uvX += 2048;
         }
-        y += stepH;
     }
+    
+    x = 0;
+    z = 0;
+    t3d_matrix_push(t3d_segment_placeholder(SEGMENT_MATRIX));
+    t3d_vert_load(d->verts, 0, d->texCount * 2);
+    t3d_matrix_pop(1);
+    int i0 = 0;
+    int i1 = 1;
+    int i2 = 2;
+    int pattern = 0;
+    int texX = 0;
+    int texY = 0;//d->texH;
+    rdpq_texparms_t parms;
+    bzero(&parms, sizeof(rdpq_texparms_t));
+    parms.s.repeats = 0;
+    parms.t.repeats = REPEAT_INFINITE;
+    parms.t.mirror = true;
+    for (int i = 0; i < 12; i++) {
+        if ((i % 2) == 0) {
+            t3d_tri_sync();
+            rdpq_tex_upload_sub(TILE0, &d->surface, &parms, texX, texY, texX + stepW, texY + stepH);
+            texX += stepW;
+            if (texX >= d->texW) {
+                texX = 0;
+                texY += stepH;
+            }
+        }
+        t3d_tri_draw(i0, i1, i2);
+        x += 16;
+        if (x >= 64) {
+            x = 0;
+            if (pattern < 2) {
+                pattern = 2;
+                i0 -= 3;
+                i1 += 3;
+            } else {
+                pattern = 0;
+                i0 += 1;
+                i1 -= 1;
+            }
+            i2 -= 2;
+        } else {
+            switch (pattern) {
+            case 0:
+                i0 += 2;
+                i2 += 1;
+                break;
+            case 1:
+                i1 += 2;
+                i2 += 1;
+                break;
+            case 2:
+                i0 += 2;
+                i2 += 5;
+                break;
+            case 3:
+                i1 += 2;
+                i2 -= 3;
+                break;
+            }
+            if (pattern == 0) {
+                pattern = 1;
+            } else if (pattern == 1) {
+                pattern = 0;
+            } else if (pattern == 2) {
+                pattern = 3;
+            } else if (pattern == 3) {
+                pattern = 2;
+            }
+        }
+    }
+    t3d_tri_sync();
+    d->block = rspq_block_end();
+
     debugf(" Texture count: %d.", d->texCount);
     debugf(" Time: %2.3fs.\n", (double) (TIMER_MICROS(DEBUG_SNAPSHOT_1_END) / 1000000.0f));
 }
 
-static void object_model_clear(ModelList *entry) {
+tstatic void object_model_clear(ModelList *entry) {
     ObjectModel *m = entry->entry;
     while (m) {
         if (m->material) {
@@ -539,6 +652,12 @@ void asset_cycle(int updateRate) {
                     gEnvironment->skySegment[i] = NULL;
                 }
                 gNumMaterials--;
+            }
+            if (gEnvironment->skyVerts) {
+                free_uncached(gEnvironment->skyVerts);
+            }
+            if (gEnvironment->skyMtx) {
+                free_uncached(gEnvironment->skyMtx);
             }
             sprite_free(gEnvironment->skySprite);
             gEnvironment->texGen = false;
@@ -592,14 +711,19 @@ void sky_texture_generate(Environment *e) {
     e->skySprite = sprite_load(asset_dir(gTextureIDs[e->skyboxTextureID].file, DFS_SPRITE));
     surface_t surf = sprite_get_pixels(e->skySprite);
     tex_format_t fmt = sprite_get_format(e->skySprite);
+    e->skyVerts = malloc_uncached(sizeof(T3DVertPacked) * 64);
+    e->skyMtx = malloc_uncached(sizeof(T3DMat4FP));
     rspq_block_begin();
+    t3d_matrix_push(t3d_segment_placeholder(SEGMENT_MATRIX));
     rdpq_set_mode_standard();
-#if OPENGL
-    glEnable(GL_TEXTURE_2D);
-    glDisable(GL_CULL_FACE);
-    glColor3f(1.0f, 1.0f, 1.0f);
-#endif
+    rdpq_mode_persp(true);
+    rdpq_mode_antialias(AA_NONE);
+    t3d_state_set_drawflags(T3D_FLAG_TEXTURED | T3D_FLAG_CULL_BACK);
+    __rdpq_mode_change_som(0x300000000001, 0x200000000000);
+    rdpq_mode_zbuf(false, false);
+    rdpq_mode_blender(0);
     rdpq_mode_filter(FILTER_BILINEAR);
+    rdpq_mode_dithering(DITHER_SQUARE_SQUARE);
     rdpq_mode_combiner(RDPQ_COMBINER_TEX);
     if (fmt == FMT_CI4 || fmt == FMT_CI8) {
         int colours;
@@ -615,54 +739,59 @@ void sky_texture_generate(Environment *e) {
     rdpq_texparms_t parms = {
         .s.translate = 0,
         .t.translate = 0,
-        .s.scale_log = 1.0f,
-        .t.scale_log = 1.0f,
+        .s.scale_log = 0,
+        .t.scale_log = 0,
     };
-    for (int i = 0, x = 0; i < 16; i++) {
+    
+    for (int i = 0, j = 0, x = 0; i < 16; i++, j += 2) {
         gNumMaterials++;
         rspq_block_begin();
+        rdpq_set_prim_color(RGBA32(i * 127, i * 64, i * 32, 255));
         rdpq_tex_upload_sub(TILE0, &surf, &parms, x, 0, x + 32, 64);
-#if OPENGL
-        float pX = 100.0f * sins((0x10000 / 16) * i);
-        float pZ = 100.0f * coss((0x10000 / 16) * i);
-        glBegin(GL_QUADS);
-        glTexCoord2f(i, 1.0f);
-        glVertex3f(pX * 0.66f, 75, pZ * 0.66f);
-        glTexCoord2f(i, 3.0f);
-        glVertex3f(pX, 0.0f, pZ);
-        pX = 100.0f * sins((0x10000 / 16) * (i + 1));
-        pZ = 100.0f * coss((0x10000 / 16) * (i + 1));
-        glTexCoord2f(i + 1.0f, 3.0f);
-        glVertex3f(pX, 0.0f, pZ);
-        glTexCoord2f(i + 1.0f, 1.0f);
-        glVertex3f(pX * 0.66f, 75, pZ * 0.66f);
-        glEnd();
-#endif
+        float pX = 500.0f * sins((0x10000 / 16) * i);
+        float pZ = 500.0f * coss((0x10000 / 16) * i);
+        e->skyVerts[j + 0] = (T3DVertPacked){
+            .posA = {pX * 0.66f, 375, pZ * 0.66f}, .stA[0] = (i * 1024), .stA[1] = 0,
+            .posB = {pX, 0, pZ}, .stB[0] = (i * 1024), .stB[1] = 2048,
+        };
+        pX = 500.0f * sins((0x10000 / 16) * (i + 1));
+        pZ = 500.0f * coss((0x10000 / 16) * (i + 1));
+        e->skyVerts[j + 1] = (T3DVertPacked){
+            .posA = {pX, 0, pZ}, .stA[0] = 1024 + (i * 1024), .stA[1] = 2048,
+            .posB = {pX * 0.66, 375, pZ * 0.66f}, .stB[0] = 1024 + (i * 1024), .stB[1] = 0,
+        };
+        
+        data_cache_hit_writeback(&e->skyVerts[j], sizeof(T3DVertPacked) * 2);
+        t3d_vert_load(&e->skyVerts[j], 0, 4);
+        t3d_tri_draw(2, 1, 0);
+        t3d_tri_draw(3, 2, 0);
+        t3d_tri_sync();
         e->skySegment[i] = rspq_block_end();
         x += 32;
     }
-    parms.t.translate = 64;
     parms.t.repeats = REPEAT_INFINITE;
-    for (int i = 0, x = 0; i < 16; i++) {
+    for (int i = 0, j = 0, x = 0; i < 16; i++, j += 2) {
         gNumMaterials++;
         rspq_block_begin();
         rdpq_tex_upload_sub(TILE0, &surf, &parms, x, 64, x + 32, 128);
-#if OPENGL
-        float pX = 100.0f * sins((0x10000 / 16) * i);
-        float pZ = 100.0f * coss((0x10000 / 16) * i);
-        glBegin(GL_QUADS);
-        glTexCoord2f(i, 1.0f);
-        glVertex3f(pX, 0.0f, pZ);
-        glTexCoord2f(i, 3.0f);
-        glVertex3f(pX * 0.66f, -75, pZ * 0.66f);
-        pX = 100.0f * sins((0x10000 / 16) * (i + 1));
-        pZ = 100.0f * coss((0x10000 / 16) * (i + 1));
-        glTexCoord2f(i + 1.0f, 3.0f);
-        glVertex3f(pX * 0.66f, -75, pZ * 0.66f);
-        glTexCoord2f(i + 1.0f, 1.0f);
-        glVertex3f(pX, 0.0f, pZ);
-        glEnd();
-#endif
+        float pX = 500.0f * sins((0x10000 / 16) * i);
+        float pZ = 500.0f * coss((0x10000 / 16) * i);
+        e->skyVerts[j + 32 + 0] = (T3DVertPacked){
+            .posA = {pX, 0, pZ}, .stB[0] = (i * 1024), .stB[1] = 2048,
+            .posB = {pX * 0.66f, -375, pZ * 0.66f}, .stA[0] = (i * 1024), .stA[1] = 0,
+        };
+        pX = 500.0f * sins((0x10000 / 16) * (i + 1));
+        pZ = 500.0f * coss((0x10000 / 16) * (i + 1));
+        e->skyVerts[j + 32 + 1] = (T3DVertPacked){
+            .posA = {pX * 0.66, -375, pZ * 0.66f}, .stB[0] = 1024 + (i * 1024), .stB[1] = 0,
+            .posB = {pX, 0, pZ}, .stA[0] = 1024 + (i * 1024), .stA[1] = 2048,
+        };
+        
+        data_cache_hit_writeback(&e->skyVerts[j + 32], sizeof(T3DVertPacked) * 2);
+        t3d_vert_load(&e->skyVerts[j + 32], 0, 4);
+        t3d_tri_draw(2, 1, 0);
+        t3d_tri_draw(3, 2, 0);
+        t3d_tri_sync();
         e->skySegment[16 + i] = rspq_block_end();
         x += 32;
     }
@@ -714,7 +843,7 @@ void obj_overlay_init(Object *obj, int objectID) {
     obj->overlayTimer = 10;
 }
 
-static void init_object_behaviour(Object *obj, int objectID) {
+tstatic void init_object_behaviour(Object *obj, int objectID) {
     obj_overlay_init(obj, objectID);
     if (obj->header->viewDist) {
         obj->viewDist = obj->header->viewDist << 4;
@@ -778,7 +907,8 @@ void check_unused_model(Object *obj) {
         }
         free(m);
     }
-    MODEL_FREE(obj->gfx->listEntry->model64);
+    t3d_model_free(obj->gfx->listEntry->model64);
+    free(obj->gfx->listEntry->animData);
     free(obj->gfx->listEntry);
 #ifdef PUPPYPRINT_DEBUG
         gNumModels--;
@@ -850,7 +980,7 @@ Clutter *allocate_clutter(void) {
     }
     newClutter->gfx = NULL;
     newClutter->flags = OBJ_FLAG_NONE;
-    newClutter->viewDist = SQR(200.0f);
+    newClutter->viewDist = SQR(1500.0f);
 #ifdef PUPPYPRINT_DEBUG
     gNumClutter++;
 #endif
@@ -892,31 +1022,44 @@ static int temp_matrix_grabber(int modelID) {
         return MTX_TRANSLATE_ROTATE_SCALE;
     case 3:
         return MTX_BILLBOARD;
+    case 7:
+        return MTX_BILLBOARD;
     }
     return MTX_TRANSLATE_ROTATE_SCALE;
+}
+
+void clutter_model_generate(Clutter *obj) {
+    ObjectModel *m = obj->gfx->listEntry->entry;
+    m->material = material_init(m->materialID);
+    rspq_block_begin();
+    t3d_matrix_push(t3d_segment_placeholder(SEGMENT_MATRIX));
+    t3d_model_draw((T3DModel *) obj->gfx->listEntry->model64);
+    t3d_matrix_pop(1);
+    m->block = rspq_block_end();
+    obj->gfx->listEntry->active = true;
 }
 
 void object_model_generate(Object *obj) {
     ObjectModel *m = obj->gfx->listEntry->entry;
     while (m) {
+        T3DMat4FP *mat;
         m->material = material_init(m->materialID);
         rspq_block_begin();
-#if OPENGL
-        //glScalef(10.0f, 9.0f, 10.0f);
-        if (obj->gfx->modelID == 1) {
-            glScalef(0.95f, 1.33f, 1.33f);
+        if (obj->animation) {
+            mat = t3d_segment_placeholder(SEGMENT_BONES);
         } else {
-            glScalef(1.0f, 1.0f, 1.0f);
+            mat = NULL;
         }
-        model64_draw_primitive(m->prim);
-#endif
+        t3d_matrix_push(t3d_segment_placeholder(SEGMENT_MATRIX));
+        t3d_model_draw_object((T3DObject *) m->prim, mat);
+        t3d_matrix_pop(1);
         m->block = rspq_block_end();
         m = m->next;
     }
     obj->gfx->listEntry->active = true;
 }
 
-static void load_object_model(Object *obj, int objectID) {
+tstatic void load_object_model(Object *obj, int objectID, int tableID) {
     DEBUG_SNAPSHOT_1();
     obj->gfx = malloc(sizeof(ObjectGraphics));
     bzero(obj->gfx, sizeof(ObjectGraphics));
@@ -927,7 +1070,12 @@ static void load_object_model(Object *obj, int objectID) {
     obj->gfx->primColour[1] = 0xFF;
     obj->gfx->primColour[2] = 0xFF;
     obj->gfx->opacity = 0xFF;
-    int modelID = gObjectModels[objectID];
+    int modelID;
+    if (tableID == MOD_CLUTTER) {
+        modelID = gClutterModels[objectID];
+    } else {
+        modelID = gObjectModels[objectID];
+    }
     obj->gfx->modelID = modelID;
     int matrixType = temp_matrix_grabber(modelID);
 
@@ -959,33 +1107,44 @@ static void load_object_model(Object *obj, int objectID) {
     list->entry = NULL;
     list->active = false;
     list->model64 = MODEL_LOAD(gModelIDs[modelID - 1]);
-#if OPENGL
-    int numMeshes = model64_get_mesh_count(list->model64);
-    ObjectModel *tail = NULL;
-    for (int i = 0; i < numMeshes; i++) {
-        mesh_t *mesh = model64_get_mesh(list->model64, i);
-        int primCount = model64_get_primitive_count(mesh);
+        ObjectModel *tail = NULL;
+        T3DModel *mesh = list->model64;
+        int primCount = mesh->chunkCount;
         for (int j = 0; j < primCount; j++) {
-            ObjectModel *m = malloc(sizeof(ObjectModel));
-            m->prim = model64_get_primitive(mesh, j);
+            ObjectModel *m;
+            if (mesh->chunkOffsets[j].type == 'O') {
+                m = malloc(sizeof(ObjectModel));
+                uint32_t offset = mesh->chunkOffsets[j].offset & 0x00FFFFFF;
+                T3DObject *obj = (T3DObject *) ((char *) mesh + offset);
+                m->prim = (primitive_t *) obj;
+                m->second = (int) obj->material->name;
+            } else {
+                continue;
+            }
             m->material = NULL;
             m->colour = RGBA32(255, 255, 255, 255);
             if (modelID == 1) {
-                m->materialID = playerModelTextures[i][j];
+                m->materialID = playerModelTextures[j];
                 if (m->materialID == MATERIAL_FLATPRIM || m->materialID == MATERIAL_EYE1 || 
                 m->materialID == MATERIAL_MOUTH1 || m->materialID == MATERIAL_EYEBROW1 || m->materialID == MATERIAL_BODY1) {
                     m->colour = RGBA32(255, 126, 0, 255);
                 }
-                if (i == 2) {
+                if (j == 1) {
                     m->colour = RGBA32(127, 48, 0, 255);
                 }
             } else if (modelID == 4 || modelID == 5 || modelID == 6) {
                 m->materialID = MATERIAL_CRATE;
+            } else if (modelID == 7) {
+                m->materialID = MATERIAL_PLANT1;
+            } else if (modelID == 3) {
+                m->materialID = MATERIAL_FLIPBOOKTEST;
+            } else if (objectID == OBJ_LIGHTSOURCE) {
+                m->materialID = MATERIAL_REFLECTION;
             } else {
                 m->materialID = 0;
             }
             m->next = NULL;
-            if (i == 0 && j == 0) {
+            if (j == 0) {
                 m->matrixBehaviour = matrixType;
             } else {
                 m->matrixBehaviour = 0;
@@ -999,9 +1158,14 @@ static void load_object_model(Object *obj, int objectID) {
             }
             tail = m;
         }
+
+    int animCount = t3d_model_get_animation_count(list->model64);
+
+    if (animCount != 0) {
+        list->animData = malloc(sizeof(void *) * animCount);
+        t3d_model_get_animations(obj->gfx->listEntry->model64, list->animData);
     }
-#elif TINY3D
-#endif
+
     debugf(" Time: %2.3fs.\n", (double) (TIMER_MICROS(DEBUG_SNAPSHOT_1_END) / 1000000.0f));
 
 #ifdef PUPPYPRINT_DEBUG
@@ -1012,26 +1176,59 @@ static void load_object_model(Object *obj, int objectID) {
     list->id = modelID;
 }
 
+void obj_animation_init(Object *obj) {
+    int animCount = t3d_model_get_animation_count(obj->gfx->listEntry->model64);
+    obj->animation = malloc(sizeof(ObjectAnimation));
+    obj->animation->id[0] = ANIM_NONE;
+    obj->animation->id[1] = ANIM_NONE;
+    obj->animation->idPrev[0] = ANIM_NONE;
+    obj->animation->idPrev[1] = ANIM_NONE;
+    obj->animation->inst = malloc(sizeof(T3DAnim) * animCount);
+    obj->animation->skeleton = t3d_skeleton_create(obj->gfx->listEntry->model64);
+    obj->animation->skelBlend = t3d_skeleton_clone(&obj->animation->skeleton, false);
+    
+    for (int i = 0; i < animCount; i++) {
+        //debugf("\n%d: %s\n", i, t3d_model_get_animation(obj->gfx->listEntry->model64, obj->gfx->listEntry->animData[i]->name)->name);
+        obj->animation->inst[i] = t3d_anim_create(obj->gfx->listEntry->model64, 
+            t3d_model_get_animation(obj->gfx->listEntry->model64, obj->gfx->listEntry->animData[i]->name)->name);
+        t3d_anim_attach(&obj->animation->inst[i], &obj->animation->skeleton);
+    }
+}
+
+void obj_animation_close(Object *obj) {
+    int animCount = t3d_model_get_animation_count(obj->gfx->listEntry->model64);    
+    for (int i = 0; i < animCount; i++) {
+        t3d_anim_destroy(&obj->animation->inst[i]);
+    }
+
+    t3d_skeleton_destroy(&obj->animation->skeleton);
+    t3d_skeleton_destroy(&obj->animation->skelBlend);
+
+    free(obj->animation->inst);
+    free(obj->animation);
+}
+
 void set_object_functions(Object *obj, int objectID) {
+    if (gObjectModels[objectID]) {
+        load_object_model(obj, objectID, MOD_OBJECT);
+    }
+    if (t3d_model_get_animation_count(obj->gfx->listEntry->model64)) {
+        obj_animation_init(obj);
+    }
     if (sObjectOverlays[objectID]) {
         init_object_behaviour(obj, objectID);
     }
-    if (gObjectModels[objectID]) {
-        load_object_model(obj, objectID);
-    }
-    obj->animID = ANIM_NONE;
 }
 
 void free_dynamic_shadow(Object *obj) {
     DynamicShadow *d = obj->gfx->dynamicShadow;
     debugf("Freeing dynamic shadow for [%s] object.\n", sObjectOverlays[obj->objectID]);
     surface_free(&d->surface);
-    for (int i = 0; i < d->texCount; i++) {
-#if OPENGL
-        glDeleteTextures(1, &d->tex[i]);
-#endif
-    }
+    rspq_block_free(obj->gfx->dynamicShadow->block);
     free(obj->gfx->dynamicShadow);
+    free(obj->gfx->dynamicShadow->mtx[0]);
+    free(obj->gfx->dynamicShadow->mtx[1]);
+    free(obj->gfx->dynamicShadow->verts);
     obj->gfx->dynamicShadow = NULL;
 }
 
@@ -1068,6 +1265,9 @@ void free_object(Object *obj) {
     }
     if (obj->movement) {
         free(obj->movement);
+    }
+    if (obj->animation) {
+        obj_animation_close(obj);
     }
     if (obj->gfx) {
         if (obj->gfx->dynamicShadow) {
@@ -1213,9 +1413,16 @@ Clutter *spawn_clutter(int objectID, float x, float y, float z, short pitch, sho
     clutter->scale[2] = 1.0f;
     clutter->objectID = objectID;
     clutter->gfx = malloc(sizeof(ObjectGraphics));
-    clutter->gfx->width = 4.0f;
-    clutter->gfx->height = 10.0f;
+    clutter->gfx->width = 32.0f;
+    clutter->gfx->height = 80.0f;
     clutter->gfx->yOffset = 0;
+    Matrix mtx;
+    if (gClutterModels[objectID]) {
+        load_object_model((Object *) clutter, objectID, MOD_CLUTTER);
+    }
+    clutter_matrix(&mtx, clutter->gfx->listEntry->entry->matrixBehaviour, clutter->pos, clutter->faceAngle, clutter->scale);
+    t3d_mat4_to_fixed_3x4(&clutter->matrix, (T3DMat4  *) &mtx);
+    data_cache_hit_writeback(&clutter->matrix, sizeof(Matrix));
     return clutter;
 }
 

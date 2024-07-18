@@ -29,7 +29,19 @@
         "object_data.h": "c",
         "talksprite_table.h": "c",
         "scene.h": "c",
-        "save.h": "c"
+        "save.h": "c",
+        "typeinfo": "c",
+        "array": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "ranges": "c",
+        "span": "c",
+        "valarray": "c",
+        "variant": "c",
+        "numbers": "c",
+        "random": "c",
+        "cstdint": "c",
+        "any": "c"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/mips-linux-gnu-gcc"
 }
