@@ -38,7 +38,6 @@ typedef struct SceneMesh {
     Material *material;
     rspq_block_t *renderBlock;
     T3DMat4FP mtx;
-    char *second;
     color_t primC;
     short materialID;
     unsigned char step;

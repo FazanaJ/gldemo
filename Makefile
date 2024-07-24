@@ -6,7 +6,6 @@ include $(T3D_INST)/t3d.mk
 FAST_COMPILE = true
 ASSET_LEVEL_COMPRESS = 2
 ARCHIVE_LEVEL_COMPRESS = 3
-GFXUCODE = tiny3d
 SAVETYPE = eeprom16k
 ifeq ($(FAST_COMPILE),true)
   N64_ROM_ELFCOMPRESS = 1
@@ -14,13 +13,6 @@ ifeq ($(FAST_COMPILE),true)
 else
   N64_ROM_ELFCOMPRESS = 3
   DSO_COMPRESS_LEVEL = 2
-endif
-
-$(eval $(call validate-option,GFXUCODE,opengl tiny3d))
-ifeq ($(GFXUCODE),opengl)
-  DEFINES += OPENGL=1
-else ifeq ($(GFXUCODE),tiny3d)
-  DEFINES += TINY3D=1
 endif
 
 src = $(wildcard src/*.c)
@@ -80,13 +72,8 @@ assets_conv = $(addprefix filesystem/,$(notdir $(assets_ttf:%.ttf=%.font64))) \
               $(addprefix filesystem/,$(notdir $(assets_wav:%.wav=%.wav64))) \
 			  $(addprefix filesystem/,$(notdir $(assets_xm1:%.xm=%.xm64))) \
               $(addprefix filesystem/,$(notdir $(assets_opus:%.wav=%.wav64))) \
+			  $(addprefix filesystem/,$(notdir $(assets_gltf:%.glb=%.t3dm))) \
 			  $(addprefix filesystem/, $(DSO_MODULES))
-
-ifeq ($(GFXUCODE),opengl)
-	assets_conv += $(addprefix filesystem/,$(notdir $(assets_gltf:%.glb=%.model64)))
-else ifeq ($(GFXUCODE),tiny3d)
-	assets_conv += $(addprefix filesystem/,$(notdir $(assets_gltf:%.glb=%.t3dm)))
-endif
 
 MKSPRITE_FLAGS ?=
 MKFONT_FLAGS ?=
@@ -178,17 +165,6 @@ filesystem/%.xm64: assets/xm/%.xm
 	@echo "    [AUDIO] $@"
 	@$(N64_AUDIOCONV) --wav-compress 1 --wav-resample 16000 --wav-mono -o filesystem "$<"
 
-ifeq ($(GFXUCODE),opengl)
-filesystem/%.model64: assets/models/%.glb
-	@mkdir -p $(dir $@)
-	@echo "    [MODEL] $@"
-	@$(N64_MKMODEL) $(COMPRESS_LEVEL) -o filesystem $<
-
-filesystem/%.model64: assets/archives/%.glb
-	@mkdir -p $(dir $@)
-	@echo "    [MODEL] $@"
-	@$(N64_MKMODEL) --compress $(ARCHIVE_LEVEL_COMPRESS) -o filesystem $<
-else ifeq ($(GFXUCODE),tiny3d)
 filesystem/%.t3dm: assets/models/%.glb
 	@mkdir -p $(dir $@)
 	@echo "    [MODEL] $@"
@@ -200,7 +176,6 @@ filesystem/%.t3dm: assets/archives/%.glb
 	@echo "    [MODEL] $@"
 	$(T3D_GLTF_TO_3D) "$<" $@ --ignore-materials --base-scale=64
 	$(N64_BINDIR)/mkasset --compress $(ARCHIVE_LEVEL_COMPRESS) -o filesystem $@
-endif
 
 $(BUILD_DIR)/gldemo.dfs: $(assets_conv) $(DSO_LIST)
 $(BUILD_DIR)/gldemo.elf: $(src:%.c=$(BUILD_DIR)/%.o) $(MAIN_ELF_EXTERNS)

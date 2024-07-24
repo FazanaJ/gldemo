@@ -113,37 +113,6 @@ tstatic void clear_scene(void) {
     free(gCurrentScene);
 }
 
-tstatic void scene_mesh_boundbox(SceneChunk *c, SceneMesh *m) {
-    T3DObject *obj = (T3DObject *) m->mesh;
-    int lowPos[3] = {9999999, 9999999, 9999999};
-    int highPos[3] = {-9999999, -9999999, -9999999};
-    float mulFactorF = WORLD_SCALE;
-
-    for (int i = 0; i < obj->numParts; i++) {
-        const T3DObjectPart *part = &obj->parts[i];
-        T3DVertPacked *vert = part->vert;
-        for (int j = 0; j < part->vertLoadCount / 2; j++) {
-            for (int k = 0; k < 3; k++) {
-                if (vert[j].posA[k] < lowPos[k]) lowPos[k] = vert[j].posA[k];
-                if (vert[j].posB[k] < lowPos[k]) lowPos[k] = vert[j].posB[k];
-                if (vert[j].posA[k] > highPos[k]) highPos[k] = vert[j].posA[k];
-                if (vert[j].posB[k] > highPos[k]) highPos[k] = vert[j].posB[k];
-            }
-        }
-    }
-
-    for (int i = 0; i < 3; i++) {
-        float new = (((float) lowPos[i] * mulFactorF)) - 8.0f;
-        if (new < c->bounds[0][i]) {
-            c->bounds[0][i] = new;
-        }
-        new = (((float) highPos[i] * mulFactorF)) + 8.0f;
-        if (new > c->bounds[1][i]) {
-            c->bounds[1][i] = new;
-        }
-    }
-}
-
 void scene_clear_chunk(SceneChunk *c) {
     SceneMesh *m = c->meshList;
     while (m) {
@@ -309,7 +278,6 @@ void load_scene(int sceneID, int updateRate, float updateRateF) {
                 //debugf("%s   %s\n", obj->name, obj->material->name);
                 SceneMesh *m = malloc(sizeof(SceneMesh));
                 m->mesh = (primitive_t *) obj;
-                m->second = obj->material->name;
                 int sceneTex = j % 8;
                 m->materialID = sSceneTexIDs[gCurrentScene->sceneID][sceneTex];
 #if OPENGL
@@ -331,13 +299,12 @@ void load_scene(int sceneID, int updateRate, float updateRateF) {
                 } else {
                     m->primC = RGBA32(255, 255, 255, 255);
                 }
-                scene_mesh_boundbox(c, m);
-                lowPos[0] = MIN(lowPos[0], c->bounds[0][0]);
-                lowPos[1] = MIN(lowPos[1], c->bounds[0][1]);
-                lowPos[2] = MIN(lowPos[2], c->bounds[0][2]);
-                highPos[0] = MAX(highPos[0], c->bounds[1][0]);
-                highPos[1] = MAX(highPos[1], c->bounds[1][1]);
-                highPos[2] = MAX(highPos[2], c->bounds[1][2]);
+                for (int k = 0; k < 3; k++) {
+                    lowPos[k] = MIN(lowPos[k], obj->aabbMin[k] * WORLD_SCALE);
+                    highPos[k] = MAX(highPos[k], obj->aabbMax[k] * WORLD_SCALE);
+                    c->bounds[0][k] = MIN(c->bounds[0][k], obj->aabbMin[k] * WORLD_SCALE);
+                    c->bounds[1][k] = MAX(c->bounds[1][k], obj->aabbMax[k] * WORLD_SCALE);
+                }
                 m->next = NULL;
                 m->renderBlock = NULL;
                 if (c->meshList == NULL) {

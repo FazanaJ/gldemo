@@ -14,6 +14,5 @@ typedef short Texture;
 #include "enums.h"
 #include "types.h"
 
-#if !defined(OPENGL) && !defined(TINY3D)
-    #define TINY3D 1
-#endif
+//#undef debugf
+//#define debugf(x, ...)

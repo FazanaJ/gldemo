@@ -34,14 +34,16 @@ char *sObjectOverlays[OBJ_TOTAL] = {
     "lightsource"
 };
 
-char *gModelIDs[OBJ_TOTAL] = {
+char *gModelIDs[] = {
     "humanoid",
     "rock",
     "bottombillboard",
     "crate",
     "testsphere",
     "testcylinder",
-    "bottombillboard_mirror"
+    "bottombillboard_mirror",
+    "metalpipe",
+    "cratelid"
 };
 
 short gObjectModels[OBJ_TOTAL] = {
@@ -71,8 +73,10 @@ MaterialList *gMaterialListHead;
 MaterialList *gMaterialListTail;
 SpriteList *gSpriteListHead;
 SpriteList *gSpriteListTail;
-ModelList *gModelIDListHead = NULL;
-ModelList *gModelIDListTail = NULL;
+ModelList_NEW *gModelListHead;
+ModelList_NEW *gModelListTail;
+ModelList *gModelIDListHead;
+ModelList *gModelIDListTail;
 rdpq_font_t *gFonts[FONT_TOTAL];
 #ifdef PUPPYPRINT_DEBUG
 short gNumMaterials;
@@ -286,6 +290,116 @@ rspq_block_t *material_generate_dl(Material *m) {
     }
     rdpq_mode_combiner(sCombinerTable[m->combiner]);
     return rspq_block_end();
+}
+
+static ModelList_NEW *model_try_load(int modelID) {
+    ModelList_NEW *list = gModelListHead;
+    // Check if the texture is already loaded, and bind it to the index.
+    while (list) {
+        if (list->modelID == modelID) {
+            goto end;
+        }
+        list = list->next;
+    }
+    // It doesn't, so load the texture into RAM and create a new entry.
+    list = malloc(sizeof(ModelList_NEW));
+    if (list == NULL) {
+        return NULL;
+    }
+    if (gModelListHead == NULL) {
+        gModelListHead = list;
+        gModelListHead->prev = NULL;
+        gModelListTail = gModelListHead;
+    } else {
+        gModelListTail->next = list;
+        gModelListTail->next->prev = gModelListTail;
+        gModelListTail = gModelListTail->next;
+    }
+    list->next = NULL;
+    list->modelID = modelID;
+    list->model = t3d_model_load(asset_dir(gModelIDs[modelID], DFS_MODEL64));
+    list->refCount = 1;
+    int partCount = list->model->chunkCount;
+    list->partCount = partCount;
+    list->nodes = malloc(sizeof(ModelDraw) * partCount);
+    T3DModelIter it = t3d_model_iter_create(list->model, T3D_CHUNK_TYPE_OBJECT);
+    for (int i = 0; t3d_model_iter_next(&it); i++) {
+        list->nodes[i].obj = it.object;
+        list->nodes[i].func = NULL;
+        list->nodes[i].materialID = -1;
+        list->nodes[i].block = NULL;
+        list->nodes[i].material = NULL;
+        // temp starts here
+        list->nodes[i].colour = RGBA32(255, 255, 255, 255);
+        if (modelID == 1) {
+            list->nodes[i].materialID = playerModelTextures[i];
+            if (list->nodes[i].materialID == MATERIAL_FLATPRIM || list->nodes[i].materialID == MATERIAL_EYE1 || 
+            list->nodes[i].materialID == MATERIAL_MOUTH1 || list->nodes[i].materialID == MATERIAL_EYEBROW1 || list->nodes[i].materialID == MATERIAL_BODY1) {
+                list->nodes[i].colour = RGBA32(255, 126, 0, 255);
+            }
+            if (i == 1) {
+                list->nodes[i].colour = RGBA32(127, 48, 0, 255);
+            }
+        } else if (modelID == 4 || modelID == 5 || modelID == 6) {
+            list->nodes[i].materialID = MATERIAL_CRATE;
+        } else if (modelID == 7) {
+            list->nodes[i].materialID = MATERIAL_PLANT1;
+        } else if (modelID == 3) {
+            list->nodes[i].materialID = MATERIAL_FLIPBOOKTEST;
+        } else {
+            list->nodes[i].materialID = 0;
+        }
+        // temp ends here
+    }
+    int animCount = t3d_model_get_animation_count(list->model);
+    if (animCount != 0) {
+        list->animData = malloc(sizeof(void *) * animCount);
+        t3d_model_get_animations(list->model, list->animData);
+    }
+
+    end:
+    list->refCount++;
+    return list;
+}
+
+tstatic void model_try_free(ModelList_NEW *list) {
+    list->refCount--;
+    if (list->refCount > 0) {
+        return;
+    }
+
+    for (int i = 0; i < list->partCount; i++) {
+        if (list->nodes[i].block) {
+            rspq_block_free(list->nodes[i].block);
+        }
+        if (list->nodes[i].material) {
+            material_try_free(list->nodes[i].material->entry);
+        }
+    }
+        
+    if (list == gModelListHead) {
+        if (gModelListHead->next) {
+            gModelListHead = gModelListHead->next;
+            gModelListHead->prev = NULL;
+        } else {
+            gModelListHead = NULL;
+            if (list == gModelListTail) {
+                gModelListTail = NULL;
+            }
+        }
+    } else {
+        if (list == gModelListTail) {
+            gModelListTail = gModelListTail->prev;
+        }
+        list->prev->next = list->next;
+        if (list->next) {
+            list->next->prev = list->prev;
+        }
+    }
+    if (list->animData) {
+        free(list->animData);
+    }
+    free(list);
 }
 
 static SpriteList *sprite_try_load(int spriteID) {
@@ -1117,7 +1231,6 @@ tstatic void load_object_model(Object *obj, int objectID, int tableID) {
                 uint32_t offset = mesh->chunkOffsets[j].offset & 0x00FFFFFF;
                 T3DObject *obj = (T3DObject *) ((char *) mesh + offset);
                 m->prim = (primitive_t *) obj;
-                m->second = (int) obj->material->name;
             } else {
                 continue;
             }
@@ -1226,9 +1339,9 @@ void free_dynamic_shadow(Object *obj) {
     surface_free(&d->surface);
     rspq_block_free(obj->gfx->dynamicShadow->block);
     free(obj->gfx->dynamicShadow);
-    free(obj->gfx->dynamicShadow->mtx[0]);
-    free(obj->gfx->dynamicShadow->mtx[1]);
-    free(obj->gfx->dynamicShadow->verts);
+    free_uncached(obj->gfx->dynamicShadow->mtx[0]);
+    free_uncached(obj->gfx->dynamicShadow->mtx[1]);
+    free_uncached(obj->gfx->dynamicShadow->verts);
     obj->gfx->dynamicShadow = NULL;
 }
 

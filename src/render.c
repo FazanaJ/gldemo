@@ -54,10 +54,7 @@ int gPrevRenderFlags;
 int gPrevMaterialID;
 unsigned int sT3dFlags;
 unsigned int sPrevT3dFlags;
-#if TINY3D
 T3DViewport gViewport;
-rspq_syncpoint_t gSyncPoint;
-#endif
 #ifdef PUPPYPRINT_DEBUG
 int gSortRecord[DRAW_TOTAL];
 #endif
@@ -1029,7 +1026,6 @@ tstatic void render_clutter(void) {
         list = list->next;
     }
     pop_render_list(DRAW_OPA);
-    pop_render_list(DRAW_XLU);
     get_time_snapshot(PP_RENDERCLUTTER, DEBUG_SNAPSHOT_1_END);
     profiler_wait();
 }
@@ -1253,7 +1249,6 @@ void render_game(int updateRate, float updateRateF) {
     }
     sPrevT3dFlags = 0;
     t3d_screen_clear_depth();
-    //if(gSyncPoint)rspq_syncpoint_wait(gSyncPoint); // wait for the RSP to process the previous frame
     t3d_viewport_attach(&gViewport);
     if (gScreenshotStatus != SCREENSHOT_SHOW) {
         rdpq_mode_antialias(AA_NONE);
@@ -1306,7 +1301,6 @@ void render_game(int updateRate, float updateRateF) {
         render_menus(updateRate, updateRateF);
     }
     rspq_wait();
-    //gSyncPoint = rspq_syncpoint_new();
 #ifdef PUPPYPRINT_DEBUG
     offset = gDebugData->timer[PP_HALT][gDebugData->iteration] - offset;
     add_time_offset(PP_RENDER, offset);

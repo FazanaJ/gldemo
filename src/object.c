@@ -492,6 +492,9 @@ tstatic void object_animate(Object *obj, float updateRateF) {
     int vis = obj->flags & OBJ_FLAG_IN_VIEW;
     ObjectAnimation *anim = obj->animation;
     for (int i = 0; i < 2; i++) {
+        if (anim->speed[i] < 0.001f) {
+            anim->speed[i] = 0.005f;
+        }
         T3DSkeleton *skel;
         if (anim->id[i] == ANIM_NONE) {
             continue;

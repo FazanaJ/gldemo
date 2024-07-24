@@ -137,6 +137,27 @@ typedef struct MaterialInfo {
     char moveT1;
 } __attribute__((__packed__)) MaterialInfo;
 
+typedef struct ModelDraw {
+    T3DObject *obj;
+	void (*func)(struct Object *obj, int updateRate, float updateRateF);
+    Material *material;
+    rspq_block_t *block;
+	color_t colour;
+    short materialID;
+} ModelDraw;
+
+typedef struct ModelList_NEW {
+    struct ModelList_NEW *next;
+    struct ModelList_NEW *prev;
+    T3DModel *model;
+    ModelDraw *nodes;
+    T3DMat4FP *matrix;
+	T3DChunkAnim **animData;
+    short modelID;
+    char refCount;
+    unsigned char partCount;
+} ModelList_NEW;
+
 extern short gNumMaterials;
 extern short gNumTextureLoads;
 extern const TextureInfo gTextureIDs[];
