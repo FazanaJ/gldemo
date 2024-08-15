@@ -1318,38 +1318,24 @@ tstatic void load_object_model(Object *obj, int objectID, int tableID) {
 }
 
 void obj_animation_init(Object *obj) {
-    int animCount = t3d_model_get_animation_count(obj->gfx->listEntry->model64);
     obj->animation = malloc(sizeof(ObjectAnimation));
     obj->animation->id[0] = ANIM_NONE;
     obj->animation->id[1] = ANIM_NONE;
     obj->animation->idPrev[0] = ANIM_NONE;
     obj->animation->idPrev[1] = ANIM_NONE;
-    obj->animation->inst = malloc(sizeof(T3DAnim) * animCount);
-    obj->animation->skeleton = t3d_skeleton_create(obj->gfx->listEntry->model64);
-    obj->animation->skelBlend = t3d_skeleton_clone(&obj->animation->skeleton, false);
+    obj->animation->skeleton[0] = t3d_skeleton_create(obj->gfx->listEntry->model64);
+    obj->animation->skeleton[1] = t3d_skeleton_clone(&obj->animation->skeleton[0], false);
     obj->animation->speed[0] = 0.05f;
     obj->animation->speed[1] = 0.05f;
-    
-    for (int i = 0; i < animCount; i++) {
-    unsigned int first = timer_ticks();
-        //debugf("\n%d: %s\n", i, t3d_model_get_animation(obj->gfx->listEntry->model64, obj->gfx->listEntry->animData[i]->name)->name);
-        obj->animation->inst[i] = t3d_anim_create(obj->gfx->listEntry->model64, 
-            t3d_model_get_animation(obj->gfx->listEntry->model64, obj->gfx->listEntry->animData[i]->name)->name);
-    debugf("%d\n", TIMER_MICROS(timer_ticks() - first));
-        t3d_anim_attach(&obj->animation->inst[i], &obj->animation->skeleton);
-    }
 }
 
 void obj_animation_close(Object *obj) {
-    int animCount = t3d_model_get_animation_count(obj->gfx->listEntry->model64);    
-    for (int i = 0; i < animCount; i++) {
-        t3d_anim_destroy(&obj->animation->inst[i]);
+    for (int i = 0; i < 2; i++) {
+        if (obj->animation->idPrev[i] != ANIM_NONE) {
+            t3d_anim_destroy(&obj->animation->inst[i]);
+        }
+        t3d_skeleton_destroy(&obj->animation->skeleton[i]);
     }
-
-    t3d_skeleton_destroy(&obj->animation->skeleton);
-    t3d_skeleton_destroy(&obj->animation->skelBlend);
-
-    free(obj->animation->inst);
     free(obj->animation);
 }
 

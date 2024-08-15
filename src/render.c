@@ -1069,7 +1069,7 @@ tstatic void render_objects(float updateRateF) {
                 add_render_node(entry, m->block, m->material, MAT_NULL, layer);
                 if (obj->animation) {
                     //entry->skel = obj->animation->skeleton.bufferCount == 1 ? obj->animation->skeleton.boneMatricesFP : t3d_segment_placeholder(T3D_SEGMENT_SKELETON);
-                    entry->skel = obj->animation->skeleton.boneMatricesFP;
+                    entry->skel = obj->animation->skeleton[0].boneMatricesFP;
                 }
                 m = m->next;
             }
@@ -1162,7 +1162,7 @@ tstatic void generate_dynamic_shadows(void) {
                 }
                 
                 if (obj->animation) {
-                    t3d_segment_set(SEGMENT_BONES, obj->animation->skeleton.boneMatricesFP);
+                    t3d_segment_set(SEGMENT_BONES, obj->animation->skeleton[0].boneMatricesFP);
                 }
                 rspq_block_run(m->block);
                 m = m->next;

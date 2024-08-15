@@ -155,9 +155,8 @@ typedef struct ObjectMovement {
 } ObjectMovement;
 
 typedef struct ObjectAnimation {
-	T3DAnim *inst;
-	T3DSkeleton skeleton;
-	T3DSkeleton skelBlend;
+	T3DAnim inst[2];
+	T3DSkeleton skeleton[2];
 	char *name[2];
 	float animBlend;
 	float speed[2];

@@ -501,51 +501,49 @@ tstatic void object_animate(Object *obj, float updateRateF) {
     ObjectAnimation *anim = obj->animation;
     for (int i = 0; i < 2; i++) {
         anim->speed[i] = CLAMP(anim->speed[i], 0.001f, 1.0f);
-        T3DSkeleton *skel;
         if (anim->id[i] == ANIM_NONE) {
             continue;
         }
-        if (i == 0) {
-            skel = &anim->skeleton;
-        } else {
-            skel = &anim->skelBlend;
-        }
         if (anim->id[i] != anim->idPrev[i]) {
+            if (anim->idPrev[i] != ANIM_NONE) {
+                t3d_anim_destroy(&anim->inst[i]);
+            }
             anim->idPrev[i] = anim->id[i];
-            t3d_anim_attach(&anim->inst[anim->id[i]], skel);
+            anim->inst[i] = t3d_anim_create(obj->gfx->listEntry->model64, t3d_model_get_animation(obj->gfx->listEntry->model64, obj->gfx->listEntry->animData[anim->id[i]]->name)->name);
+            t3d_anim_attach(&anim->inst[i], &anim->skeleton[i]);
             if (vis) {
-                t3d_skeleton_reset(skel);
+                t3d_skeleton_reset(&anim->skeleton[i]);
             }
         }
     }
     if (anim->id[0] != ANIM_NONE) {
         float animSpeed = updateRateF * anim->speed[0];
         if (vis) {
-            t3d_anim_update(&anim->inst[anim->id[0]], animSpeed);
+            t3d_anim_update(&anim->inst[0], animSpeed);
         } else {
-            t3d_anim_set_time(&anim->inst[anim->id[0]], anim->inst[anim->id[0]].time + animSpeed);
+            t3d_anim_set_time(&anim->inst[0], anim->inst[0].time + animSpeed);
         }
-        float time = anim->inst[anim->id[0]].time;
+        float time = anim->inst[0].time;
         if (anim->framePrev[0] > time) {
             anim->stage[0] = 0;
         }
         anim->framePrev[0] = time;
         if (anim->id[1] != ANIM_NONE) {
-            float time = anim->inst[anim->id[1]].time;
+            float time = anim->inst[1].time;
             if (anim->framePrev[1] > time) {
                 anim->stage[1] = 0;
             }
             anim->framePrev[1] = time;
             animSpeed = updateRateF * anim->speed[1];
             if (vis) {
-                t3d_anim_update(&anim->inst[anim->id[1]], animSpeed);
-                t3d_skeleton_blend(&anim->skeleton, &anim->skeleton, &anim->skelBlend, anim->animBlend);
+                t3d_anim_update(&anim->inst[1], animSpeed);
+                t3d_skeleton_blend(&anim->skeleton[0], &anim->skeleton[0], &anim->skeleton[1], anim->animBlend);
             } else {
-                t3d_anim_set_time(&anim->inst[anim->id[1]], anim->inst[anim->id[1]].time + animSpeed);
+                t3d_anim_set_time(&anim->inst[1], anim->inst[1].time + animSpeed);
             }
         }
         if (vis) {
-            t3d_skeleton_update(&anim->skeleton);
+            t3d_skeleton_update(&anim->skeleton[0]);
         }
     }
     get_time_snapshot(PP_ANIMATION, DEBUG_SNAPSHOT_1_END);
