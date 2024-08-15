@@ -74,6 +74,7 @@ const short sLayerSizes[DRAW_TOTAL] = {
     0x3800, // Standard
     0x400, // Decal
     0x800, // Semitransparent
+    0x400, // Misc
 };
 
 
@@ -625,8 +626,8 @@ static inline void render_end(void) {
 #define SHAD_SIZ 16
 
 tstatic void render_shadow(float pos[3], float height) {
-    T3DVertPacked* vertices = render_alloc(sizeof(T3DVertPacked) * 2, DRAW_OPA);
-    T3DMat4FP *mtx = (T3DMat4FP *) render_alloc(sizeof(T3DMat4FP), DRAW_OPA);
+    T3DVertPacked* vertices = render_alloc(sizeof(T3DVertPacked) * 2, DRAW_MISC);
+    T3DMat4FP *mtx = (T3DMat4FP *) render_alloc(sizeof(T3DMat4FP), DRAW_MISC);
     vertices[0] = (T3DVertPacked){
         .posA = {SHAD_SIZ, 0, -SHAD_SIZ}, .stA[0] = 2048, .stA[1] = 0,
         .posB = {-SHAD_SIZ, 0, -SHAD_SIZ}, .stB[0] = 0, .stB[1] = 0,
@@ -642,10 +643,10 @@ tstatic void render_shadow(float pos[3], float height) {
     data_cache_hit_writeback(mtx, sizeof(T3DMat4FP));
     t3d_matrix_push(mtx);
     t3d_vert_load(vertices, 0, 4);
-    t3d_matrix_pop(1);
     t3d_tri_draw(0, 1, 2);
     t3d_tri_draw(2, 3, 0);
     t3d_tri_sync();
+    t3d_matrix_pop(1);
 }
 
 tstatic void apply_anti_aliasing(int mode) {
@@ -757,6 +758,21 @@ tstatic void add_render_node(RenderNode *entry, rspq_block_t *block, Material *m
     get_time_snapshot(PP_BATCH, DEBUG_SNAPSHOT_1_END);
 }
 
+tstatic void layer_reset(int layer) {
+    gRenderNodeHead[layer] = NULL;
+    gRenderNodeTail[layer] = NULL;
+    gMateriallistHead[layer] = NULL;
+    gMateriallistTail[layer] = NULL;
+    gPrevMatList = NULL;
+#ifdef PUPPYPRINT_DEBUG
+    int total = gSortPos[layer] - ((unsigned int) gSortHeap[layer]);
+    if (total < gSortRecord[layer]) {
+        gSortRecord[layer] = total;
+    }
+#endif
+    gSortPos[layer] = ((unsigned int) gSortHeap[layer]) + sLayerSizes[layer];
+}
+
 tstatic void pop_render_list(int layer) {
     if (gRenderNodeHead[layer] == NULL) {
         return;
@@ -782,18 +798,7 @@ tstatic void pop_render_list(int layer) {
         rspq_block_run(renderList->block);
         renderList = renderList->next;
     }
-    gRenderNodeHead[layer] = NULL;
-    gRenderNodeTail[layer] = NULL;
-    gMateriallistHead[layer] = NULL;
-    gMateriallistTail[layer] = NULL;
-    gPrevMatList = NULL;
-#ifdef PUPPYPRINT_DEBUG
-    int total = gSortPos[layer] - ((unsigned int) gSortHeap[layer]);
-    if (total < gSortRecord[layer]) {
-        gSortRecord[layer] = total;
-    }
-#endif
-    gSortPos[layer] = ((unsigned int) gSortHeap[layer]) + sLayerSizes[layer];
+    layer_reset(layer);
 }
 
 tstatic void render_particles(void) {
@@ -1007,13 +1012,13 @@ tstatic void render_clutter(void) {
                 layer = DRAW_OPA;
             }
             RenderNode *entry = (RenderNode *) render_alloc(sizeof(RenderNode), layer);
-            entry->matrix = &obj->matrix;
+            entry->matrix = obj->matrix;
             if (m->matrixBehaviour == MTX_BILLBOARD || m->matrixBehaviour == MTX_BILLBOARD_SCALE) {
                 Matrix mtx;
                 //data_cache_hit_invalidate(&obj->matrix, sizeof(T3DMat4FP));
                 //entry->matrix = UncachedAddr(&obj->matrix);
                 set_draw_matrix(&mtx, m->matrixBehaviour, obj->pos, obj->faceAngle, obj->scale);
-                t3d_mat4_to_fixed_3x4(&obj->matrix, (T3DMat4  *) &mtx);
+                t3d_mat4_to_fixed_3x4(obj->matrix, (T3DMat4  *) &mtx);
             }
             entry->primColour = m->colour;
             add_render_node(entry, m->block, m->material, MAT_NULL, layer);
@@ -1290,6 +1295,7 @@ void render_game(int updateRate, float updateRateF) {
         rdpq_set_mode_standard();
         rdpq_mode_dithering(DITHER_SQUARE_SQUARE);
     }
+    layer_reset(DRAW_MISC);
     get_time_snapshot(PP_RENDER, DEBUG_SNAPSHOT_1_END);
     if (gScreenshotStatus <= SCREENSHOT_NONE) {
         render_hud(updateRate, updateRateF);

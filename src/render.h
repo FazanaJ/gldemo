@@ -16,6 +16,7 @@ enum DrawLayer {
     DRAW_OPA,   // Opaque geometry
     DRAW_DECAL, // Decal geometry, should come after opaque, but before semitransparent
     DRAW_XLU,   // Semitransparent geometry, do this last.
+    DRAW_MISC,  // Just temp stuff unrelated to standard layering
 
     DRAW_TOTAL
 };

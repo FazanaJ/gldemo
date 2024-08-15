@@ -269,6 +269,12 @@ void profiler_draw_overview(void) {
     rdpq_text_printf(NULL, FONT_ARIAL, 8, height - 32, "Mtx %d | Mdl %d | Ovl %d", gDebugData->matrixOps, gNumModels, gNumOverlays);
     rdpq_text_printf(NULL, FONT_ARIAL, 8, height - 40, "OPA 0x%X", gSortRecord[DRAW_OPA]);
     rdpq_text_printf(NULL, FONT_ARIAL, 8, height - 48, "XLU 0x%X", gSortRecord[DRAW_XLU]);
+
+    if (gPlayer) {
+        rdpq_text_printf(NULL, FONT_ARIAL, 8, 128 + 0, "X: %2.2f", (double) gPlayer->pos[0]);
+        rdpq_text_printf(NULL, FONT_ARIAL, 8, 128 + 8, "Y: %2.2f", (double) gPlayer->pos[1]);
+        rdpq_text_printf(NULL, FONT_ARIAL, 8, 128 + 16, "Z: %2.2f", (double) gPlayer->pos[2]);
+    }
 }
 
 void profiler_draw_breakdown(void) {

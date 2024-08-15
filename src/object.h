@@ -208,7 +208,7 @@ typedef struct Clutter {
 	float viewDist;
 	float scale[3];
 	unsigned int flags;
-	T3DMat4FP matrix;
+	T3DMat4FP *matrix;
 } Clutter;
 
 typedef struct ClutterList {

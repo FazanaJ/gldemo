@@ -1121,6 +1121,7 @@ Clutter *allocate_clutter(void) {
     newClutter->gfx = NULL;
     newClutter->flags = OBJ_FLAG_NONE;
     newClutter->viewDist = SQR(1500.0f);
+    newClutter->matrix = malloc_uncached(sizeof(T3DMat4FP));
 #ifdef PUPPYPRINT_DEBUG
     gNumClutter++;
 #endif
@@ -1444,6 +1445,7 @@ void free_clutter(Clutter *obj) {
         }
     }
     free(obj->entry);
+    free_uncached(obj->matrix);
     if (obj->gfx) {
         check_unused_model((Object *) obj);
         free(obj->gfx);
@@ -1565,8 +1567,7 @@ Clutter *spawn_clutter(int objectID, float x, float y, float z, short pitch, sho
         clutter->gfx->yOffset = 0;
     }
     clutter_matrix(&mtx, clutter->gfx->listEntry->entry->matrixBehaviour, clutter->pos, clutter->faceAngle, clutter->scale);
-    t3d_mat4_to_fixed_3x4(&clutter->matrix, (T3DMat4  *) &mtx);
-    data_cache_hit_writeback(&clutter->matrix, sizeof(Matrix));
+    t3d_mat4_to_fixed_3x4(clutter->matrix, (T3DMat4  *) &mtx);
     return clutter;
 }
 
