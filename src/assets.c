@@ -193,12 +193,14 @@ void material_setup_constants(Material *m) {
 
 void material_run_tile0(Material *m) {
     m->shiftS0 += gMaterialIDs[m->entry->materialID].moveS0;
-    if (m->shiftS0 > 1024) {
-        m->shiftS0 -= 1024;
+    int capS = 1024 >> gMaterialIDs[m->entry->materialID].shiftS0;
+    if (m->shiftS0 > capS) {
+        m->shiftS0 -= capS;
     }
     m->shiftT0 += gMaterialIDs[m->entry->materialID].moveT0;
-    if (m->shiftT0 > 1024) {
-        m->shiftT0 -= 1024;
+    int capT = 1024 >> gMaterialIDs[m->entry->materialID].shiftT0;
+    if (m->shiftT0 > capT) {
+        m->shiftT0 -= capT;
     }
     sTexParams.s.translate = (float) m->shiftS0 * 0.125f;
     sTexParams.t.translate = (float) m->shiftT0 * 0.125f;
@@ -224,12 +226,14 @@ void material_run_tile0(Material *m) {
 
 void material_run_tile1(Material *m) {
     m->shiftS1 += gMaterialIDs[m->entry->materialID].moveS1;
-    if (m->shiftS1 > 1024) {
-        m->shiftS1 -= 1024;
+    int capS = 1024 >> gMaterialIDs[m->entry->materialID].shiftS1;
+    if (m->shiftS1 > capS) {
+        m->shiftS1 -= capS;
     }
     m->shiftT1 += gMaterialIDs[m->entry->materialID].moveT1;
-    if (m->shiftT1 > 1024) {
-        m->shiftT1 -= 1024;
+    int capT = 1024 >> gMaterialIDs[m->entry->materialID].shiftT1;
+    if (m->shiftT1 > capT) {
+        m->shiftT1 -= capT;
     }
     sTexParams.s.translate = (float) m->shiftS1 * 0.125f;
     sTexParams.t.translate = (float) m->shiftT1 * 0.125f;
@@ -355,6 +359,8 @@ static ModelList_NEW *model_try_load(int modelID) {
     if (animCount != 0) {
         list->animData = malloc(sizeof(void *) * animCount);
         t3d_model_get_animations(list->model, list->animData);
+    } else {
+        list->animData = NULL;
     }
 
     end:
@@ -740,6 +746,29 @@ tstatic void object_model_clear(ModelList *entry) {
     entry->active = false;
 }
 
+void sky_free(Environment *e) {
+    debugf("Freeing texture: %s.\n", gTextureIDs[gEnvironment->skyboxTextureID].file);
+    if (gEnvironment->skyInit) {
+        rspq_block_free(gEnvironment->skyInit);
+        gEnvironment->skyInit = NULL;
+    }
+    for (int i = 0; i < 32; i++) {
+        if (gEnvironment->skySegment[i]) {
+            rspq_block_free(gEnvironment->skySegment[i]);
+            gEnvironment->skySegment[i] = NULL;
+        }
+        gNumMaterials--;
+    }
+    if (gEnvironment->skyVerts) {
+        free_uncached(gEnvironment->skyVerts);
+    }
+    if (gEnvironment->skyMtx) {
+        free_uncached(gEnvironment->skyMtx);
+    }
+    sprite_free(gEnvironment->skySprite);
+    gEnvironment->texGen = false;
+}
+
 void asset_cycle(int updateRate) {
     DEBUG_SNAPSHOT_1();
     if (gMaterialListHead == NULL) {
@@ -755,26 +784,7 @@ void asset_cycle(int updateRate) {
     if (gEnvironment->texGen) {
         gEnvironment->skyTimer -= updateRate;
         if (gEnvironment->skyTimer <= 0) {
-            debugf("Freeing texture: %s.\n", gTextureIDs[gEnvironment->skyboxTextureID].file);
-            if (gEnvironment->skyInit) {
-                rspq_block_free(gEnvironment->skyInit);
-                gEnvironment->skyInit = NULL;
-            }
-            for (int i = 0; i < 32; i++) {
-                if (gEnvironment->skySegment[i]) {
-                    rspq_block_free(gEnvironment->skySegment[i]);
-                    gEnvironment->skySegment[i] = NULL;
-                }
-                gNumMaterials--;
-            }
-            if (gEnvironment->skyVerts) {
-                free_uncached(gEnvironment->skyVerts);
-            }
-            if (gEnvironment->skyMtx) {
-                free_uncached(gEnvironment->skyMtx);
-            }
-            sprite_free(gEnvironment->skySprite);
-            gEnvironment->texGen = false;
+            sky_free(gEnvironment);
         }
     }
     get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
@@ -810,8 +820,8 @@ void asset_cycle(int updateRate) {
         if (sceneList->collisionTimer > 0) {
             sceneList->collisionTimer -= updateRate;
             if (sceneList->collisionTimer <= 0) {
-                free(sceneList->collision->data);
                 free(sceneList->collision);
+                free(sceneList->collisionData);
                 sceneList->collision = NULL;
             }
         }
@@ -993,6 +1003,17 @@ void check_unused_model(Object *obj) {
         }
         objList = objList->next;
     }
+
+    ClutterList *cluList = gClutterListHead;
+    Clutter *listClu;
+
+    while (cluList) {
+        listClu = cluList->clutter;
+        if (listClu->gfx->modelID == obj->gfx->modelID && listClu != (Clutter *) obj) {
+            return;
+        }
+        cluList = cluList->next;
+    }
     
     debugf("Freeing model [%s]\n", gModelIDs[obj->gfx->modelID - 1]);
     if (obj->gfx->listEntry == gModelIDListHead) {
@@ -1016,13 +1037,18 @@ void check_unused_model(Object *obj) {
     while (curMesh) {
         ObjectModel *m = curMesh;
         curMesh = curMesh->next;
+        if (m->material) {
+            material_try_free(m->material->entry);
+        }
         if (m->block) {
             rspq_block_free(m->block);
         }
         free(m);
     }
     t3d_model_free(obj->gfx->listEntry->model64);
-    free(obj->gfx->listEntry->animData);
+    if (obj->gfx->listEntry->animData) {
+        free(obj->gfx->listEntry->animData);
+    }
     free(obj->gfx->listEntry);
 #ifdef PUPPYPRINT_DEBUG
         gNumModels--;
@@ -1216,11 +1242,10 @@ tstatic void load_object_model(Object *obj, int objectID, int tableID) {
         list->prev = gModelIDListTail;
     }
     gModelIDListTail = list;
-
     debugf("Loading model [%s].", gModelIDs[modelID - 1]);
     list->entry = NULL;
     list->active = false;
-    list->model64 = MODEL_LOAD(gModelIDs[modelID - 1]);
+    list->model64 = t3d_model_load(asset_dir(gModelIDs[modelID - 1], DFS_MODEL64));
         ObjectModel *tail = NULL;
         T3DModel *mesh = list->model64;
         int primCount = mesh->chunkCount;
@@ -1277,6 +1302,8 @@ tstatic void load_object_model(Object *obj, int objectID, int tableID) {
     if (animCount != 0) {
         list->animData = malloc(sizeof(void *) * animCount);
         t3d_model_get_animations(obj->gfx->listEntry->model64, list->animData);
+    } else {
+        list->animData = NULL;
     }
 
     debugf(" Time: %2.3fs.\n", (double) (TIMER_MICROS(DEBUG_SNAPSHOT_1_END) / 1000000.0f));
@@ -1299,11 +1326,15 @@ void obj_animation_init(Object *obj) {
     obj->animation->inst = malloc(sizeof(T3DAnim) * animCount);
     obj->animation->skeleton = t3d_skeleton_create(obj->gfx->listEntry->model64);
     obj->animation->skelBlend = t3d_skeleton_clone(&obj->animation->skeleton, false);
+    obj->animation->speed[0] = 0.05f;
+    obj->animation->speed[1] = 0.05f;
     
     for (int i = 0; i < animCount; i++) {
+    unsigned int first = timer_ticks();
         //debugf("\n%d: %s\n", i, t3d_model_get_animation(obj->gfx->listEntry->model64, obj->gfx->listEntry->animData[i]->name)->name);
         obj->animation->inst[i] = t3d_anim_create(obj->gfx->listEntry->model64, 
             t3d_model_get_animation(obj->gfx->listEntry->model64, obj->gfx->listEntry->animData[i]->name)->name);
+    debugf("%d\n", TIMER_MICROS(timer_ticks() - first));
         t3d_anim_attach(&obj->animation->inst[i], &obj->animation->skeleton);
     }
 }
@@ -1414,6 +1445,7 @@ void free_clutter(Clutter *obj) {
     }
     free(obj->entry);
     if (obj->gfx) {
+        check_unused_model((Object *) obj);
         free(obj->gfx);
     }
     free(obj);
@@ -1525,13 +1557,12 @@ Clutter *spawn_clutter(int objectID, float x, float y, float z, short pitch, sho
     clutter->scale[1] = 1.0f;
     clutter->scale[2] = 1.0f;
     clutter->objectID = objectID;
-    clutter->gfx = malloc(sizeof(ObjectGraphics));
-    clutter->gfx->width = 32.0f;
-    clutter->gfx->height = 80.0f;
-    clutter->gfx->yOffset = 0;
     Matrix mtx;
     if (gClutterModels[objectID]) {
         load_object_model((Object *) clutter, objectID, MOD_CLUTTER);
+        clutter->gfx->width = 32.0f;
+        clutter->gfx->height = 80.0f;
+        clutter->gfx->yOffset = 0;
     }
     clutter_matrix(&mtx, clutter->gfx->listEntry->entry->matrixBehaviour, clutter->pos, clutter->faceAngle, clutter->scale);
     t3d_mat4_to_fixed_3x4(&clutter->matrix, (T3DMat4  *) &mtx);

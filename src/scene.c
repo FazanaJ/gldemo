@@ -66,6 +66,7 @@ tstatic void clear_scene(void) {
         while (curChunk) {
             if (curChunk->collision) {
                 free(curChunk->collision);
+                free(curChunk->collisionData);
             }
             SceneMesh *curMesh = curChunk->meshList;
             while (curMesh) {
@@ -89,23 +90,12 @@ tstatic void clear_scene(void) {
     }
     if (gEnvironment) {
         if (gEnvironment->texGen) {
-            if (gEnvironment->skyInit) {
-                rspq_block_free(gEnvironment->skyInit);
-                gEnvironment->skyInit = NULL;
-            }
-            for (int i = 0; i < 32; i++) {
-                if (gEnvironment->skySegment[i]) {
-                    rspq_block_free(gEnvironment->skySegment[i]);
-                    gEnvironment->skySegment[i] = NULL;
-                }
-                gNumMaterials--;
-            }
-            sprite_free(gEnvironment->skySprite);
+            sky_free(gEnvironment);
         }
         //free(gEnvironment);
     }
     if (gCurrentScene->model) {
-        MODEL_FREE(gCurrentScene->model);
+        t3d_model_free(gCurrentScene->model);
     }
     if (gCurrentScene->overlay) {
         dlclose(gCurrentScene->overlay);
@@ -129,8 +119,16 @@ void scene_clear_chunk(SceneChunk *c) {
     c->flags &= ~CHUNK_HAS_MODEL;
 }
 
-#if OPENGL
 void scene_generate_collision(SceneChunk *c) {
+    int triCount = c->collisionTriCount;
+    if (triCount == 0) {
+        return;
+    }
+    int cellCount = 1;
+    if (triCount > 400) {
+        cellCount *= 4;
+    }
+#if OPENGL
     int triCount = c->collisionTriCount;
     if (triCount == 0) {
         return;
@@ -189,17 +187,17 @@ void scene_generate_collision(SceneChunk *c) {
         }
         m = m->next;
     }
-}
 #endif
+}
 
 void scene_generate_chunk(SceneMesh *s) {
     s->material = material_init(s->materialID);
     rspq_block_begin();
-    t3d_mat4fp_from_srt_euler(&s->mtx, (float[3]){WORLD_SCALE, WORLD_SCALE, WORLD_SCALE}, (float[3]){0, 0, 0}, (float[3]){0, 0, 0});
-    data_cache_hit_writeback(&s->mtx, sizeof(Matrix));
-    t3d_matrix_push(&s->mtx);
+    //t3d_mat4fp_from_srt_euler(&s->mtx, (float[3]){WORLD_SCALE, WORLD_SCALE, WORLD_SCALE}, (float[3]){0, 0, 0}, (float[3]){0, 0, 0});
+    //data_cache_hit_writeback(&s->mtx, sizeof(Matrix));
+    //t3d_matrix_push(&s->mtx);
     t3d_model_draw_object((T3DObject *) s->mesh, NULL);
-    t3d_matrix_pop(1);
+    //t3d_matrix_pop(1);
     s->renderBlock = rspq_block_end();
 }
 
@@ -280,12 +278,12 @@ void load_scene(int sceneID, int updateRate, float updateRateF) {
                 m->mesh = (primitive_t *) obj;
                 int sceneTex = j % 8;
                 m->materialID = sSceneTexIDs[gCurrentScene->sceneID][sceneTex];
-#if OPENGL
                 if ((gMaterialIDs[m->materialID].collisionFlags & COLFLAG_INTANGIBLE) == false) {
-                    ModelPrim *prim = (ModelPrim *) m->mesh;
-                    c->collisionTriCount += prim->num_indices;
+                    for (int k = 0; k < obj->numParts; k++) {
+                        const T3DObjectPart *part = &obj->parts[k];
+                        c->collisionTriCount += part->numIndices;
+                    }
                 }
-#endif
                 m->material = NULL;
                 if (gMaterialIDs[m->materialID].flags & MAT_INVISIBLE) {
                     m->flags = MESH_INVISIBLE;

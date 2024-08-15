@@ -11,8 +11,8 @@
 
 
 void loop(Object *obj, int updateRate, float updateRateF) {
-    obj->animation->id[0] = 0;
-    obj->animation->speed[0] = 0.02f;
+    //obj->animation->id[0] = 0;
+    //obj->animation->speed[0] = 0.02f;
 }
 
 Hitbox bbox = {

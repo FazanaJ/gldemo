@@ -151,10 +151,9 @@ typedef struct ModelList_NEW {
     struct ModelList_NEW *prev;
     T3DModel *model;
     ModelDraw *nodes;
-    T3DMat4FP *matrix;
 	T3DChunkAnim **animData;
     short modelID;
-    char refCount;
+    unsigned char refCount;
     unsigned char partCount;
 } ModelList_NEW;
 
@@ -195,3 +194,4 @@ void material_run(Material *m);
 void material_run_partial(Material *m);
 void material_run_flipbook(Material *m);
 void clutter_model_generate(struct Clutter *obj);
+void sky_free(Environment *e);

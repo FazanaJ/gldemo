@@ -237,10 +237,13 @@ void object_collide(Object *obj) {
             chunk = chunk->next;
             continue;
         }
-        if (chunk->collision == NULL) {
-            //scene_generate_collision(chunk);
+        /*if (chunk->collision == NULL) {
+            scene_generate_collision(chunk);
+            if (chunk->collision == NULL) {
+                chunk = chunk->next;
+            }
         }
-        //chunk->collisionTimer = 30;
+        chunk->collisionTimer = 30;*/
         while (mesh) {
             if (mesh->material && mesh->material->collisionFlags & COLFLAG_INTANGIBLE) {
                 mesh = mesh->next;

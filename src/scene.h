@@ -7,7 +7,7 @@
 #define MAP_OBJ 0
 #define MAP_CLU 1
 
-#define WORLD_SCALE 0.5328f
+#define WORLD_SCALE 1.0f//0.5328f
 
 enum SceneNames {
     SCENE_INTRO,
@@ -46,7 +46,8 @@ typedef struct SceneMesh {
 
 typedef struct SceneChunk {
     struct SceneChunk *next;
-    struct CollisionCell *collision;
+    struct CollisionCell **collision;
+    void *collisionData;
     float bounds[2][3];
     SceneMesh *meshList;
     short flags;

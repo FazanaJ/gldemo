@@ -52,6 +52,8 @@ RenderSettings gRenderSettings;
 rspq_block_t *gParticleMaterialBlock;
 int gPrevRenderFlags;
 int gPrevMaterialID;
+unsigned long long gOtherModeFlags;
+unsigned long long gPrevOtherModeFlags;
 unsigned int sT3dFlags;
 unsigned int sPrevT3dFlags;
 T3DViewport gViewport;
@@ -573,14 +575,10 @@ tstatic void material_set(Material *material, int flags) {
 
 tstatic void render_sky_flat(Environment *e) {
     DEBUG_SNAPSHOT_1();
-    int width = display_get_width();
-    int height = display_get_height();
-    rdpq_set_mode_fill(RGBA32((e->skyColourTop[0] + e->skyColourBottom[0]) / 2,
+    rdpq_clear(RGBA32((e->skyColourTop[0] + e->skyColourBottom[0]) / 2,
                               (e->skyColourTop[1] + e->skyColourBottom[1]) / 2,
                               (e->skyColourTop[2] + e->skyColourBottom[2]) / 2,
                                255));
-    rdpq_fill_rectangle(0, 0, width, height);
-    rdpq_set_mode_standard();
     get_time_snapshot(PP_BG, DEBUG_SNAPSHOT_1_END);
 }
 
@@ -627,18 +625,15 @@ static inline void render_end(void) {
 #define SHAD_SIZ 16
 
 tstatic void render_shadow(float pos[3], float height) {
-    Matrix mtxF;
     T3DVertPacked* vertices = render_alloc(sizeof(T3DVertPacked) * 2, DRAW_OPA);
     T3DMat4FP *mtx = (T3DMat4FP *) render_alloc(sizeof(T3DMat4FP), DRAW_OPA);
-    
-    uint16_t norm = t3d_vert_pack_normal(&(T3DVec3){{ 0, 1, 0}});
     vertices[0] = (T3DVertPacked){
-        .posA = {SHAD_SIZ, 0, -SHAD_SIZ}, .rgbaA = 0x0000007F, .normA = norm, .stA[0] = 2048, .stA[1] = 0,
-        .posB = {-SHAD_SIZ, 0, -SHAD_SIZ}, .rgbaB = 0x0000007F, .normB = norm, .stB[0] = 0, .stB[1] = 0,
+        .posA = {SHAD_SIZ, 0, -SHAD_SIZ}, .stA[0] = 2048, .stA[1] = 0,
+        .posB = {-SHAD_SIZ, 0, -SHAD_SIZ}, .stB[0] = 0, .stB[1] = 0,
     };
     vertices[1] = (T3DVertPacked){
-        .posA = {-SHAD_SIZ, 0, SHAD_SIZ}, .rgbaA = 0x0000007F, .normA = norm, .stA[0] = 0, .stA[1] = 2048,
-        .posB = {SHAD_SIZ, 0, SHAD_SIZ}, .rgbaB = 0x0000007F, .normB = norm, .stB[0] = 2048, .stB[1] = 2048,
+        .posA = {-SHAD_SIZ, 0, SHAD_SIZ}, .stA[0] = 0, .stA[1] = 2048,
+        .posB = {SHAD_SIZ, 0, SHAD_SIZ}, .stB[0] = 2048, .stB[1] = 2048,
     };
     
     t3d_mat4fp_from_srt_euler(mtx, (float[3]){1.0f, 1.0f, 1.0f}, (float[3]){0, 0, 0}, (float[3]){pos[0], height + 1.0f, pos[2]});
@@ -1271,13 +1266,13 @@ void render_game(int updateRate, float updateRateF) {
         apply_anti_aliasing(AA_ACTOR);
         render_objects(updateRateF);
         apply_anti_aliasing(AA_GEO);
-        //render_particles();
+        render_particles();
         render_end();
         if (gScreenshotStatus == SCREENSHOT_GENERATE) {
             clear_dynamic_shadows();
         }
     } else if (gScreenshotStatus == SCREENSHOT_SHOW) {
-        render_world();
+        //render_world();
         render_end();
         if (gScreenshotType == FMT_RGBA16) {
             rdpq_set_mode_copy(false);

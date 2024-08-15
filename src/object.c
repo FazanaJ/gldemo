@@ -138,6 +138,14 @@ void delete_clutter(Clutter *clutter) {
  * gObjectListHead is updated every time it's removed, so keep removing it until it reads null.
 */
 void clear_objects(void) {
+    
+    /*ObjectList *objList = gObjectListHead;
+    Object *obj;
+    while (objList) {
+        obj = objList->obj;
+        obj->flags |= OBJ_FLAG_DELETE;
+        objList = objList->next;
+    }*/
     while (gObjectListHead) {
         free_object(gObjectListHead->obj);
     }
@@ -492,9 +500,7 @@ tstatic void object_animate(Object *obj, float updateRateF) {
     int vis = obj->flags & OBJ_FLAG_IN_VIEW;
     ObjectAnimation *anim = obj->animation;
     for (int i = 0; i < 2; i++) {
-        if (anim->speed[i] < 0.001f) {
-            anim->speed[i] = 0.005f;
-        }
+        anim->speed[i] = CLAMP(anim->speed[i], 0.001f, 1.0f);
         T3DSkeleton *skel;
         if (anim->id[i] == ANIM_NONE) {
             continue;

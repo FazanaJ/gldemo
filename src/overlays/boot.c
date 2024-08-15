@@ -115,6 +115,7 @@ void init_debug(void) {
     gDebugData = malloc(sizeof(DebugData));
     bzero(gDebugData, sizeof(DebugData));
     gDebugData->enabled = false;
+    //gDebugData->menuPage = PAGE_OVERVIEW;
     //gDebugData->debugMeshes[0] = MODEL_LOAD("debugcylinder");
 }
 #endif

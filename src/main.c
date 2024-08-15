@@ -120,9 +120,14 @@ void boot_game(void) {
     debugf("Game booted in %2.3fs.\n", (double) (TIMER_MICROS(timer_ticks()) / 1000000.0f));
 }
 
+extern int gTransitionScene;
+
 int main(void) {
     int updateRate;
     float updateRateF;
+
+    static int balls = 0;
+    static int balls2 = 0;
 
     boot_game();
 #ifdef PUPPYPRINT_DEBUG
@@ -133,6 +138,14 @@ int main(void) {
     while (1) {
         reset_profiler_times();
         DEBUG_SNAPSHOT_1();
+
+        balls2++;
+        if (balls2 > 90) {
+            balls ^= 1;
+            //transition_into_scene(balls, TRANSITION_FULLSCREEN_IN, 30, TRANSITION_FULLSCREEN_OUT);
+            balls2 = 0;
+            //gMenuStatus = MENU_CLOSED;
+        }
 
         update_game_time(&updateRate, &updateRateF);
         asset_cycle(updateRate);

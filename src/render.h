@@ -11,9 +11,6 @@
 #define SEGMENT_BONES   0x02
 #define SEGMENT_VERTS   0x03
 
-#define MODEL_LOAD(x) t3d_model_load(asset_dir(x, DFS_MODEL64))
-#define MODEL_FREE(x) t3d_model_free(x)
-
 enum DrawLayer {
     DRAW_NZB,   // No Z Buffer
     DRAW_OPA,   // Opaque geometry

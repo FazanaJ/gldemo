@@ -168,13 +168,13 @@ filesystem/%.xm64: assets/xm/%.xm
 filesystem/%.t3dm: assets/models/%.glb
 	@mkdir -p $(dir $@)
 	@echo "    [MODEL] $@"
-	$(T3D_GLTF_TO_3D) "$<" $@ --ignore-materials --base-scale=64
+	$(T3D_GLTF_TO_3D) "$<" $@ --ignore-materials --base-scale=34
 	$(N64_BINDIR)/mkasset $(COMPRESS_LEVEL) -o filesystem $@
 
 filesystem/%.t3dm: assets/archives/%.glb
 	@mkdir -p $(dir $@)
 	@echo "    [MODEL] $@"
-	$(T3D_GLTF_TO_3D) "$<" $@ --ignore-materials --base-scale=64
+	$(T3D_GLTF_TO_3D) "$<" $@ --ignore-materials --base-scale=34
 	$(N64_BINDIR)/mkasset --compress $(ARCHIVE_LEVEL_COMPRESS) -o filesystem $@
 
 $(BUILD_DIR)/gldemo.dfs: $(assets_conv) $(DSO_LIST)
