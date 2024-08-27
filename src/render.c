@@ -147,7 +147,7 @@ tstatic inline void mtx_invalidate(void* addr) {
 
 tstatic inline void set_frustrum(float l, float r, float b, float t, float n, float f) {
     DEBUG_SNAPSHOT_1();
-    DEBUG_//MATRIX_OP();
+    DEBUG_MATRIX_OP();
     Matrix frustum = (Matrix) { .m={
         {(2*n)/(r-l), 0.f, 0.f, 0.f},
         {0.f, (2.f*n)/(t-b), 0.f, 0.f},
@@ -177,7 +177,7 @@ tstatic float lookat_dot(const float *a, const float *b) {
 
 tstatic void mtx_lookat(float eyex, float eyey, float eyez, float centerx, float centery, float centerz, float upx, float upy, float upz) {
     DEBUG_SNAPSHOT_1();
-    DEBUG_//MATRIX_OP();
+    DEBUG_MATRIX_OP();
     GLfloat eye[3] = {eyex, eyey, eyez};
     GLfloat f[3] = {centerx - eyex, centery - eyey, centerz - eyez};
     GLfloat u[3] = {upx, upy, upz};
@@ -226,7 +226,7 @@ tstatic void mtx_lookat(float eyex, float eyey, float eyez, float centerx, float
 };
 
 tstatic void mtx_translate_rotate(Matrix *mtx, short angleX, short angleY, short angleZ, GLfloat x, GLfloat y, GLfloat z) {
-    DEBUG_//MATRIX_OP();
+    DEBUG_MATRIX_OP();
     float sx = sins(angleX);
     float cx = coss(angleX);
 
@@ -255,7 +255,7 @@ tstatic void mtx_translate_rotate(Matrix *mtx, short angleX, short angleY, short
 }
 
 tstatic void mtx_translate(Matrix *mtx, float x, float y, float z) {
-    DEBUG_//MATRIX_OP();
+    DEBUG_MATRIX_OP();
     bzero(mtx, sizeof(Matrix));
 
     mtx->m[0][0] = 1.0f;
@@ -268,7 +268,7 @@ tstatic void mtx_translate(Matrix *mtx, float x, float y, float z) {
 }
 
 tstatic void mtx_rotate(Matrix *mtx, short angleX, short angleY, short angleZ) {
-    DEBUG_//MATRIX_OP();
+    DEBUG_MATRIX_OP();
     float sx = sins(angleX);
     float cx = coss(angleX);
 
@@ -297,7 +297,7 @@ tstatic void mtx_rotate(Matrix *mtx, short angleX, short angleY, short angleZ) {
 }
 
 tstatic void mtx_billboard(Matrix *mtx, float x, float y, float z) {
-    DEBUG_//MATRIX_OP();
+    DEBUG_MATRIX_OP();
     gBillboardMatrix.m[3][0] = x;
     gBillboardMatrix.m[3][1] = y;
     gBillboardMatrix.m[3][2] = z;
@@ -306,7 +306,7 @@ tstatic void mtx_billboard(Matrix *mtx, float x, float y, float z) {
 }
 
 tstatic void mtx_scale(Matrix *mtx, float scaleX, float scaleY, float scaleZ) {
-    DEBUG_//MATRIX_OP();
+    DEBUG_MATRIX_OP();
     float s[3] = {scaleX, scaleY, scaleZ};
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
@@ -378,7 +378,8 @@ void clutter_matrix(Matrix *mtx, int matrixBehaviour, float *pos, unsigned short
     set_draw_matrix(mtx, matrixBehaviour, pos, angle, scale);
 }
 
-tstatic void set_light(light_t light) {
+tstatic void light_apply(light_t light) {
+    DEBUG_SNAPSHOT_1();
     static T3DVec3 lightDirVec = {{1.0f, 1.0f, 1.0f}};
     static uint8_t colorAmbient[4] = {0xAA, 0xAA, 0xAA, 0xFF};
     static uint8_t colorDir[4]     = {0xFF, 0xAA, 0xAA, 0xFF};
@@ -386,9 +387,10 @@ tstatic void set_light(light_t light) {
     t3d_light_set_ambient(colorAmbient);
     t3d_light_set_directional(0, colorDir, &lightDirVec);
     t3d_light_set_count(4);
+    get_time_snapshot(PP_LIGHTS, DEBUG_SNAPSHOT_1_END);
 }
 
-tstatic void project_camera(void) {
+tstatic void camera_project(void) {
     Camera *c = gCamera;
     float fov = gCamera->fov / 50.0f;
     static float prevFov = 0.0f;
@@ -447,28 +449,38 @@ tstatic void material_mode(int flags) {
         if (!gRenderSettings.cutout) {
             rdpq_mode_alphacompare(192);
             gRenderSettings.cutout = true;
+            if (gRenderSettings.xlu) {
+                rdpq_mode_blender(0);
+                gRenderSettings.xlu = false;
+            }
         }
     } else {
         if (gRenderSettings.cutout) {
             rdpq_mode_alphacompare(0);
             gRenderSettings.cutout = false;
         }
-    }
-    if (flags & MAT_XLU) {
-        if (!gRenderSettings.xlu) {
-            rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
-            gRenderSettings.xlu = true;
-        }
-    } else {
-        if (gRenderSettings.xlu) {
-            rdpq_mode_blender(0);
-            gRenderSettings.xlu = false;
+        if (flags & MAT_XLU) {
+            if (!gRenderSettings.xlu) {
+                rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+                gRenderSettings.xlu = true;
+            }
+        } else {
+            if (gRenderSettings.xlu) {
+                rdpq_mode_blender(0);
+                gRenderSettings.xlu = false;
+            }
         }
     }
     if (flags & MAT_DEPTH_READ) {
         sT3dFlags |= T3D_FLAG_DEPTH;
         if (!gRenderSettings.depthRead) {
-            rdpq_mode_zbuf(true, true);
+            int write;
+            if (flags & MAT_DECAL || flags & MAT_XLU) {
+                write = false;
+            } else {
+                write = true;
+            }
+            rdpq_mode_zbuf(true, write);
             gRenderSettings.depthRead = true;
         }
     } else {
@@ -552,7 +564,7 @@ tstatic void material_texture(Material *m) {
         gNumTextureLoads++;
         gPrevMaterialID = m->entry->materialID;
     } else {
-        sT3dFlags &= T3D_FLAG_TEXTURED;
+        sT3dFlags &= ~T3D_FLAG_TEXTURED;
     }
 }
 
@@ -568,7 +580,7 @@ tstatic void material_set(Material *material, int flags) {
     }
     
     if (sT3dFlags != sPrevT3dFlags) {
-        t3d_state_set_drawflags(sT3dFlags | T3D_FLAG_SHADED | T3D_FLAG_DEPTH);
+        t3d_state_set_drawflags(sT3dFlags);
         sPrevT3dFlags = sT3dFlags;
     }
     get_time_snapshot(PP_MATERIALS, DEBUG_SNAPSHOT_1_END);
@@ -649,7 +661,7 @@ tstatic void render_shadow(float pos[3], float height) {
     t3d_matrix_pop(1);
 }
 
-tstatic void apply_anti_aliasing(int mode) {
+tstatic void render_aa(int mode) {
     switch (gConfig.graphics) {
     case G_PERFORMANCE:
         rdpq_mode_antialias(AA_NONE);
@@ -677,7 +689,7 @@ tstatic void render_ztarget_scissor(void) {
     rdpq_set_scissor(0, targetPos, display_get_width(), display_get_height() - (targetPos));
 }
 
-tstatic void apply_render_settings(void) {
+tstatic void render_set_modes(void) {
     gPrevMaterialID = -1;
     gPrevRenderFlags = -1;
     rspq_block_run(sBeginModeBlock);
@@ -937,7 +949,7 @@ tstatic void render_world(void) {
     profiler_wait();
 }
 
-tstatic void render_object_shadows(void) {
+tstatic void shadow_render(void) {
     profiler_wait();
     DEBUG_SNAPSHOT_1();
     ObjectList *list = gObjectListHead;
@@ -1108,13 +1120,13 @@ tstatic void reset_shadow_perspective(void) {
     //rspq_block_run(sDynamicShadowBlock);
 }
 
-tstatic void generate_dynamic_shadows(void) {
+tstatic void shadow_update(void) {
     profiler_wait();
     DEBUG_SNAPSHOT_1();
     ObjectList *list = gObjectListHead;
     Object *obj;
 
-    apply_render_settings();
+    render_set_modes();
     float pos[3] = {0.0f, 0.0f, 0.0f};
     float scale[3] = {-1.0f, 1.0f, 1.0f};
     reset_shadow_perspective();
@@ -1187,7 +1199,7 @@ void clear_dynamic_shadows(void) {
     }
 }
 
-tstatic void render_determine_visible(void) {
+tstatic void render_visibility(void) {
     DEBUG_SNAPSHOT_1();
     ObjectList *list = gObjectListHead;
     Object *obj;
@@ -1240,7 +1252,7 @@ void render_game(int updateRate, float updateRateF) {
     }
 #endif
     if (gScreenshotStatus != SCREENSHOT_SHOW && gConfig.graphics != G_PERFORMANCE) {
-        generate_dynamic_shadows();
+        shadow_update();
     }
     if (gScreenshotStatus > SCREENSHOT_NONE) {
         screenshot_generate();
@@ -1253,7 +1265,7 @@ void render_game(int updateRate, float updateRateF) {
     if (gScreenshotStatus != SCREENSHOT_SHOW) {
         rdpq_mode_antialias(AA_NONE);
         render_ztarget_scissor();
-        project_camera();
+        camera_project();
         if (gConfig.graphics == G_PERFORMANCE) {
             render_sky_flat(gEnvironment);
         } else if (gEnvironment->skyboxTextureID == -1) {
@@ -1261,16 +1273,16 @@ void render_game(int updateRate, float updateRateF) {
         } else {
             render_sky_texture(gEnvironment);
         }
-        apply_render_settings();
-        set_light(lightNeutral);
-        render_determine_visible();
-        apply_anti_aliasing(AA_GEO);
+        render_set_modes();
+        light_apply(lightNeutral);
+        render_visibility();
+        render_aa(AA_GEO);
         render_world();
-        render_object_shadows();
+        shadow_render();
         render_clutter();
-        apply_anti_aliasing(AA_ACTOR);
+        render_aa(AA_ACTOR);
         render_objects(updateRateF);
-        apply_anti_aliasing(AA_GEO);
+        render_aa(AA_GEO);
         render_particles();
         render_end();
         if (gScreenshotStatus == SCREENSHOT_GENERATE) {

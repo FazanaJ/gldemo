@@ -44,13 +44,12 @@ enum PlayerInput {
     PLAYER_INPUT_L_HELD = (1 << 8),
 };
 
-void player_anim_idle(Object *o, PlayerData *d) {
+static void player_anim_idle(Object *o, PlayerData *d) {
     ObjectAnimation *a = o->animation;
     float vel = MIN(d->intendedMag, 1.0f) * 24.0f;
     int stepSound = false;
     if (vel > 1.0f) {
         float spd;
-        float blend;
         float clamp2 = MIN(vel, 16.0f);
         spd = 0.02f + (clamp2 / 300.0f);
         if (vel > 8.0f) {
@@ -187,7 +186,7 @@ tstatic void player_act_air(Object *o, PlayerData *d, int updateRate, float upda
             }
         }
 
-        /*if (grabbed) {
+        if (grabbed) {
             d->action = PLAYER_ACT_LEDGE;
             d->climbPos[0] = posX;
             d->climbPos[1] = height;
@@ -196,7 +195,7 @@ tstatic void player_act_air(Object *o, PlayerData *d, int updateRate, float upda
             o->movement->vel[1] = 0.0f;
             o->movement->vel[2] = 0.0f;
             d->weaponOut = false;
-        }*/
+        }
     }
 }
 

@@ -35,7 +35,8 @@
     "Culling", \
     "Background", \
     "Hitboxes", \
-    "Animation"
+    "Animation", \
+    "Lights"
 
 
 enum ProfileTimers {
@@ -66,6 +67,7 @@ enum ProfileTimers {
     PP_BG,
     PP_HITBOXES,
     PP_ANIMATION,
+    PP_LIGHTS,
 
     PP_TOTAL
 };
@@ -130,19 +132,19 @@ void profiler_wait(void);
 #define DEBUG_SNAPSHOT_1_RESET() first1 = timer_ticks()
 #define DEBUG_SNAPSHOT_2_RESET() first2 = timer_ticks()
 #define DEBUG_SNAPSHOT_3_RESET() first3 = timer_ticks()
-#define DEBUG_SNAPSHOT_1_END timer_ticks() - first1
-#define DEBUG_SNAPSHOT_2_END timer_ticks() - first2
-#define DEBUG_SNAPSHOT_3_END timer_ticks() - first3
+#define DEBUG_SNAPSHOT_1_END (timer_ticks() - first1)
+#define DEBUG_SNAPSHOT_2_END (timer_ticks() - first2)
+#define DEBUG_SNAPSHOT_3_END (timer_ticks() - first3)
 #define DEBUG_GET_TIME_1(index) unsigned int compare1 = get_profiler_time(index)
 #define DEBUG_GET_TIME_2(index) unsigned int compare2 = get_profiler_time(index)
 #define DEBUG_GET_TIME_3(index) unsigned int compare3 = get_profiler_time(index)
 #define DEBUG_GET_TIME_1_RESET(index) compare1 = get_profiler_time(index)
 #define DEBUG_GET_TIME_2_RESET(index) compare2 = get_profiler_time(index)
 #define DEBUG_GET_TIME_3_RESET(index) compare3 = get_profiler_time(index)
-#define DEBUG_GET_TIME_1_END(index) get_profiler_time(index) - compare1
-#define DEBUG_GET_TIME_2_END(index) get_profiler_time(index) - compare2
-#define DEBUG_GET_TIME_3_END(index) get_profiler_time(index) - compare3
-#define DEBUG_//MATRIX_OP() gDebugData->matrixOps++
+#define DEBUG_GET_TIME_1_END(index) (get_profiler_time(index) - compare1)
+#define DEBUG_GET_TIME_2_END(index) (get_profiler_time(index) - compare2)
+#define DEBUG_GET_TIME_3_END(index) (get_profiler_time(index) - compare3)
+#define DEBUG_MATRIX_OP() gDebugData->matrixOps++
 #else
 #define reset_profiler_times()
 #define get_time_snapshot(index, diff)
@@ -173,5 +175,5 @@ void profiler_wait(void);
 #define DEBUG_GET_TIME_1_END(index)
 #define DEBUG_GET_TIME_2_END(index)
 #define DEBUG_GET_TIME_3_END(index)
-#define DEBUG_//MATRIX_OP()
+#define DEBUG_MATRIX_OP()
 #endif

@@ -509,7 +509,9 @@ tstatic void object_animate(Object *obj, float updateRateF) {
                 t3d_anim_destroy(&anim->inst[i]);
             }
             anim->idPrev[i] = anim->id[i];
+            //unsigned int first = timer_ticks();
             anim->inst[i] = t3d_anim_create(obj->gfx->listEntry->model64, t3d_model_get_animation(obj->gfx->listEntry->model64, obj->gfx->listEntry->animData[anim->id[i]]->name)->name);
+            //debugf("Anim Time: %d\n", ((unsigned int) (timer_ticks() - first)));
             t3d_anim_attach(&anim->inst[i], &anim->skeleton[i]);
             if (vis) {
                 t3d_skeleton_reset(&anim->skeleton[i]);
@@ -530,12 +532,18 @@ tstatic void object_animate(Object *obj, float updateRateF) {
         anim->framePrev[0] = time;
         if (anim->id[1] != ANIM_NONE) {
             float time = anim->inst[1].time;
-            if (anim->framePrev[1] > time) {
-                anim->stage[1] = 0;
+            if (anim->speed[1] > 0.0f) {
+                if (anim->framePrev[1] > time) {
+                    anim->stage[1] = 0;
+                }
+            } else {
+                if (anim->framePrev[1] < time) {
+                    anim->stage[1] = 0;
+                }
             }
             anim->framePrev[1] = time;
             animSpeed = updateRateF * anim->speed[1];
-            if (vis) {
+            if (vis && anim->animBlend != 0.0f) {
                 t3d_anim_update(&anim->inst[1], animSpeed);
                 t3d_skeleton_blend(&anim->skeleton[0], &anim->skeleton[0], &anim->skeleton[1], anim->animBlend);
             } else {
@@ -723,6 +731,9 @@ tstatic void update_particles(int updateRate, float updateRateF) {
 }
 
 void update_game_entities(int updateRate, float updateRateF) {
+    if (gTalkControl) {
+        return;
+    }
     if (gSceneUpdate == false || gMenuStatus != MENU_CLOSED || gCamera->mode == CAMERA_PHOTO || gScreenshotStatus != SCREENSHOT_NONE) {
         gSceneUpdate = true;
     } else {

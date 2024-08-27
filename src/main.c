@@ -120,14 +120,9 @@ void boot_game(void) {
     debugf("Game booted in %2.3fs.\n", (double) (TIMER_MICROS(timer_ticks()) / 1000000.0f));
 }
 
-extern int gTransitionScene;
-
 int main(void) {
     int updateRate;
     float updateRateF;
-
-    static int balls = 0;
-    static int balls2 = 0;
 
     boot_game();
 #ifdef PUPPYPRINT_DEBUG
@@ -139,20 +134,10 @@ int main(void) {
         reset_profiler_times();
         DEBUG_SNAPSHOT_1();
 
-        balls2++;
-        if (balls2 > 90) {
-            balls ^= 1;
-            //transition_into_scene(balls, TRANSITION_FULLSCREEN_IN, 30, TRANSITION_FULLSCREEN_OUT);
-            balls2 = 0;
-            //gMenuStatus = MENU_CLOSED;
-        }
-
         update_game_time(&updateRate, &updateRateF);
         asset_cycle(updateRate);
         input_update(updateRate);
-        if (gTalkControl == NULL) {
-            update_game_entities(updateRate, updateRateF);
-        }
+        update_game_entities(updateRate, updateRateF);
         process_hud(updateRate, updateRateF);
         process_menus(updateRate, updateRateF);
 #ifdef PUPPYPRINT_DEBUG
@@ -164,7 +149,7 @@ int main(void) {
         DEBUG_SNAPSHOT_2();
         audio_loop(updateRate, updateRateF);
         render_game(updateRate, updateRateF);
-        get_cpu_time((DEBUG_SNAPSHOT_2_END) + first1);
+        get_cpu_time(DEBUG_SNAPSHOT_2_END + first1);
         DEBUG_SNAPSHOT_1_RESET();
         process_profiler();
         if (gDebugData && gDebugData->enabled && gScreenshotStatus != SCREENSHOT_GENERATE) {

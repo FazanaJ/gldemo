@@ -22,13 +22,15 @@ char *sSceneTable[SCENE_TOTAL] = {
     "testarea",
     "testarea2",
     "testarea3",
+    "testarea4"
 };
 
-char sSceneTexIDs[SCENE_TOTAL][8] = {
+char sSceneTexIDs[SCENE_TOTAL][20] = {
     {MATERIAL_INTROSIGN2, MATERIAL_KITCHENTILE, MATERIAL_INTROSIGN},
     {MATERIAL_WATER, MATERIAL_GRASS0, MATERIAL_STONE, MATERIAL_WATER},
     {MATERIAL_WATER, MATERIAL_RAILING, MATERIAL_KITCHENTILE, MATERIAL_HEALTH, MATERIAL_INTROSIGN, MATERIAL_LOGWALL, MATERIAL_FLATPRIM_XLU},
     {MATERIAL_GRASS0, MATERIAL_KITCHENTILE, MATERIAL_LOGWALL, MATERIAL_LOGWALL, MATERIAL_STONE},
+    {MATERIAL_DUSTMAT0, MATERIAL_DUSTMAT1, MATERIAL_DUSTMAT2, MATERIAL_DUSTMAT5, MATERIAL_DUSTMAT6, MATERIAL_DUSTMAT7, MATERIAL_DUSTMAT8, MATERIAL_DUSTMAT9, MATERIAL_DUSTMAT11, MATERIAL_DUSTMAT12, MATERIAL_DUSTMAT16, MATERIAL_DUSTMAT17, 0, 0, 0, 0, 0, MATERIAL_DUSTMAT13, MATERIAL_DUSTMAT18, MATERIAL_DUSTMAT24}
 };
 
 tstatic void setup_fog(SceneHeader *header) {
@@ -277,7 +279,18 @@ void load_scene(int sceneID, int updateRate, float updateRateF) {
                 SceneMesh *m = malloc(sizeof(SceneMesh));
                 m->mesh = (primitive_t *) obj;
                 int sceneTex = j % 8;
-                m->materialID = sSceneTexIDs[gCurrentScene->sceneID][sceneTex];
+                if (sceneID == SCENE_TESTAREA4) {
+                    int matID = strtol(obj->material->name, 0, 10);
+                    if (matID < 0) {
+                        matID = 0;
+                    }
+                    if (matID > MATERIAL_DUSTMAT33) {
+                        matID = MATERIAL_DUSTMAT33;
+                    }
+                    m->materialID = matID;
+                } else {
+                    m->materialID = sSceneTexIDs[gCurrentScene->sceneID][sceneTex];
+                }
                 if ((gMaterialIDs[m->materialID].collisionFlags & COLFLAG_INTANGIBLE) == false) {
                     for (int k = 0; k < obj->numParts; k++) {
                         const T3DObjectPart *part = &obj->parts[k];

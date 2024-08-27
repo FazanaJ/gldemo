@@ -406,7 +406,6 @@ void render_hud(int updateRate, float updateRateF) {
     matrix_ortho();
     if (gPlayer && gMenuStatus == MENU_CLOSED) {
         render_ztarget();
-        //render_health(updateRateF);
         sRenderHealth = true;
         sRenderMinimap = true;
     }
