@@ -345,9 +345,9 @@ void loop(Object *obj, int updateRate, float updateRateF) {
     if (input_pressed(INPUT_DUP, 0)) {
         data->healthMax++;
     }
-    Object *targetObj = find_nearest_object_facing(obj, OBJ_NPC, 30.0f, 0x3000, obj->faceAngle[1]);
+    Object *targetObj = find_nearest_object_facing(obj, OBJ_NPC, 240.0f, 0x3000, obj->faceAngle[1]);
     if (targetObj) {
-        if (targetObj->objectID == OBJ_NPC && DIST3(obj->pos, targetObj->pos) < 10.0f * 10.0f) {
+        if (targetObj->objectID == OBJ_NPC && DIST3(obj->pos, targetObj->pos) < 80.0f * 80.0f) {
             if (data->input & PLAYER_INPUT_A_PRESSED) {
                 data->weaponOut = false;
                 talk_open(0);

@@ -19,13 +19,13 @@ void init(Object *obj) {
 void loop(Object *obj, int updateRate, float updateRateF) {
     tempTimer += updateRate;
     if (tempTimer < 120) {
-        obj->pos[0] += 0.05f * updateRateF;
+        obj->pos[0] += 0.4f * updateRateF;
     } else if (tempTimer < 240) {
-        obj->pos[1] += 0.05f * updateRateF;
+        obj->pos[1] += 0.4f * updateRateF;
     } else if (tempTimer < 360) {
-        obj->pos[1] -= 0.05f * updateRateF;
+        obj->pos[1] -= 0.4f * updateRateF;
     } else {
-        obj->pos[0] -= 0.05f * updateRateF;
+        obj->pos[0] -= 0.4f * updateRateF;
         if (tempTimer >= 480) {
             tempTimer -= 480;
         }
@@ -36,10 +36,10 @@ Hitbox bbox = {
     .type = HITBOX_BLOCK,
     .solid = true,
     .offsetY = 0,
-    .width = 4.0f,
-    .length = 4.0f,
+    .width = 256.0f,
+    .length = 256.0f,
     .weight = 2000.0f,
-    .height = 8.0f,
+    .height = 512.0f,
     .moveSound = SOUND_SHELL1,
 };
 

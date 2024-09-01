@@ -30,7 +30,7 @@ char sSceneTexIDs[SCENE_TOTAL][20] = {
     {MATERIAL_WATER, MATERIAL_GRASS0, MATERIAL_STONE, MATERIAL_WATER},
     {MATERIAL_WATER, MATERIAL_RAILING, MATERIAL_KITCHENTILE, MATERIAL_HEALTH, MATERIAL_INTROSIGN, MATERIAL_LOGWALL, MATERIAL_FLATPRIM_XLU},
     {MATERIAL_GRASS0, MATERIAL_KITCHENTILE, MATERIAL_LOGWALL, MATERIAL_LOGWALL, MATERIAL_STONE},
-    {MATERIAL_DUSTMAT0, MATERIAL_DUSTMAT1, MATERIAL_DUSTMAT2, MATERIAL_DUSTMAT5, MATERIAL_DUSTMAT6, MATERIAL_DUSTMAT7, MATERIAL_DUSTMAT8, MATERIAL_DUSTMAT9, MATERIAL_DUSTMAT11, MATERIAL_DUSTMAT12, MATERIAL_DUSTMAT16, MATERIAL_DUSTMAT17, 0, 0, 0, 0, 0, MATERIAL_DUSTMAT13, MATERIAL_DUSTMAT18, MATERIAL_DUSTMAT24}
+    {0}
 };
 
 tstatic void setup_fog(SceneHeader *header) {
@@ -279,7 +279,7 @@ void load_scene(int sceneID, int updateRate, float updateRateF) {
                 SceneMesh *m = malloc(sizeof(SceneMesh));
                 m->mesh = (primitive_t *) obj;
                 int sceneTex = j % 8;
-                if (sceneID == SCENE_TESTAREA4) {
+                if (sceneID == SCENE_TESTAREA4 || sceneID == SCENE_TESTAREA3) {
                     int matID = strtol(obj->material->name, 0, 10);
                     if (matID < 0) {
                         matID = 0;
