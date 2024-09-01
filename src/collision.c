@@ -87,10 +87,12 @@ static float collision_surface_down(int *pos, int16_t *v0, int16_t *v1, int16_t 
     return -30000;
 }
 
-tstatic void collision_surface_side(int *pos, int16_t *v0, int16_t *v1, int16_t *v2, int size, Object *obj) {
+tstatic void collision_surface_side(int *pos, int16_t *v0, int16_t *v1, int16_t *v2, int width, int height, int stepHeight, Object *obj) {
     int posCheck = pos[1];
-    if ((posCheck < v0[1] && posCheck < v1[1] && posCheck < v2[1]) || (posCheck > v0[1] && posCheck > v1[1] && posCheck > v2[1])) {
-        return;
+    int posCheck2 = pos[1] + stepHeight;
+    topCol:
+    if ((posCheck < v0[1] && posCheck < v1[1] && posCheck < v2[1]) || (posCheck2 >= v0[1] && posCheck2 >= v1[1] && posCheck2 >= v2[1])) {
+        goto end;
     }
 
     float normal[4];
@@ -98,18 +100,19 @@ tstatic void collision_surface_side(int *pos, int16_t *v0, int16_t *v1, int16_t 
 
     float offset = (normal[0] * ((float) pos[0])) + (normal[1] * ((float) pos[1])) + (normal[2] * ((float) pos[2])) + normal[3];
 
-    if (fabsf(offset) > size) {
-        return;
+    if (fabsf(offset) > width) {
+        goto end;
     }
 
-    int px = pos[0];
-    int pz = pos[2];
+    float px = pos[0];
+    float pz = pos[2];
 
     float norm;
     float ppz;
-    int w1;
-    int w2;
-    int w3;
+    float w1;
+    float w2;
+    float w3;
+
     if (fabsf(normal[0]) > 0.707f) {
         w1 = -v0[2];
         w2 = -v1[2];
@@ -125,31 +128,40 @@ tstatic void collision_surface_side(int *pos, int16_t *v0, int16_t *v1, int16_t 
     }
 
     if (norm > 0.0f) {
-        if ((v0[1] - pos[1]) * (w2 - w1) - (w1 - ppz) * (v1[1] - v0[1]) > 0.0f) {
-            return;
+        if ((v0[1] - posCheck) * (w2 - w1) - (w1 - ppz) * (v1[1] - v0[1]) > 0.0f) {
+            goto end;
         }
-        if ((v1[1] - pos[1]) * (w3 - w2) - (w2 - ppz) * (v2[1] - v1[1]) > 0.0f) {
-            return;
+        if ((v1[1] - posCheck) * (w3 - w2) - (w2 - ppz) * (v2[1] - v1[1]) > 0.0f) {
+            goto end;
         }
-        if ((v2[1] - pos[1]) * (w1 - w3) - (w3 - ppz) * (v0[1] - v2[1]) > 0.0f) {
-            return;
+        if ((v2[1] - posCheck) * (w1 - w3) - (w3 - ppz) * (v0[1] - v2[1]) > 0.0f) {
+            goto end;
         }
     } else {
-        if ((v0[1] - pos[1]) * (w2 - w1) - (w1 - ppz) * (v1[1] - v0[1]) < 0.0f) {
-            return;
+        if ((v0[1] - posCheck) * (w2 - w1) - (w1 - ppz) * (v1[1] - v0[1]) < 0.0f) {
+            goto end;
         }
-        if ((v1[1] - pos[1]) * (w3 - w2) - (w2 - ppz) * (v2[1] - v1[1]) < 0.0f) {
-            return;
+        if ((v1[1] - posCheck) * (w3 - w2) - (w2 - ppz) * (v2[1] - v1[1]) < 0.0f) {
+            goto end;
         }
-        if ((v2[1] - pos[1]) * (w1 - w3) - (w3 - ppz) * (v0[1] - v2[1]) < 0.0f) {
-            return;
+        if ((v2[1] - posCheck) * (w1 - w3) - (w3 - ppz) * (v0[1] - v2[1]) < 0.0f) {
+            goto end;
         }
     }
 
-    float of = ((size - offset) * WORLD_SCALE);
+    float of = ((width - offset) * WORLD_SCALE);
 
     obj->pos[0] += normal[0] * of;
     obj->pos[2] += normal[2] * of;
+    pos[0] = obj->pos[0];
+    pos[2] = obj->pos[2];
+
+    end:
+    if (height) {
+        posCheck += height;
+        height = 0;
+        goto topCol;
+    }
 }
 
 float collision_floor(float x, float y, float z, float *norm, int w) {
@@ -267,7 +279,7 @@ void object_collide(Object *obj) {
                     float normals[3];
                     collision_normals(vertex[0], vertex[1], vertex[2], normals, false);
                     if (fabsf(normals[1] < 0.3f)) {
-                        collision_surface_side(pos, vertex[0], vertex[1], vertex[2], 4 * 8, obj);
+                        collision_surface_side(pos, vertex[0], vertex[1], vertex[2], obj->hitbox->width, obj->hitbox->height, obj->hitbox->height / 4, obj);
                     } else {
                         float h = collision_surface_down(pos, vertex[0], vertex[1], vertex[2], &normY);
                         if (h > peakY) {

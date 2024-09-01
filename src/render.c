@@ -148,12 +148,12 @@ tstatic inline void mtx_invalidate(void* addr) {
 tstatic inline void set_frustrum(float l, float r, float b, float t, float n, float f) {
     DEBUG_SNAPSHOT_1();
     DEBUG_MATRIX_OP();
-    Matrix frustum = (Matrix) { .m={
+    /*Matrix frustum = (Matrix) { .m={
         {(2*n)/(r-l), 0.f, 0.f, 0.f},
         {0.f, (2.f*n)/(t-b), 0.f, 0.f},
         {(r+l)/(r-l), (t+b)/(t-b), -(f+n)/(f-n), -1.f},
         {0.f, 0.f, -(2*f*n)/(f-n), 0.f},
-    }};
+    }};*/
     //MATRIX_MUL(frustum.m[0], 0, 0);
     get_time_snapshot(PP_MATRIX, DEBUG_SNAPSHOT_1_END);
 }
@@ -721,13 +721,12 @@ tstatic void find_material_list(RenderNode *node, int layer) {
         sPrevEntry = node;
         return;
     }
-    forceNew:
     RenderList *matList;
     if (gRenderNodeHead[layer] == NULL) {
         gRenderNodeHead[layer] = node;
         matList = (RenderList *) render_alloc(sizeof(RenderList), layer);
         gMateriallistHead[layer] = matList;
-                    sPrevEntry = node;
+        sPrevEntry = node;
     } else {
         RenderList *list = gMateriallistHead[layer];
         while (list) {

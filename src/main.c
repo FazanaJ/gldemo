@@ -71,7 +71,6 @@ static float sPrevDeltaF;
 static inline void update_game_time(int *updateRate, float *updateRateF) {
     
     sCurTime = timer_ticks();
-    // Convert it to float too, and make it 20% faster on PAL systems.
     *updateRateF = ((float) TIMER_MICROS(sCurTime - sPrevTime) / 16666.666f);
     if (*updateRateF <= 0.0001f) {
         *updateRateF = 0.0001f;
